@@ -1,0 +1,393 @@
+---
+description: Estructura estándar para reglas de Cursor - Principios anti-redundancia
+globs: ["**/*.mdc"]
+alwaysApply: true
+---
+
+# 📐 Estructura de Reglas de Cursor
+
+## 📋 TL;DR
+
+- ✅ Estructura estándar con 7 secciones máximo
+- ✅ Max 400 líneas (300 ideal)
+- ✅ Tablas sobre ejemplos largos
+- ❌ NO repetir información entre archivos
+- ❌ NO ejemplos obvios
+
+## 🎯 ESTRUCTURA OBLIGATORIA
+
+```markdown
+---
+description: Max 100 caracteres
+globs: ["**/*.ext"]
+alwaysApply: true/false
+---
+
+# 🔧 [Título]
+
+## 📋 TL;DR
+- 3-5 bullets esenciales
+
+## 🚨 Reglas Principales
+[Máximo 5 reglas concisas]
+
+## 📊 Referencia Rápida
+[Tabla con patrones esenciales]
+
+## ✅ Ejemplos
+[Solo NO obvios, máximo 3]
+
+## 🚫 Restricciones
+[Lista numerada, máximo 10]
+
+## ✅ Validación Automática
+[Qué debe detectar Cursor]
+
+## 🎯 Objetivo + Regla de Oro
+[1-2 líneas + frase memorable]
+```
+
+## 🚫 ANTI-PATRONES CRÍTICOS
+
+### ❌ Repetir Ejemplos
+```markdown
+<!-- ❌ MAL - 4 variantes casi idénticas -->
+### Ejemplo Normal
+[50 líneas de código]
+### Ejemplo Bold  
+[50 líneas casi iguales]
+### Ejemplo Error
+[50 líneas casi iguales]
+
+<!-- ✅ BIEN - Tabla + 1 ejemplo -->
+| Variante | Clase | Uso |
+|----------|-------|-----|
+| Normal | `.class` | Uso normal |
+| Bold | `.class--bold` | Énfasis |
+
+[1 ejemplo base + nota de variantes]
+```
+
+### ❌ Duplicar Entre Archivos
+```markdown
+<!-- ❌ MAL - Copiar contenido completo -->
+
+<!-- ✅ BIEN - Referenciar -->
+> Ver [componentes-01-primeng-forms.mdc](./componentes-01-primeng-forms.mdc#buttons)
+```
+
+### ❌ Ejemplos Obvios
+```typescript
+// ❌ MAL - No agregar
+const x = 1;  // Sin tipo
+
+// Solo incluir cuando NO sea obvio por qué está mal
+```
+
+## 📏 LÍMITES ESTRICTOS
+
+| Tipo | Max Líneas | Acción |
+|------|------------|--------|
+| Simple | 300 | ✅ Ideal |
+| Media | 400 | ⚠️ Máximo |
+| Compleja | 500 | 🚨 Refactorizar |
+
+**Al exceder:** Tablas, referencias, eliminar redundancia
+
+## 📝 NOMENCLATURA
+
+**Patrón:** `[tipo]-[num]-[nombre].mdc`
+
+| Tipo | Contenido |
+|------|-----------|
+| `documentacion-XX` | JSDoc, DokuWiki |
+| `servicios-XX` | APIs, CMS, Storage, DI, DTOs |
+| `componentes-XX` | UI, Estilos, Modelos |
+| `test-XX` | Jest, E2E |
+| `arquitectura-XX` | Estructura, Patrones |
+
+**Nota**: Para reglas de DTOs ver [servicios-05-dtos.mdc](./servicios-05-dtos.mdc)
+
+## 📐 PATRONES DE ORGANIZACIÓN
+
+### Estructura Simple vs Organizada vs Modular
+
+| Tipo | Cuándo Usar | Ejemplo |
+|------|-------------|---------|
+| **Simple** | 1 funcionalidad/endpoint | `service/shorturl/` |
+| **Organizada** | ≥2 ops misma entidad | `service/transaction/detail/` |
+| **Modular** ⭐ | Módulo completo independiente | `service/processconfig/` + paquetes en todas las capas |
+
+#### 1️⃣ Estructura Simple
+**Usar cuando:**
+- ✅ Una sola funcionalidad/endpoint
+- ✅ Dos operaciones muy relacionadas y simples
+- ✅ DTOs compartidos entre operaciones
+
+**Ejemplo:**
+```
+service/shorturl/
+dto/shorturl/
+```
+
+#### 2️⃣ Estructura Organizada
+**Usar cuando:**
+- ✅ Múltiples endpoints sobre la misma entidad (GET, POST, PUT, DELETE)
+- ✅ Operaciones con DTOs y lógica claramente diferenciados
+- ✅ Evita colisión de nombres entre servicios similares
+
+**Ejemplo:**
+```
+service/transaction/
+├── detail/          # GET - Consulta
+└── step/            # PUT - Actualización
+
+dto/transaction/
+├── detail/          # DTOs de consulta
+└── step/            # DTOs de actualización
+```
+
+#### 3️⃣ Estructura Modular ⭐ **RECOMENDADA**
+**Usar cuando:**
+- ✅ Módulo funcional completo e independiente
+- ✅ Funcionalidad con controller, service, dto y exception propios
+- ✅ Requiere README.md con documentación específica
+- ✅ Facilita mantenimiento y escalabilidad
+
+**Ejemplo:**
+```
+controller/processconfig/
+└── ProcessConfigurationController.java
+
+service/processconfig/
+├── AllyProcessConfigurationService.java
+├── AllyProcessConfigurationServiceImpl.java
+└── README.md
+
+exception/processconfig/
+└── ProcessConfigurationException.java
+
+documents/allies/
+└── WorkFlowAlly.java (reutilizado como respuesta)
+    └── Incluye ControlsValidationDto (actualizado)
+```
+
+**💡 Nota:** Se reutilizó documento MongoDB existente en lugar de crear DTO duplicado.
+
+### 📋 Tabla de Decisión
+
+| Criterio | Simple | Organizada | Modular |
+|----------|:------:|:----------:|:-------:|
+| 1 operación | ✅ | ❌ | ❌ |
+| ≥2 ops misma entidad | ❌ | ✅ | ❌ |
+| Módulo completo | ❌ | ❌ | ✅ |
+| Con controller propio | ❌ | ❌ | ✅ |
+| Con exception propia | ❌ | ❌ | ✅ |
+| Con README.md | ❌ | ❌ | ✅ |
+
+### ❌ Anti-patrón: Sobre-organización
+
+**NO crear subcarpetas cuando:**
+```
+❌ MAL - Subcarpeta innecesaria
+service/payment/
+└── single/              # Solo una operación
+    └── PaymentServiceImpl.java
+
+✅ BIEN - Estructura simple
+service/payment/
+└── PaymentServiceImpl.java
+```
+
+**NO crear múltiples niveles de organización:**
+```
+❌ MAL - Demasiados niveles
+service/transaction/detail/get/retrieve/
+                                      └── ...
+
+✅ BIEN - Máximo 2 niveles
+service/transaction/detail/
+                      └── ...
+```
+
+## 📂 REGLAS ACTUALES
+
+| Categoría | Archivo | Descripción | Líneas | Estado |
+|-----------|---------|-------------|--------|--------|
+| 🏗️ Arquitectura | `arquitectura-00-rules-structure` | Estructura estándar y anti-redundancia | ~381 | ✅ Actualizada |
+| 🔧 Servicios | `servicios-01-creacion-servicios` | Arquitectura en capas + organización modular | ~310 | ✅ Actualizada |
+| 🔧 Servicios | `servicios-02-feign-client` | Integración con APIs externas vía Feign | 186 | ✅ |
+| 🔧 Servicios | `servicios-03-feign-config` | Configuración transversal de Feign | 189 | ✅ |
+| 🔧 Servicios | `servicios-04-excepciones` | Excepciones + paquetes específicos | ~370 | ✅ Actualizada |
+| 🔧 Servicios | `servicios-05-dtos` | DTOs y Data Transfer Objects | 306 | ✅ |
+| 🔧 Servicios | `servicios-06-transaction` | Servicios de transacción (uso interno) | 226 | ✅ |
+| 📝 Documentación | `servicios-08-documentacion` | Informes de cambios en DokuWiki + Ejemplos Uso | 223 | ✅ Estandarizada |
+| 🔧 Servicios | `servicios-09-organizacion-capacidades` | Organización por capacidades - Servicios y DTOs | 315 | ✅ Estandarizada |
+
+**Total:** 9 archivos (1 arquitectura + 7 servicios + 1 documentación)
+
+**Estado de límites:**
+- ✅ 8 archivos dentro del rango ideal (< 300 líneas)
+- ✅ 1 archivo en rango medio (300-400 líneas)
+- ✅ 0 archivos requieren refactorización
+- ✅ Promedio: ~272 líneas por archivo
+
+**Últimas actualizaciones:**
+- ✨ Agregada regla de **Documentación DokuWiki** (`servicios-08-documentacion`)
+- ✨ **Sección "Ejemplos de Uso"** obligatoria con curl + responses (éxito + error)
+- ✨ Agregada **Estructura Modular** para módulos completos
+- ✨ Documentación de paquetes específicos para excepciones
+- ✨ Ejemplos del módulo `processconfig` como referencia
+
+
+### 📋 Reglas para Comandos
+
+**✅ Permitido:**
+- Un archivo `.md` por comando con instrucciones claras
+- Nombre del comando = nombre del archivo (sin extensión)
+- Instrucciones detalladas dentro del archivo del comando
+
+**❌ PROHIBIDO:**
+- NO crear archivos `README.md` en carpeta commands
+- NO crear archivos `INDEX.md` o similar
+- NO crear archivos `USAGE.md` o documentación adicional
+- NO duplicar información entre comandos
+- NO crear subcarpetas dentro de commands
+
+**⚠️ IMPORTANTE:** 
+- Los comandos de Cursor (`.cursor/commands/`) son autodocumentados
+- La regla de READMEs para componentes shared (`componentes-06-shared.mdc`) SOLO aplica a `src/app/shared/components/`
+- NO aplicar reglas de documentación de código a carpetas de configuración de Cursor
+
+**Razón:** Los comandos son autodocumentados. El contenido del archivo `.md` es la documentación del comando.
+
+## 🔗 REFERENCIAS
+
+```markdown
+> Ver [archivo.mdc](./archivo.mdc#seccion)
+
+**Específico aquí:**
+- Solo diferencias
+```
+
+### Referencias Específicas por Tema
+
+**Para DTOs (Data Transfer Objects):**
+> Ver [servicios-05-dtos.mdc](./servicios-05-dtos.mdc) para nomenclatura, estructura de paquetes y validaciones.
+
+**Evitar redundancia sobre:**
+- Nomenclatura de DTOs (sufijo `Dto`)
+- Agrupación por dominio (`dto/{dominio}/`)
+- Estructura organizada por funcionalidad (`dto/{dominio}/{operacion}/`)
+- Anotaciones Lombok y Jackson
+- Clases separadas vs internas
+- Métodos helper en DTOs
+
+**Para Servicios (Service Layer):**
+> Ver [servicios-01-creacion-servicios.mdc](./servicios-01-creacion-servicios.mdc) para arquitectura en capas y principios SOLID.
+
+**Evitar redundancia sobre:**
+- Tipos de servicios (Principal, Especializado, External, Processor, Retriever)
+- Estructura de carpetas por dominio (`service/{dominio}/`)
+- Estructura organizada por funcionalidad (`service/{dominio}/{operacion}/`)
+- **Estructura modular** (`service/{modulo}/` + paquetes en todas las capas)
+- Inyección de dependencias por interfaz
+- Validación previa (solicitar URL, CURL, responses JSON)
+
+**Para Organización por Capacidades:**
+> Ver [servicios-09-organizacion-capacidades.mdc](./servicios-09-organizacion-capacidades.mdc) para organización de servicios external y DTOs por capacidades.
+
+**Evitar redundancia sobre:**
+- Separación por capacidades (`external/auth/`, `external/questions/`)
+- Decisión raíz vs subcarpetas (≥2 capacidades → subcarpetas)
+- Estructura paralela entre `service/external/` y `dto/`
+- Patrones comunes de capacidades (auth, questions, validation, processing, storage)
+- Beneficios de alta cohesión y bajo acoplamiento
+
+**Para Feign Clients:**
+> Ver [servicios-02-feign-client.mdc](./servicios-02-feign-client.mdc) para integración con APIs externas.
+
+**Evitar redundancia sobre:**
+- Nomenclatura de clientes (sufijo `-client` en `@FeignClient`, prefijo `External` en interfaz)
+- Ubicación en `external/` junto con servicios external
+- Configuración automática desde `FeignClientConfig`
+- URL dinámica desde `${services.{nombre}.url}`
+- API Key opcional desde `${services.{nombre}.api-key}`
+
+**Para Excepciones:**
+> Ver [servicios-04-excepciones.mdc](./servicios-04-excepciones.mdc) para manejo de errores personalizados.
+
+**Evitar redundancia sobre:**
+- Formato de códigos de error (`TDTC-XX-NNNN`)
+- Estructura de excepciones (campo `errorCode`, dos constructores)
+- **Paquetes específicos** (`exception/{modulo}/` para módulos completos)
+- Constantes en `Constants.java`
+- Handlers en `ExceptionHandlerController`
+
+**Para Transacciones (uso interno):**
+> Ver [servicios-06-transaction.mdc](./servicios-06-transaction.mdc) para servicios de transacción sin controllers.
+
+**Evitar redundancia sobre:**
+- Servicios internos sin controllers
+- Nomenclatura `{id}` y `{paso}` (NO transactionId/step)
+- Reutilización de servicio base `tienda-seguros.url`
+- Path estándar `/tienda-seguros/api/v1/transaccion/{id}/paso/{paso}`
+
+**Para Documentación de Cambios:**
+> Ver [servicios-08-documentacion.mdc](./servicios-08-documentacion.mdc) para informes de cambios en DokuWiki.
+
+**Evitar redundancia sobre:**
+- Estructura obligatoria del informe (8 secciones)
+- Formato de nombre de archivo
+- Secciones prohibidas (Cobertura, Arquitectura, SOLID, etc.)
+- Formato de PRs en tablas por ambiente
+- Análisis de commits con comandos git
+
+## 🔗 MATRIZ DE DEPENDENCIAS
+
+| Regla | Depende de | Razonamiento |
+|-------|------------|--------------|
+| `servicios-01-creacion-servicios` | `servicios-02-feign-client`, `servicios-04-excepciones`, `servicios-05-dtos` | Servicios usan Feign Clients, Excepciones y DTOs |
+| `servicios-02-feign-client` | `servicios-03-feign-config`, `servicios-05-dtos` | Feign Clients usan config transversal y DTOs |
+| `servicios-06-transaction` | `servicios-01-creacion-servicios`, `servicios-02-feign-client`, `servicios-04-excepciones`, `servicios-05-dtos` | Caso específico que aplica todas las reglas |
+| `servicios-09-organizacion-capacidades` | `servicios-01-creacion-servicios`, `servicios-02-feign-client`, `servicios-05-dtos` | Organiza servicios external y DTOs por capacidades |
+
+**Principio:** Cuando una regla depende de otra, usar **referencias** en lugar de duplicar contenido.
+
+## ✅ VALIDACIÓN
+
+### Checklist al Crear/Editar Reglas
+
+**Estructura:**
+- [ ] ¿TL;DR con 3-5 bullets?
+- [ ] ¿< 400 líneas? (300 ideal)
+- [ ] ¿Secciones estándar completas?
+- [ ] ¿Tabla de Referencia Rápida presente?
+
+**Contenido:**
+- [ ] ¿Sin repetir ejemplos similares?
+- [ ] ¿Sin duplicar contenido de otras reglas?
+- [ ] ¿Referencias en lugar de copiar?
+- [ ] ¿Solo ejemplos NO obvios?
+- [ ] ¿Máximo 3 ejemplos de código?
+
+**Organización:**
+- [ ] ¿Sin archivos README.md o INDEX.md adicionales?
+- [ ] ¿Sin documentación externa innecesaria?
+- [ ] ¿Referencias cruzadas actualizadas?
+- [ ] ¿Validación automática definida?
+
+**PROHIBIDO crear:**
+- `README.md` en carpetas de reglas
+- `INDEX.md` para listar reglas
+- Archivos de documentación adicional (`.md` no relacionados con comandos)
+- Guías de uso separadas cuando la regla ya está autodocumentada
+- **Documentación MD para CSS/SCSS** (usar comentarios JSDoc en el código)
+- **Archivos MD que expliquen arquitectura de temas o variables CSS**
+- **Guías de migración, limitaciones técnicas o resúmenes de cambios en MD**
+
+## 🎯 OBJETIVO
+
+Reglas concisas, sin redundancia, fáciles de consultar.
+
+**REGLA DE ORO**: "Si puedes usar tabla en lugar de 4 ejemplos, usa tabla. Si puedes referenciar en lugar de copiar, referencia."

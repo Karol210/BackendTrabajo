@@ -1,0 +1,188 @@
+---
+description: Configuración centralizada de Feign Clients con Parameter Store y retry
+globs: ["**/config/FeignClientConfig.java"]
+alwaysApply: true
+---
+
+# ⚙️ Feign Client Config - Configuración Transversal
+
+## 📋 TL;DR
+
+- ✅ UNA configuración para TODOS los Feign Clients
+- ✅ URL y API Key desde Parameter Store automáticamente
+- ✅ Timeouts: 10s connect, 30s read
+- ✅ Retry: 3 intentos con backoff exponencial
+- ❌ NO crear configuraciones personalizadas por cliente
+
+## 🚨 Reglas Principales
+
+1. `FeignClientConfig` es la ÚNICA configuración para todos los clientes
+2. Extrae nombre del servicio quitando sufijo `-client`
+3. Busca URL en `${services.{nombre}.url}` y consulta Parameter Store
+4. Agrega API Key automáticamente si existe `${services.{nombre}.api-key}`
+5. Timeouts y retry policy son globales para todos los clientes
+
+## 📊 Referencia Rápida - Flujo de Configuración
+
+| Paso | Acción | Descripción |
+|------|--------|-------------|
+| 1 | Extraer nombre | `parameter-client` → `parameter` |
+| 2 | Construir property | `services.parameter.url` |
+| 3 | Leer yml | Obtener ruta Parameter Store |
+| 4 | Consultar AWS | Obtener URL real desde Parameter Store |
+| 5 | Aplicar URL | Configurar en `requestTemplate` |
+| 6 | API Key opcional | Si existe, agregar header `x-api-key` |
+
+## ✅ Ejemplos
+
+### Ejemplo 1: Estructura Básica
+
+```java
+@Slf4j
+@Configuration
+@RequiredArgsConstructor
+public class FeignClientConfig {
+
+    private final ParameterStoreUtil parameterStoreUtil;
+    private final Environment environment;
+
+    @Bean
+    public RequestInterceptor feignClientInterceptor() {
+        return requestTemplate -> {
+            final String clientName = requestTemplate.feignTarget().name();
+            
+            log.debug("🔍 Procesando cliente Feign: {}", clientName);
+            
+            try {
+                String serviceName = extractServiceName(clientName);
+                configureUrl(requestTemplate, serviceName);
+                addApiKeyIfExists(requestTemplate, serviceName);
+                
+                log.debug("✅ Cliente {} configurado exitosamente", clientName);
+                
+            } catch (Exception e) {
+                log.error("❌ Error configurando cliente Feign {}: {}", 
+                    clientName, e.getMessage(), e);
+                throw new RuntimeException("Error configurando cliente Feign: " + clientName, e);
+            }
+        };
+    }
+
+    private String extractServiceName(String clientName) {
+        if (clientName.endsWith("-client")) {
+            return clientName.substring(0, clientName.length() - "-client".length());
+        }
+        return clientName;
+    }
+}
+```
+
+### Ejemplo 2: Configurar URL
+
+```java
+private void configureUrl(feign.RequestTemplate requestTemplate, String serviceName) {
+    try {
+        // 1. Construir property key: services.{serviceName}.url
+        String propertyKey = String.format("services.%s.url", serviceName);
+        
+        // 2. Obtener ruta del Parameter Store desde yml
+        String parameterStoreKey = environment.getProperty(propertyKey);
+        
+        if (parameterStoreKey == null || parameterStoreKey.trim().isEmpty()) {
+            log.debug("No se encontró configuración de URL para: {}", propertyKey);
+            return;
+        }
+        
+        // 3. Obtener URL desde Parameter Store
+        String baseUrl = parameterStoreUtil.getParameterStoreValues(parameterStoreKey);
+        
+        if (baseUrl != null && !baseUrl.trim().isEmpty()) {
+            String cleanUrl = sanitizeUrl(baseUrl);
+            
+            // 4. Aplicar URL al request
+            requestTemplate.target(cleanUrl);
+            
+            log.info("📡 URL configurada para {}: {}", serviceName, cleanUrl);
+        }
+        
+    } catch (Exception e) {
+        log.error("Error obteniendo URL para servicio: {}", serviceName, e);
+        throw e;
+    }
+}
+
+private String sanitizeUrl(String baseUrl) {
+    if (baseUrl == null || baseUrl.trim().isEmpty()) {
+        throw new IllegalStateException("URL no puede estar vacía");
+    }
+    return baseUrl.trim().replaceAll("/$", "");
+}
+```
+
+### Ejemplo 3: Timeouts y Retry
+
+```java
+@Bean
+public Request.Options feignRequestOptions() {
+    return new Request.Options(
+        10000, TimeUnit.MILLISECONDS, // Connect timeout: 10 segundos
+        30000, TimeUnit.MILLISECONDS, // Read timeout: 30 segundos
+        true                          // Follow redirects
+    );
+}
+
+@Bean
+public Retryer feignRetryer() {
+    return new Retryer.Default(
+        100,  // Initial interval: 100ms
+        1000, // Max interval: 1 segundo
+        3     // Max attempts: 3 intentos
+    );
+}
+```
+
+## 🚫 Restricciones
+
+1. **NO** crear múltiples clases de configuración Feign
+2. **NO** modificar URLs manualmente en interceptores personalizados
+3. **NO** agregar API Keys manualmente en servicios
+4. **NO** usar valores hardcodeados de timeout
+5. **NO** omitir logs de configuración (info/debug)
+6. **NO** lanzar excepciones genéricas sin contexto
+7. **NO** ignorar errores de Parameter Store
+8. **NO** modificar el nombre del header de API Key (`x-api-key` es estándar)
+
+## ✅ Validación Automática
+
+Cursor debe detectar:
+
+- ❌ Múltiples clases anotadas con `@Configuration` para Feign
+- ❌ Configuraciones personalizadas en `@FeignClient(configuration = ...)`
+- ❌ Headers de autenticación agregados manualmente en servicios
+- ❌ Timeouts hardcodeados en clientes individuales
+- ❌ Falta de `@Slf4j` en `FeignClientConfig`
+- ❌ Falta de manejo de excepciones en interceptor
+- ❌ URL no sanitizada (con slashes finales)
+
+## 🎯 Objetivo + Regla de Oro
+
+**Objetivo**: Configuración centralizada y automática de todos los Feign Clients desde Parameter Store, sin duplicación de código.
+
+**REGLA DE ORO**: "UNA configuración para TODOS. El nombre del cliente (`X-client`) define el servicio (`X`). URL y API Key se buscan automáticamente en `services.X.*`."
+
+---
+
+## 🔧 Estrategia de Reintentos
+
+```
+Intento 1 → Falla → Espera 100ms
+Intento 2 → Falla → Espera 200ms (duplica)
+Intento 3 → Falla → Espera 400ms (duplica)
+Intento 4 → ERROR FINAL
+```
+
+**Razón**: Fallas transitorias de red son comunes. 3 intentos con backoff exponencial minimizan impacto sin sobrecargar servicios externos.
+
+> **Ver también**: 
+> - [servicios-02-feign-client.mdc](./servicios-02-feign-client.mdc) - Crear Feign Clients
+> - [servicios-01-creacion-servicios.mdc](./servicios-01-creacion-servicios.mdc) - Uso en servicios

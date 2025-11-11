@@ -1,0 +1,306 @@
+---
+description: Reglas para creación y organización de DTOs (Data Transfer Objects)
+globs: ["**/dto/**/*.java"]
+alwaysApply: true
+---
+
+# 📦 DTOs - Data Transfer Objects
+
+## 📋 TL;DR
+
+- ✅ Todos los DTOs terminan con sufijo `Dto`
+- ✅ Clases SEPARADAS (no internas) para objetos anidados
+- ✅ Agrupar por dominio: `dto/{dominio}/`
+- ✅ **Si múltiples operaciones**: usar subcarpetas `dto/{dominio}/{operacion}/`
+- ✅ Lombok + Jackson: `@Data`, `@Builder`, `@JsonProperty`
+- ❌ NO lógica de negocio (solo métodos helper simples)
+
+## 🚨 Reglas Principales
+
+1. **Nomenclatura**: Todos terminan con `Dto` (ejemplo: `HealthInsurancePremiumRequestDto`)
+2. **Clases Separadas**: Objetos anidados en archivos SEPARADOS (NO clases internas estáticas)
+3. **Agrupación**: Un subpaquete `dto/{dominio}/` por funcionalidad (ejemplo: `dto/healthinsurance/`)
+4. **Anotaciones**: Lombok (`@Data`, `@Builder`, `@NoArgsConstructor`, `@AllArgsConstructor`) + Jackson (`@JsonProperty`)
+5. **JavaDoc Completo**: Documentar clase, campos y métodos helper
+
+## 📊 Referencia Rápida
+
+### Nomenclatura por Tipo
+
+| Tipo | Sufijo | Ejemplo | Uso |
+|------|--------|---------|-----|
+| Request | `RequestDto` | `HealthInsurancePremiumRequestDto` | Input de APIs |
+| Response | `ResponseDto` | `HealthInsurancePremiumResponseDto` | Output de APIs |
+| Data (anidado) | `DataDto` | `HealthInsurancePremiumDataDto` | Objeto `data` en response |
+| Error (anidado) | `ErrorDataDto` | `HealthInsurancePremiumErrorDataDto` | Objeto `error` en response |
+| Interno | `Dto` | `ResolvedParametersDto` | Transferencia entre capas |
+
+### Estructura de Paquetes
+
+#### Estructura Simple (Funcionalidad Única)
+
+```
+dto/
+├── healthinsurance/
+│   ├── HealthInsurancePremiumRequestDto.java
+│   ├── HealthInsurancePremiumResponseDto.java
+│   ├── HealthInsurancePremiumDataDto.java
+│   └── HealthInsurancePremiumErrorDataDto.java
+├── shorturl/
+│   ├── ShortUrlRequestDto.java
+│   └── ShortUrlResponseDto.java
+└── payment/
+    ├── PaymentRequestDto.java
+    └── PaymentResponseDto.java
+```
+
+#### Estructura Organizada (Múltiples Operaciones Relacionadas)
+
+**Cuando existen múltiples operaciones sobre la misma entidad** (ej: GET, POST, PUT, DELETE de transacciones), organizar en subcarpetas por tipo de operación:
+
+```
+dto/transaction/
+├── detail/                                    # GET - Consulta
+│   ├── TransactionDetailResponseDto.java
+│   ├── TransactionDetailBodyDto.java
+│   ├── TransactionDatosDto.java
+│   └── CiudadDto.java
+└── step/                                      # PUT - Actualización de pasos
+    ├── TransactionStepRequestDto.java
+    ├── TransactionStepResponseDto.java
+    ├── TransactionStepResponseBodyDto.java
+    ├── ConsultasDto.java
+    └── PasarelaPagosDto.java
+```
+
+**Criterios para usar subcarpetas:**
+- ✅ Múltiples endpoints sobre la misma entidad con DTOs distintos
+- ✅ Operaciones GET, POST, PUT, DELETE claramente diferenciadas
+- ✅ Evita mezclar DTOs de diferentes operaciones
+- ✅ Facilita mantenimiento y escalabilidad
+- ❌ NO usar si solo hay una operación o todos los DTOs son muy simples
+
+### Orden de Anotaciones Estándar
+
+```java
+@Data                    // 1. Lombok Data
+@Builder                 // 2. Builder pattern
+@NoArgsConstructor       // 3. Constructor sin args
+@AllArgsConstructor      // 4. Constructor con todos los args
+public class MiDto {
+```
+
+## ✅ Ejemplos
+
+### Ejemplo 1: Request DTO con Validaciones
+
+```java
+package com.bolivar.tienda.digital.transaccional.comunes.ms.dto.healthinsurance;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+/**
+ * DTO para la solicitud de cotización de prima de seguro de salud.
+ * Contiene la fecha de referencia y la fecha de nacimiento del asegurado.
+ *
+ * @author Team Tienda Digital
+ * @since 1.0.0
+ */
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class HealthInsurancePremiumRequestDto {
+
+    /**
+     * Fecha de referencia para el cálculo de la prima.
+     * Formato: ISO 8601 (ejemplo: "2024-08-31T00:00:00.000")
+     */
+    @JsonProperty("referenceDate")
+    private String referenceDate;
+
+    /**
+     * Fecha de nacimiento del asegurado principal.
+     * Formato: ISO 8601 (ejemplo: "1964-09-17T00:00:00.000")
+     */
+    @JsonProperty("birthDate1")
+    private String birthDate1;
+}
+```
+
+### Ejemplo 2: Response DTO con Métodos Helper
+
+```java
+package com.bolivar.tienda.digital.transaccional.comunes.ms.dto.healthinsurance;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+/**
+ * DTO para la respuesta de cotización de prima de seguro de salud.
+ *
+ * @author Team Tienda Digital
+ * @since 1.0.0
+ */
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class HealthInsurancePremiumResponseDto {
+
+    @JsonProperty("statusCode")
+    private Integer statusCode;
+
+    @JsonProperty("data")
+    private HealthInsurancePremiumDataDto data;  // ← Clase separada
+
+    @JsonProperty("error")
+    private HealthInsurancePremiumErrorDataDto error;  // ← Clase separada
+
+    /**
+     * Verifica si la respuesta fue exitosa.
+     */
+    public boolean isSuccess() {
+        return statusCode != null && statusCode == 200 && data != null;
+    }
+
+    /**
+     * Obtiene el mensaje de error si existe.
+     */
+    public String getErrorMessage() {
+        return error != null ? error.getMessage() : "Error desconocido";
+    }
+}
+```
+
+### Ejemplo 3: DTO para Objeto Anidado (Archivo Separado)
+
+```java
+package com.bolivar.tienda.digital.transaccional.comunes.ms.dto.healthinsurance;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+/**
+ * DTO que representa los datos de la prima calculada.
+ *
+ * @author Team Tienda Digital
+ * @since 1.0.0
+ */
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class HealthInsurancePremiumDataDto {
+
+    @JsonProperty("premium")
+    private Integer premium;
+}
+```
+
+**¿Por qué archivo separado?**
+- ✅ Organización clara (3 archivos vs 1 grande)
+- ✅ Sin colisión de nombres
+- ✅ Fácil de testear individualmente
+- ✅ Reutilizable si es necesario
+
+## 🚫 Restricciones
+
+1. **NO** omitir sufijo `Dto` en nombres
+2. **NO** usar clases internas para objetos anidados (crear archivos separados)
+3. **NO** crear DTOs en paquete raíz `dto/` (usar `dto/{dominio}/` o `dto/{dominio}/{operacion}/`)
+4. **NO** omitir anotaciones Lombok (`@Data`, `@Builder`, `@NoArgsConstructor`, `@AllArgsConstructor`)
+5. **NO** omitir `@JsonProperty` en campos que mapean JSON
+6. **NO** usar nombres genéricos sin contexto (`Data.java`, `Error.java`)
+7. **NO** incluir lógica de negocio compleja (solo métodos helper simples)
+8. **NO** usar `@Autowired` o inyectar servicios en DTOs
+9. **NO** usar tipos primitivos para campos opcionales (usar wrappers: `Integer`, `Boolean`)
+10. **NO** mezclar DTOs de diferentes dominios en el mismo subpaquete
+11. **NO** mezclar DTOs de diferentes operaciones si hay múltiples endpoints (usar subcarpetas)
+
+## ✅ Validación Automática
+
+Cursor debe detectar:
+
+- ❌ Clases en `dto/` sin sufijo `Dto`
+- ❌ DTOs en paquete raíz `dto/` sin subpaquete
+- ❌ Clases internas estáticas (`public static class`) para objetos anidados
+- ❌ Falta de anotaciones Lombok
+- ❌ Campos sin `@JsonProperty` cuando mapean JSON
+- ❌ Falta de JavaDoc en clases
+- ❌ Lógica de negocio compleja más allá de métodos helper
+- ❌ Uso de `@Autowired` en DTOs
+- ❌ Nombres genéricos sin contexto de dominio
+
+## 🎯 Objetivo + Regla de Oro
+
+**Objetivo**: Crear DTOs organizados, mantenibles y reutilizables que representen claramente la estructura de datos de entrada/salida.
+
+**REGLA DE ORO**: "Un DTO = Un archivo. Todos con sufijo `Dto`. Agrupar por dominio en `dto/{dominio}/`. Si múltiples operaciones, usar subcarpetas `dto/{dominio}/{operacion}/`. Lombok + Jackson. Solo datos y métodos helper simples."
+
+---
+
+## 📋 Aspectos Adicionales
+
+### Métodos Helper Permitidos
+```java
+// ✅ PERMITIDO: Validaciones simples
+public boolean isSuccess() {
+    return statusCode != null && statusCode == 200;
+}
+
+// ✅ PERMITIDO: Getters con lógica simple
+public String getErrorMessage() {
+    return error != null ? error.getMessage() : "Error desconocido";
+}
+
+// ❌ PROHIBIDO: Lógica de negocio compleja
+public void processData() {
+    // llamadas a servicios, cálculos complejos, etc.
+}
+```
+
+### Validaciones Bean Validation (Opcional)
+```java
+import jakarta.validation.constraints.NotBlank;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class MiRequestDto {
+    
+    @NotBlank(message = "Campo obligatorio")
+    @JsonProperty("campo")
+    private String campo;
+}
+```
+
+### Enums en DTOs
+```java
+// ✅ CORRECTO: Enum dentro del DTO que lo usa
+public class MiDto {
+    private ParameterSource source;
+    
+    public enum ParameterSource {
+        REQUEST, SERVICE
+    }
+}
+```
+
+---
+
+> **Ver también**: 
+> - [servicios-01-creacion-servicios.mdc](./servicios-01-creacion-servicios.mdc) - Uso de DTOs en servicios
+> - [servicios-02-feign-client.mdc](./servicios-02-feign-client.mdc) - DTOs en Feign Clients
+> - [servicios-09-organizacion-capacidades.mdc](./servicios-09-organizacion-capacidades.mdc) - Organización por capacidades

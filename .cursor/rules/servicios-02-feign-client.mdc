@@ -1,0 +1,185 @@
+---
+description: Guía para crear Feign Clients con configuración automática desde Parameter Store
+globs: ["**/client/**/*.java"]
+alwaysApply: true
+---
+
+# 🌐 Feign Client - Integración con APIs Externas
+
+## 📋 TL;DR
+
+- ✅ Configuración automática desde Parameter Store vía `FeignClientConfig`
+- ✅ Nombre del cliente termina en `-client`
+- ✅ URL dinámica: `${services.{nombre}.url}`
+- ✅ API Key opcional: `${services.{nombre}.api-key}`
+- ❌ NO hardcodear URLs
+
+## 🚨 Reglas Principales
+
+1. **Nomenclatura**: `@FeignClient(name="xxx-client")` + interfaz `External{Nombre}Client` (sin guiones)
+2. **Ubicación**: Paquete `external/` junto con servicios external
+3. **URL dinámica**: `${services.{nombre}.url}` sin sufijo `-client`
+4. **Config transversal**: `configuration = FeignClientConfig.class` (obligatorio)
+5. **@PathVariable**: Siempre con nombre explícito • API Key automática si existe en yml
+
+## 📊 Referencia Rápida - Convenciones
+
+| Elemento | Convención | Ejemplo |
+|----------|-----------|---------|
+| Ubicación | `service/{dominio}/external/` | `service/healthinsurance/external/` |
+| Nombre interfaz | `External{Nombre}Client` | `ExternalHealthInsurancePremiumClient` |
+| Nombre en @FeignClient | `{nombre}-client` (guiones) | `health-insurance-premium-client` |
+| URL property | `${services.{servicio}.url}` | `${services.health-insurance-premium.url}` |
+| API Key property | `${services.{servicio}.api-key}` | `${services.health-insurance-premium.api-key}` |
+| Configuration | `FeignClientConfig.class` | Siempre incluir |
+| PathVariable | `@PathVariable("nombre")` | Con nombre explícito |
+
+## ✅ Ejemplos
+
+### Ejemplo 1: Cliente SIN API Key
+
+```java
+package com.bolivar.tienda.digital.transaccional.comunes.ms.service.shorturl.external;
+
+import com.bolivar.tienda.digital.transaccional.comunes.ms.config.FeignClientConfig;
+import com.bolivar.tienda.digital.transaccional.comunes.ms.dto.ChannelParameterDto;
+import com.bolivar.tienda.digital.transaccional.comunes.ms.models.Response;
+import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+
+/**
+ * Cliente Feign para consumir parámetros de canal del servicio de Tienda Digital Commons.
+ * La URL se configura dinámicamente desde Parameter Store.
+ *
+ * @author Team Tienda Digital
+ * @since 1.0.0
+ */
+@FeignClient(
+    name = "parameter-client",                    // ✅ Con guiones en @FeignClient
+    url = "${services.parameter.url}",            // ✅ Property key en yml
+    configuration = FeignClientConfig.class       // ✅ Config transversal
+)
+public interface ExternalParameterClient {        // ✅ Prefijo External + sin guiones
+
+    /**
+     * Consulta parámetros de canal por nombre de producto.
+     *
+     * @param channelParametersProduct Nombre del producto
+     * @return Respuesta con parámetros del canal
+     */
+    @GetMapping("${services.parameter.endpoints.channel-parameters}")
+    Response<ChannelParameterDto> consultChannelParameters(
+        @PathVariable("channelParametersProduct") String channelParametersProduct
+    );
+}
+```
+
+**application.yml**:
+```yaml
+services:
+  parameter:
+    url: tienda/endpoint                         # Llave en Parameter Store
+    endpoints:
+      channel-parameters: /api/v1/parametros/{channelParametersProduct}
+```
+
+### Ejemplo 2: Cliente CON API Key
+
+```java
+@FeignClient(
+    name = "notificaciones-client",
+    url = "${services.notificaciones.url}",
+    configuration = FeignClientConfig.class
+)
+public interface NotificacionesClient {
+    
+    @PostMapping("/enviar")
+    NotificacionResponse enviarNotificacion(@RequestBody NotificacionRequest request);
+}
+```
+
+**application.yml**:
+```yaml
+services:
+  notificaciones:
+    url: notificaciones/api/endpoint
+    api-key: notificaciones/api/key  # 🔑 API Key requerida
+```
+
+### Ejemplo 3: Uso en Servicio
+
+```java
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class MiServicioImpl implements MiServicio {
+
+    private final ParameterClient parameterClient;  // ✅ Inyección de interfaz
+
+    public void procesarDatos() {
+        log.info("Llamando al servicio externo...");
+        
+        // ✅ La URL y API key se configuran automáticamente
+        Response<ChannelParameterDto> response = 
+            parameterClient.consultChannelParameters("producto");
+        
+        // Procesar respuesta...
+    }
+}
+```
+
+## 🚫 Restricciones
+
+1. **NO** usar URLs hardcodeadas en `@FeignClient(url = "https://...")`
+2. **NO** omitir `configuration = FeignClientConfig.class`
+3. **NO** usar nombres de cliente sin sufijo `-client` en la anotación `@FeignClient`
+4. **NO** colocar el cliente en el paquete `client/` (debe ir en `external/`)
+5. **NO** usar `@PathVariable` sin nombre explícito
+6. **NO** agregar headers de API Key manualmente (se agrega automáticamente)
+7. **NO** crear configuraciones personalizadas por cliente (usar la transversal)
+8. **NO** omitir JavaDoc en la interfaz del cliente
+9. **NO** crear múltiples clientes para el mismo servicio
+10. **NO** usar guiones en el nombre de la interfaz (solo en `@FeignClient.name`)
+
+## ✅ Validación Automática
+
+Cursor debe detectar:
+
+- ❌ `@FeignClient` sin `name` terminado en `-client`
+- ❌ Cliente creado en paquete `client/` en lugar de `external/`
+- ❌ Nombre de interfaz sin prefijo `External` (debe ser `ExternalHealthInsurancePremiumClient`)
+- ❌ Nombre de interfaz con guiones (debe ser `ExternalHealthInsurancePremiumClient`, NO `External-Health-Insurance-Premium-Client`)
+- ❌ `@FeignClient` con URL hardcodeada
+- ❌ Falta de `configuration = FeignClientConfig.class`
+- ❌ `@PathVariable` sin nombre: `@PathVariable String param`
+- ❌ Headers de autenticación agregados manualmente
+- ❌ Falta de JavaDoc en la interfaz
+- ❌ Property `${services.X.url}` no definida en `application.yml`
+
+## 🎯 Objetivo + Regla de Oro
+
+**Objetivo**: Crear clientes Feign estandarizados con configuración automática desde Parameter Store, sin duplicación de lógica de autenticación.
+
+**REGLA DE ORO**: "Cliente en `external/`, nombre interfaz `External{Nombre}Client` (prefijo External + sin guiones), nombre en anotación con guiones (`-client`). URL desde `${services.X.url}`, config transversal `FeignClientConfig.class`. Si necesita API Key, agrégala en yml y se aplicará automáticamente."
+
+---
+
+## 📋 Checklist de Creación
+
+- [ ] Interface creada con nombre `External{Nombre}Client` (prefijo External)
+- [ ] Cliente ubicado en el paquete `external/` junto con el servicio external
+- [ ] `@FeignClient` con `name` terminado en `-client`
+- [ ] `@FeignClient` con `url = "${services.xxx.url}"`
+- [ ] `configuration = FeignClientConfig.class` agregado
+- [ ] JavaDoc completo en la interfaz
+- [ ] `@PathVariable` con nombre explícito
+- [ ] Configuración agregada en `application.yml`
+- [ ] Parámetros creados en Parameter Store (dev, stage, prod)
+- [ ] API Key agregada si es necesaria (SecureString)
+- [ ] Tests unitarios con mock del cliente
+- [ ] Validar que el servicio inyecta la interfaz correctamente
+
+> **Ver también**: 
+> - [servicios-03-feign-config.mdc](./servicios-03-feign-config.mdc) - Configuración de `FeignClientConfig`
+> - [servicios-01-creacion-servicios.mdc](./servicios-01-creacion-servicios.mdc) - Uso en servicios

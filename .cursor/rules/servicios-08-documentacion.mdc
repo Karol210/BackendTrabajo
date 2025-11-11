@@ -1,0 +1,222 @@
+---
+description: Generación de informes de cambios en formato DokuWiki
+globs: []
+alwaysApply: true
+---
+
+# 📄 Documentación DokuWiki - Informes de Cambios
+
+## 📋 TL;DR
+
+- ✅ Sintaxis DokuWiki obligatoria • Analizar SOLO tus commits
+- ✅ 9 secciones estándar • PRs organizados por ambiente (Stage/Dev)
+- ✅ Ejemplos de uso con curl + responses (éxito + error)
+- ✅ Máximo 400-500 líneas • Sin secciones prohibidas
+- ❌ NO incluir cobertura detallada • NO ejemplos JSON extensos (> 30 líneas)
+- ❌ NO diagramas con imágenes • NO secciones arquitectónicas
+
+## 🚨 Reglas Principales
+
+1. **Analizar SOLO tus commits**: `git diff [RAMA_BASE]...HEAD` + `git log --author="[USUARIO]"` para identificar únicamente cambios propios
+2. **Estructura obligatoria**: 9 secciones • Ejemplos de Uso + Controles de Cambio son CRÍTICOS
+3. **Documento conciso**: QUÉ + POR QUÉ + CÓMO USAR + PRs • Máximo 400-500 líneas
+4. **Formato nombre**: `INFORME_CAMBIOS_[FUNCIONALIDAD]_[RAMA]_[FECHA]_[HORA].txt`
+5. **Sin redundancia**: Evitar secciones arquitectónicas, cobertura detallada, explicaciones SOLID
+
+## 📊 Referencia Rápida
+
+### Estructura del Informe (9 Secciones)
+
+| Sección | Contenido | Obligatorio |
+|---|---|:---:|
+| 1. Encabezado | `====== 📋 Informe de Cambios - [Funcionalidad] ======` | ✅ |
+| 2. Info Desarrollador | Tabla con usuario, email, rama, fecha | ✅ |
+| 3. Resumen | Commits, archivos modificados, líneas agregadas | ✅ |
+| 4. Clases Agregadas | Por tipo (Controller, Service, Exception, DTO, Tests) | ✅ |
+| 5. Clases Modificadas | Tabla con campos agregados/modificados | ✅ |
+| 6. Funcionalidad | Descripción + Criterios de aceptación | ✅ |
+| 7. Ejemplos de Uso | Curl + Response 200 + Response error con códigos | ✅ |
+| 8. Controles Cambio | PRs Stage + PRs Dev (tablas con enlaces) | ✅ |
+| 9. Pie de página | Fecha, autor, rama | ✅ |
+
+### Formato de Nombre de Archivo
+
+| Componente | Formato | Ejemplo |
+|---|---|---|
+| Prefijo | `INFORME_CAMBIOS_` | Fijo |
+| Funcionalidad | Mayúsculas sin espacios | `PROCESSCONFIG` |
+| Rama | Sin prefijos | `GD917-3200-KR` |
+| Fecha | `YYYYMMDD` | `20251106` |
+| Hora | `HHMM` | `0810` |
+| Extensión | `.txt` | Fijo |
+
+**Ejemplo completo**: `INFORME_CAMBIOS_PROCESSCONFIG_GD917-3200-KR_20251106_0810.txt`
+
+### Comandos Git Requeridos
+
+| Comando | Propósito |
+|---|---|
+| `git config user.name` | Obtener usuario |
+| `git config user.email` | Obtener email |
+| `git branch --show-current` | Rama actual |
+| `git log --oneline --author="[USUARIO]" -20` | Commits del usuario |
+| `git diff [RAMA_BASE]...HEAD --name-status` | Archivos modificados |
+| `git diff [RAMA_BASE]...HEAD -- [ARCHIVO]` | Ver cambios específicos |
+
+### Límites y Optimización
+
+| Aspecto | Límite | Acción si excede |
+|---|---|---|
+| Líneas totales | 400-500 | Resumir ejemplos, usar tablas |
+| Ejemplos código | 20 líneas | Mostrar solo lo relevante |
+| Campos por tabla | 10 | Agrupar por categoría |
+| Tests por clase | 1 línea | Solo total de líneas |
+| JSON ejemplos | 0-30 líneas | Eliminar o resumir |
+
+### Secciones Prohibidas (NO incluir)
+
+| Sección | Razón |
+|---|---|
+| Cobertura detallada de tests | Solo mencionar líneas totales |
+| Diagramas/imágenes | Usar lista de pasos en texto |
+| Casos de uso con JSON | Solo ejemplos breves si son relevantes |
+| Integración MongoDB | Si solo reutiliza infraestructura |
+| Arquitectura del Módulo | Redundante con clases agregadas |
+| Principios SOLID | Obvio en código bien estructurado |
+| Variables Config | Solo si hay nuevas |
+| Impacto en Sistema | Redundante con clases modificadas |
+| Compatibilidad | Obvio si no rompe contratos |
+| Checklist Validación | Interno del desarrollador |
+| Notas/Decisiones Diseño | Solo en README del módulo |
+| Recomendaciones Deploy | Obvio en proceso estándar |
+| Referencias/Enlaces | Solo si son externos críticos |
+| Historial Cambios | Ya está en el resumen |
+
+## ✅ Ejemplos
+
+### Ejemplo 1: Controles de Cambio (PRs por Ambiente)
+
+```dokuwiki
+==== Controles de Cambio ====
+
+=== Pull Requests de Stage ===
+^  PR  ^  Título  ^  Estado  ^  URL  ^
+| #1132 | Merge stage a develop | [[https://github.com/.../pull/1132|Ver PR]] | Stage |
+| #1130 | HU3200 - Implementación | [[https://github.com/.../pull/1130|Ver PR]] | Stage |
+
+=== Pull Requests de Dev ===
+^  PR  ^  Título  ^  Estado  ^  URL  ^
+| #1129 | HU3200 - Implementación | [[https://github.com/.../pull/1129|Ver PR]] | Dev |
+```
+
+### Ejemplo 2: Ejemplos de Uso (Curl + Responses)
+
+```dokuwiki
+==== Ejemplos de Uso ====
+
+=== Request ===
+<code bash>
+curl --location 'https://api.example.com/stage/tienda-seguros/api/v1/configuracion-proceso/aliado/UUID'
+</code>
+
+=== Response Exitoso (200 OK) ===
+<code json>
+{
+    "failure": false,
+    "code": 200,
+    "body": {
+        "name": "Davivienda Super APP Salud",
+        "controles": {...},
+        "process": {...}
+    }
+}
+</code>
+
+=== Response Fallido (400 Bad Request) ===
+<code json>
+{
+    "failure": true,
+    "code": 400,
+    "message": "[TDTC-PC-0002] No se encontró configuración"
+}
+</code>
+
+**Casos de error:**
+  * ''TDTC-PC-0001'': UUID inválido
+  * ''TDTC-PC-0002'': Configuración no encontrada
+```
+
+### Ejemplo 3: Template Estructura Básica
+
+```dokuwiki
+====== 📋 Informe de Cambios - [Funcionalidad] ======
+
+===== 👤 Información del Desarrollador =====
+^  **Desarrollador**  | [USUARIO] |
+^  **Rama**  | [RAMA] |
+^  **Fecha**  | [FECHA] |
+
+===== 📦 Resumen de Cambios =====
+[Descripción + commits + archivos]
+
+===== ➕ Clases Agregadas =====
+[Por tipo: Controller, Service, Exception, DTO, Tests]
+
+===== ✏️ Clases Modificadas =====
+[Tabla campos + motivo]
+
+===== 🎯 Funcionalidad Implementada =====
+[Descripción + criterios]
+
+==== Ejemplos de Uso ====
+[Curl + responses]
+
+===== 🔍 Controles de Cambio =====
+[PRs Stage + Dev]
+
+----
+//Última actualización: [FECHA]//
+```
+
+## 🚫 Restricciones
+
+1. **NO** incluir secciones de cobertura detallada (solo líneas totales de tests)
+2. **NO** agregar diagramas con imágenes (usar texto)
+3. **NO** incluir casos de uso con JSONs extensos (solo si es crítico)
+4. **NO** documentar MongoDB si solo reutiliza infraestructura
+5. **NO** agregar secciones de arquitectura extensas
+6. **NO** incluir explicaciones de SOLID (ya está en el código)
+7. **NO** mencionar variables de configuración si no hay nuevas
+8. **NO** agregar checklist de validación (es interno)
+9. **NO** incluir notas de diseño extensas (van en README del módulo)
+10. **NO** exceder 400-500 líneas totales
+
+## ✅ Validación Automática
+
+Cursor debe detectar:
+
+**Estructura:**
+- ❌ Falta alguna de las 9 secciones obligatorias
+- ❌ Sección "Ejemplos de Uso" sin curl o sin responses
+- ❌ Sección "Ejemplos de Uso" sin response de error
+- ❌ Sección "Controles de Cambio" sin PRs de Stage y Dev
+- ❌ PRs sin enlaces clickeables a GitHub
+- ❌ Documento excede 500 líneas
+
+**Contenido:**
+- ❌ Incluye secciones prohibidas (Cobertura, Arquitectura, SOLID, etc.)
+- ❌ Ejemplos JSON extensos (> 30 líneas) sin resumir con `[...]`
+- ❌ Diagramas con sintaxis de imagen `{{ }}`
+- ❌ Referencias a archivos de imagen
+- ❌ Response de error sin códigos de error listados
+
+**Análisis:**
+- ❌ No usa `git diff [RAMA_BASE]...HEAD` para identificar cambios
+- ❌ Incluye cambios de otros desarrolladores
+- ❌ No especifica autor con `git config user.name`
+
+## 🎯 Objetivo + Regla de Oro
+
+**Objetivo**: Generar informes de cambios concisos en DokuWiki que documenten QUÉ cambió, POR QUÉ, CÓMO USAR y los PRs asociados, sin información redundante.
+
+**REGLA DE ORO**: "Documenta SOLO tus cambios. QUÉ (clases agregadas/modificadas) + POR QUÉ (funcionalidad) + CÓMO USAR (curl + responses) + PRs (Stage/Dev). SIEMPRE incluir Ejemplos de Uso y Controles de Cambio. Sin secciones arquitectónicas ni cobertura detallada. Máximo 400-500 líneas."

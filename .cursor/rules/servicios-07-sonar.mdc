@@ -1,0 +1,254 @@
+---
+description: Estándares SonarQube - Complejidad cognitiva y code smells en servicios
+globs: ["**/service/**/*.java", "**/controller/**/*.java"]
+alwaysApply: false
+---
+
+# 🔍 Calidad de Código - SonarQube en Servicios
+
+## 📋 TL;DR
+
+- ✅ Complejidad cognitiva ≤ 15 por método (ideal ≤ 10)
+- ✅ Extraer métodos privados para reducir complejidad
+- ✅ Usar `Objects::nonNull` en lugar de lambdas explícitas
+- ✅ NO inicializar variables a `null` innecesariamente
+- ❌ NO métodos > 50 líneas
+
+## 🚨 Reglas Principales
+
+1. **Complejidad Cognitiva**: Máximo 15 por método (ideal ≤ 10). Extraer lógica a métodos privados con nombres descriptivos
+2. **Métodos Cortos**: Máximo 50 líneas. Si excede, refactorizar en métodos más pequeños
+3. **Code Smells**: Eliminar trailing whitespace, inicializaciones innecesarias, y usar method references
+4. **Separación de Responsabilidades**: Cada método debe tener UNA sola responsabilidad clara
+5. **Nombres Descriptivos**: Métodos privados con nombres como `shouldReturnEmptyList()`, `extractAllowedPlans()`
+
+## 📊 Referencia Rápida - Problemas Comunes
+
+| Problema | Severidad | Solución | Ejemplo |
+|----------|-----------|----------|---------|
+| **Complejidad Cognitiva Alta** | Critical | Extraer métodos privados | Ver Ejemplo 1 |
+| **Métodos largos** | Major | Dividir en submétodos | Ver Ejemplo 1 |
+| **Trailing whitespace** | Minor | Eliminar espacios al final | `// comentario␣` → `// comentario` |
+| **Inicialización a null** | Minor | Usar método que retorna valor | `List x = null; if(...) x = y;` → `extractList()` |
+| **Lambda explícito** | Info | Usar method reference | `.filter(x -> x != null)` → `.filter(Objects::nonNull)` |
+| **Return early anidado** | Major | Extraer validaciones | Ver Ejemplo 2 |
+| **Duplicación de código** | Major | Extraer método común | Método reutilizable |
+
+## ✅ Ejemplos
+
+### Ejemplo 1: Reducir Complejidad Cognitiva
+
+**❌ ANTES: Complejidad Alta (10+)**
+```java
+public List<PlanDto> filterPlans(List<PlanDto> plans, ConfigDto config) {
+    log.info("Iniciando filtrado. Planes: {}", plans.size());
+    
+    // Múltiples validaciones anidadas + lógica de extracción
+    if (plans == null || plans.isEmpty()) {
+        log.warn("Sin planes");
+        return Collections.emptyList();
+    }
+    if (config == null || !config.isSuccess()) { /* ... */ }
+    
+    List<String> allowedCodes = null;
+    if (config.getBody() != null && config.getBody().hasControls()) {
+        allowedCodes = config.getBody().getCodes();
+    }
+    // ... más validaciones y transformaciones anidadas (40 líneas)
+}
+```
+
+**✅ DESPUÉS: Complejidad Reducida (3)**
+```java
+public List<PlanDto> filterPlans(List<PlanDto> plans, ConfigDto config) {
+    log.info("Iniciando filtrado. Planes: {}", plans != null ? plans.size() : 0);
+    
+    if (shouldReturnEmptyList(plans)) {
+        return Collections.emptyList();
+    }
+    if (shouldReturnAllPlans(config)) {
+        return plans;
+    }
+    
+    Set<Integer> allowedCodesInt = extractAllowedCodes(config);
+    return allowedCodesInt.isEmpty() ? plans : applyPlanFilter(plans, allowedCodesInt);
+}
+
+// ✅ Métodos helper privados con responsabilidades únicas
+private boolean shouldReturnEmptyList(List<PlanDto> plans) { /* validación */ }
+private boolean shouldReturnAllPlans(ConfigDto config) { /* validación */ }
+private Set<Integer> extractAllowedCodes(ConfigDto config) { /* extracción */ }
+private Set<Integer> convertStringCodesToInteger(List<String> codes) { 
+    return codes.stream()
+        .filter(Objects::nonNull)  // ✅ Method reference
+        .map(String::trim)
+        .map(this::parseCode)
+        .collect(Collectors.toSet());
+}
+private List<PlanDto> applyPlanFilter(List<PlanDto> plans, Set<Integer> codes) { /* filtrado */ }
+```
+
+**Resultados:**
+- Complejidad cognitiva: 10+ → 3
+- Método principal: 50 líneas → 15 líneas
+- Testabilidad: Cada método testeable independientemente
+- Legibilidad: Auto-documentado con nombres descriptivos
+
+### Ejemplo 2: Eliminar Code Smells
+
+**❌ ANTES: Múltiples Code Smells**
+```java
+private Set<Integer> convertCodes(List<String> codes) {
+    return codes.stream()
+        .filter(code -> code != null && !code.trim().isEmpty())  
+        .map(String::trim)
+        .map(this::parse)
+        .filter(code -> code != null)  // ❌ Lambda explícito
+        .collect(Collectors.toSet());
+}
+
+public void processData(String id) {
+    List<DataDto> data = null;  // ❌ Inicialización innecesaria
+    if (id != null) {
+        data = repository.findById(id);
+    }
+    // ... más lógica
+}
+```
+
+**✅ DESPUÉS: Sin Code Smells**
+```java
+private Set<Integer> convertCodes(List<String> codes) {
+    return codes.stream()
+        .filter(code -> code != null && !code.trim().isEmpty())
+        .map(String::trim)
+        .map(this::parse)
+        .filter(Objects::nonNull)  // ✅ Method reference
+        .collect(Collectors.toSet());
+}
+
+public void processData(String id) {
+    // ✅ Sin inicialización innecesaria
+    List<DataDto> data = extractData(id);
+    // ... más lógica
+}
+
+private List<DataDto> extractData(String id) {
+    if (id != null) {
+        return repository.findById(id);
+    }
+    return Collections.emptyList();
+}
+```
+
+### Ejemplo 3: Validaciones con Early Return
+
+**❌ ANTES: Validaciones anidadas**
+```java
+public ResponseDto process(RequestDto request) {
+    if (request != null) {
+        if (request.getData() != null) {
+            if (!request.getData().isEmpty()) {
+                // Lógica principal aquí (20+ líneas)
+                return processData(request.getData());
+            } else {
+                throw new ValidationException("Data vacía");
+            }
+        } else {
+            throw new ValidationException("Data null");
+        }
+    } else {
+        throw new ValidationException("Request null");
+    }
+}
+```
+
+**✅ DESPUÉS: Early Return + Método de validación**
+```java
+public ResponseDto process(RequestDto request) {
+    validateRequest(request);
+    return processData(request.getData());
+}
+
+private void validateRequest(RequestDto request) {
+    if (request == null) {
+        throw new ValidationException("Request null");
+    }
+    if (request.getData() == null) {
+        throw new ValidationException("Data null");
+    }
+    if (request.getData().isEmpty()) {
+        throw new ValidationException("Data vacía");
+    }
+}
+```
+
+## 🚫 Restricciones
+
+1. **NO** crear métodos con complejidad cognitiva > 15 (ideal ≤ 10)
+2. **NO** crear métodos > 50 líneas sin refactorizar
+3. **NO** dejar trailing whitespace (espacios al final de línea)
+4. **NO** inicializar variables a `null` cuando se puede usar método que retorna valor
+5. **NO** usar lambdas explícitas cuando existe method reference (`Objects::nonNull`)
+6. **NO** anidar más de 3 niveles de validaciones (usar early return)
+7. **NO** duplicar lógica de validación (extraer a método privado)
+8. **NO** crear métodos privados sin JavaDoc descriptivo
+9. **NO** ignorar warnings de SonarQube sin justificación documentada
+10. **NO** usar nombres genéricos (`process()`, `handle()`, `execute()`) - ser específico
+
+## ✅ Validación Automática
+
+Cursor debe detectar:
+
+- ❌ Métodos con complejidad cognitiva > 15
+- ❌ Métodos > 50 líneas
+- ❌ Trailing whitespace (espacios al final de línea)
+- ❌ Inicialización `= null` seguida de asignación condicional
+- ❌ Lambda `.filter(x -> x != null)` en lugar de `.filter(Objects::nonNull)`
+- ❌ Más de 5 validaciones `if` consecutivas sin extraer
+- ❌ Múltiples niveles de anidación (> 3)
+- ❌ Métodos privados sin JavaDoc
+- ❌ Duplicación de lógica de validación
+
+## 🎯 Objetivo + Regla de Oro
+
+**Objetivo**: Mantener código limpio, legible y mantenible que cumpla con los estándares de calidad de SonarQube, minimizando la complejidad cognitiva.
+
+**REGLA DE ORO**: "Si el método tiene más de 3 validaciones o supera 30 líneas, extraer métodos privados con nombres descriptivos. Cada método debe hacer UNA cosa bien. Complejidad cognitiva ≤ 10 es el objetivo."
+
+---
+
+## 📊 Métricas de Calidad
+
+| Métrica | Límite Crítico | Límite Ideal | Acción |
+|---------|----------------|--------------|---------|
+| Complejidad Cognitiva | 15 | 10 | Extraer métodos |
+| Líneas por método | 75 | 50 | Dividir método |
+| Parámetros | 7 | 4 | Usar DTO |
+| Niveles anidación | 4 | 3 | Early return |
+| Duplicación | 5% | 3% | Extraer común |
+
+## 🔧 Estrategias de Refactorización
+
+1. **Extract Method**: Extraer bloques lógicos a métodos privados descriptivos
+2. **Guard Clauses**: Usar early return para validaciones
+3. **Method References**: Preferir `Objects::nonNull` sobre lambdas explícitas
+4. **Factory Methods**: Extraer construcción compleja a métodos dedicados
+5. **Validation Methods**: Agrupar validaciones relacionadas
+
+## 📝 Convenciones de Nombres para Métodos Privados
+
+| Propósito | Prefijo/Patrón | Ejemplo |
+|-----------|----------------|---------|
+| Validación booleana | `should*`, `is*`, `has*` | `shouldReturnEmptyList()` |
+| Extracción de datos | `extract*`, `get*` | `extractAllowedCodes()` |
+| Conversión | `convert*`, `transform*` | `convertStringToInteger()` |
+| Aplicación de lógica | `apply*`, `process*` | `applyPlanFilter()` |
+| Construcción | `build*`, `create*` | `buildRequest()` |
+| Validación con throw | `validate*`, `ensure*` | `validateRequest()` |
+
+---
+
+> **Ver también**: 
+> - [servicios-01-creacion-servicios.mdc](./servicios-01-creacion-servicios.mdc) - Arquitectura de servicios
+> - [servicios-04-excepciones.mdc](./servicios-04-excepciones.mdc) - Manejo de excepciones

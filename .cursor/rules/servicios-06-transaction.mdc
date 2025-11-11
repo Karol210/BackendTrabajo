@@ -1,0 +1,225 @@
+---
+description: Creación de servicios para actualización de pasos de transacción
+globs: ["**/service/transaction/**/*.java"]
+alwaysApply: true
+---
+
+# 🔄 Servicios de Transacción - Actualización de Pasos
+
+## 📋 TL;DR
+
+- ✅ NO crear controllers (uso interno únicamente)
+- ✅ Nomenclatura: `{id}` y `{paso}` (NO transactionId/step)
+- ✅ Usar servicio base `tienda-seguros` existente
+- ✅ DTOs en `dto/transaction/`
+- ❌ NO exponer endpoints públicos
+
+## 🚨 Reglas Principales
+
+1. **Servicios de transacción son para uso INTERNO** - NO requieren controller
+2. Nomenclatura obligatoria: `{id}` y `{paso}` (NO transactionId/step)
+3. Usar servicio base `tienda-seguros.url` (NO crear configuración nueva)
+4. Path estándar: `/tienda-seguros/api/v1/transaccion/{id}/paso/{paso}`
+5. DTOs con métodos helper `isSuccess()` y `getErrorMessage()`
+
+## 📊 Referencia Rápida
+
+| Elemento | Ubicación | Nomenclatura |
+|---|---|---|
+| DTOs | `dto/transaction/` | `Transaction*Dto` |
+| Feign Client | `service/transaction/external/` | `ExternalTransactionStepClient` |
+| Servicio External | `service/transaction/external/` | `ExternalTransactionStepService` |
+| Servicio Principal | `service/transaction/` | `TransactionStepService` |
+| Excepción | `exception/` | `TransactionStepException` |
+| Configuración | `application.yml` | `services.tienda-seguros.url` |
+
+## ✅ Ejemplos
+
+### Ejemplo 1: Feign Client
+
+```java
+@FeignClient(
+    name = "tienda-seguros-transaction-client",
+    url = "${services.tienda-seguros.url}",  // ✅ Reutiliza servicio existente
+    configuration = FeignClientConfig.class
+)
+public interface ExternalTransactionStepClient {
+
+    /**
+     * Actualiza el paso de una transacción específica.
+     *
+     * @param id ID de la transacción
+     * @param paso Nombre del paso a actualizar (ej: "recortarUrl")
+     * @param request Datos del paso a actualizar
+     * @return Respuesta del servicio externo
+     */
+    @PutMapping("/tienda-seguros/api/v1/transaccion/{id}/paso/{paso}")  // ✅ Nomenclatura correcta
+    TransactionStepResponseDto updateTransactionStep(
+        @PathVariable("id") String id,           // ✅ "id", NO "transactionId"
+        @PathVariable("paso") String paso,       // ✅ "paso", NO "step"
+        @RequestBody TransactionStepRequestDto request
+    );
+}
+```
+
+### Ejemplo 2: Servicio Principal (Uso Interno)
+
+```java
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class TransactionStepServiceImpl implements TransactionStepService {
+
+    private final ExternalTransactionStepService externalTransactionStepService;
+
+    @Override
+    public TransactionStepResponseDto updateTransactionStep(
+            String id, 
+            String paso, 
+            TransactionStepRequestDto request) {
+        
+        log.info("Iniciando actualización de paso de transacción: id={}, paso={}", 
+                id, paso);
+
+        try {
+            validateRequest(id, paso, request);
+
+            TransactionStepResponseDto response = externalTransactionStepService.updateTransactionStep(
+                    id, 
+                    paso, 
+                    request
+            );
+
+            log.info("Paso de transacción actualizado exitosamente: id={}, paso={}", 
+                    id, paso);
+
+            return response;
+
+        } catch (TransactionStepException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Error durante la actualización del paso de transacción: {}", 
+                    e.getMessage(), e);
+            throw new TransactionStepException(
+                Constants.ERROR_TRANSACTION_STEP_UPDATE + ": " + e.getMessage(),
+                Constants.CODE_TRANSACTION_STEP_UPDATE_ERROR,
+                e
+            );
+        }
+    }
+}
+```
+
+### Ejemplo 3: Uso desde Otro Servicio
+
+```java
+@Service
+@RequiredArgsConstructor
+public class ShortUrlServiceImpl implements ShortUrlService {
+
+    private final TransactionStepService transactionStepService;
+
+    private void guardarPaso(String id, String urlCorta, Integer dias) {
+        TransactionStepRequestDto request = TransactionStepRequestDto.builder()
+            .consultas(ConsultasDto.builder()
+                .pasarelaPagos(PasarelaPagosDto.builder()
+                    .urlCorta(urlCorta)
+                    .vigenciaDias(dias)
+                    .estado("CREADA")
+                    .build())
+                .build())
+            .build();
+
+        transactionStepService.updateTransactionStep(id, "recortarUrl", request);
+    }
+}
+```
+
+**DTOs**: Ver [servicios-05-dtos.mdc](./servicios-05-dtos.mdc) para estructura estándar. Métodos helper obligatorios: `isSuccess()` y `getErrorMessage()`.
+
+## 🚫 Restricciones
+
+1. **NO** crear controllers para servicios de transacción
+2. **NO** exponer endpoints públicos (`@RestController`)
+3. **NO** usar nomenclatura `transactionId` o `step` (usar `id` y `paso`)
+4. **NO** crear configuración nueva en `application.yml` (usar `tienda-seguros`)
+5. **NO** usar path diferente a `/tienda-seguros/api/v1/transaccion/{id}/paso/{paso}`
+6. **NO** omitir validación de respuesta del servicio externo
+7. **NO** lanzar excepciones genéricas sin código de error
+8. **NO** omitir logs de operaciones críticas
+9. **NO** hardcodear URLs del servicio
+10. **NO** crear DTOs sin métodos helper para validaciones
+
+## ✅ Validación Automática
+
+Cursor debe detectar:
+
+- ❌ Controller creado para servicios de transacción
+- ❌ `@RestController` en servicios internos
+- ❌ Nomenclatura `transactionId` en lugar de `id`
+- ❌ Nomenclatura `step` en lugar de `paso`
+- ❌ Nueva configuración `transaction-*` en yml
+- ❌ Path diferente al estándar
+- ❌ Falta de `@PathVariable` con nombre explícito
+- ❌ Response DTO sin métodos `isSuccess()` o `getErrorMessage()`
+- ❌ Servicio sin validación de entrada
+
+## 🎯 Objetivo + Regla de Oro
+
+**Objetivo**: Crear servicios internos para actualizar pasos de transacción sin exponer endpoints públicos, reutilizando infraestructura existente.
+
+**REGLA DE ORO**: "Servicios de transacción son INTERNOS (sin controller). Nomenclatura: `{id}` + `{paso}`. Usa `tienda-seguros.url`. Path estándar: `/tienda-seguros/api/v1/transaccion/{id}/paso/{paso}`."
+
+---
+
+## 📋 Checklist de Creación
+
+| Fase | Verificación |
+|---|---|
+| **Diseño** | Sin controller • Usa `tienda-seguros.url` • Nomenclatura `{id}` y `{paso}` |
+| **DTOs** | En `dto/transaction/` • Con métodos helper • Ver [servicios-05-dtos.mdc](./servicios-05-dtos.mdc) |
+| **Servicios** | Feign Client • External Service • Principal Service • Validaciones |
+| **Excepciones** | `TransactionStepException` • Código `TDTC-TX-NNNN` • Handler en controller |
+| **Validación** | Sin endpoints públicos • Logs en operaciones • Sin errores linter |
+
+## 📊 Estructura de Archivos
+
+```
+src/main/java/com/bolivar/tienda/.../ms/
+├── dto/
+│   └── transaction/
+│       ├── TransactionStepRequestDto.java
+│       ├── TransactionStepResponseDto.java
+│       ├── TransactionStepResponseBodyDto.java
+│       ├── ConsultasDto.java
+│       └── PasarelaPagosDto.java
+├── service/
+│   └── transaction/
+│       ├── TransactionStepService.java (Interface)
+│       ├── TransactionStepServiceImpl.java (Principal)
+│       └── external/
+│           ├── ExternalTransactionStepClient.java (Feign)
+│           ├── ExternalTransactionStepService.java (Interface)
+│           └── ExternalTransactionStepServiceImpl.java
+└── exception/
+    └── TransactionStepException.java
+```
+
+## 🔗 Referencias
+
+> Ver también:
+> - [servicios-01-creacion-servicios.mdc](./servicios-01-creacion-servicios.mdc) - Arquitectura en capas
+> - [servicios-02-feign-client.mdc](./servicios-02-feign-client.mdc) - Configuración de Feign Clients
+> - [servicios-04-excepciones.mdc](./servicios-04-excepciones.mdc) - Manejo de excepciones
+> - [servicios-05-dtos.mdc](./servicios-05-dtos.mdc) - Estructura de DTOs
+
+## 💡 Uso Común
+
+| Caso | Estado | Ejemplo |
+|---|---|---|
+| **Éxito** | `estado: "CREADA"` | `urlCorta` con valor, `detalleError: null` |
+| **Error** | `estado: "ERROR"` | `urlCorta: null`, `detalleError` con mensaje |
+
+**Manejo de errores**: Crítico → lanzar excepción. No crítico → solo loguear.
+
+**Fechas**: ISO 8601 (`"2025-10-30T14:30:00Z"`) usando `ZonedDateTime.now(ZoneOffset.UTC)`.

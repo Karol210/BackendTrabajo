@@ -1,0 +1,336 @@
+---
+description: Guía para crear servicios Spring con arquitectura en capas y principios SOLID
+globs: ["**/service/**/*.java"]
+alwaysApply: true
+---
+
+# 🏗️ Creación de Servicios - Arquitectura en Capas
+
+## 📋 TL;DR
+
+- ✅ **CRÍTICO**: Verificar DTOs/modelos/servicios existentes ANTES de crear - reutilizar sin modificar tipos/nombres
+- ✅ **OBLIGATORIO**: Solicitar URL, CURL y responses (éxito + error) ANTES de crear servicio
+- ✅ Arquitectura: Controller → Service Principal → External Service → Feign Client • Inyección por interfaz
+- ✅ Organización: Simple (1 op) / Organizada (≥2 ops) / Modular (módulo completo)
+- ✅ Servicios External en `service/{dominio}/external/` • Para ≥2 capacidades, ver regla 09
+
+## 🚨 Reglas Principales
+
+1. **Verificación obligatoria**: Antes de crear, buscar DTOs/modelos/servicios/endpoints existentes en `dto/`, `documents/`, `models/`, `service/`. Reutilizar sin modificar tipos/nombres de campos (solo agregar nuevos). Preguntar al usuario sobre controller (nuevo o reutilizar).
+2. **Validación previa**: Solicitar URL, CURL y responses JSON (éxito + error) ANTES de crear cualquier servicio. No inventar estructura de DTOs.
+3. **Arquitectura en capas**: Controller → Service (Interface) → Service Impl → External Service → Feign Client. Servicios External SIEMPRE en paquete `service/{dominio}/external/`.
+4. **Inyección de dependencias**: SIEMPRE por interfaz usando `@RequiredArgsConstructor` (NUNCA `@Autowired` ni implementaciones concretas).
+5. **Organización por complejidad**: Simple (1 op) en `service/{dominio}/`, Organizada (≥2 ops) con subcarpetas `service/{dominio}/{operacion}/`, Modular (módulo completo) con paquetes en todas las capas.
+
+## 📊 Referencia Rápida
+
+### Tipos de Servicios
+
+| Tipo | Sufijo | Responsabilidad | Ubicación | Dependencias | Exposición |
+|------|--------|----------------|-----------|--------------|------------|
+| Principal | `ServiceImpl` | Coordinar flujo completo, validaciones de negocio | `service/{dominio}/` | Servicios External | ✅ Pública |
+| External | `External*ServiceImpl` | Comunicación con APIs externas | `service/{dominio}/external/` | Feign Clients | ❌ Interna |
+| Especializado | `*ServiceImpl` | Tarea específica del dominio | `service/{dominio}/` | Feign Clients, otros servicios | ✅ Pública |
+| Processor | `*Processor` | Transformar/procesar datos | `service/{dominio}/` | Ninguna o DTOs | ❌ Interna |
+| Organization | `*OrganizationService` | Ordenar/agrupar datos (uso interno) | `service/{dominio}/organization/` | Ninguna o DTOs | ❌ Interna |
+| Retriever | `*RepositoryImpl` | Acceso a bases de datos | `service/{dominio}/` | JPA, MongoDB Repositories | ❌ Interna |
+
+### Decisión de Controller y Exposición de APIs
+
+**🔴 CRÍTICO: SIEMPRE preguntar al usuario ANTES de crear o modificar controllers**
+
+#### Pregunta 1: ¿El servicio debe ser expuesto públicamente?
+
+| Tipo de Servicio | ¿Exponer API? | Acción |
+|------------------|:-------------:|--------|
+| Processor / Organization / Retriever | ❌ NO | Uso interno solamente - NO crear endpoint |
+| Principal / Especializado | ⚠️ Preguntar | "¿Deseas exponer esta funcionalidad como API REST?" |
+
+**Servicios que NO deben exponerse:**
+- ✅ Servicios de procesamiento/transformación de datos (`*Processor`, `*OrganizationService`)
+- ✅ Servicios de acceso a datos (`*Repository`, `*Retriever`)
+- ✅ Servicios auxiliares que son usados por otros servicios internamente
+
+**Servicios que pueden exponerse (previa aprobación):**
+- ⚠️ Servicios principales que coordinan flujos de negocio
+- ⚠️ Servicios especializados con funcionalidad específica del dominio
+
+#### Pregunta 2: Si el usuario aprueba exponer, ¿nuevo controller o reutilizar?
+
+| Pregunta | Opción A | Opción B |
+|----------|----------|----------|
+| "¿Deseas crear un **nuevo controller** o **reutilizar uno existente**?" | Crear nuevo controller separado | Agregar endpoint a controller existente |
+
+**Criterios para crear nuevo controller:**
+- ✅ Funcionalidad completamente independiente del dominio existente
+- ✅ Requiere ruta base diferente (ej: `/api/v1/declaracion-asegurabilidad` vs `/api/v1/oferta`)
+- ✅ Endpoints relacionados a un módulo específico
+- ✅ Documentación Swagger diferenciada
+
+**Criterios para reutilizar controller existente:**
+- ✅ Endpoints relacionados al mismo dominio
+- ✅ Comparten ruta base común
+- ✅ Operaciones sobre la misma entidad principal
+
+### Estructura de Carpetas
+
+| Caso | Estructura | Cuándo usar | Ejemplo |
+|------|-----------|-------------|---------|
+| **Simple** | `service/{dominio}/` | Una funcionalidad, DTOs compartidos | `service/shorturl/` |
+| **Organizada** | `service/{dominio}/{operacion}/` | ≥2 ops HTTP diferentes | `service/transaction/detail/` + `step/` |
+| **Modular** ⭐ | `service/{modulo}/` + paquetes en todas capas | Módulo completo independiente | `service/processconfig/` + `controller/processconfig/` + `exception/processconfig/` |
+| **Interna** | `service/{dominio}/organization/` | Servicios de procesamiento/organización (NO expuestos) | `service/insurability/organization/` |
+
+**Criterios para Estructura Modular:**
+
+| Criterio | Simple | Organizada | Modular |
+|----------|:------:|:----------:|:-------:|
+| 1 operación | ✅ | ❌ | ❌ |
+| ≥2 ops misma entidad | ❌ | ✅ | ❌ |
+| Módulo completo (controller + service + dto + exception) | ❌ | ❌ | ✅ |
+| Con README.md propio | ❌ | ❌ | ✅ |
+
+### Validación de DTOs/Modelos/Servicios/Endpoints Existentes
+
+**⚠️ CRÍTICO**: Verificar existentes ANTES de crear nuevos
+
+| Tipo | Dónde buscar | Ejemplo |
+|------|-------------|---------|
+| DTOs | `dto/{dominio}/` | `dto/processconfig/` |
+| Documentos | `documents/` | `documents/allies/WorkFlowAlly` |
+| Modelos | `models/` | `models/Response` |
+| Servicios | `service/` | `TransactionService` para tracking |
+| Endpoints | `service/**/external/` | Feign Clients con `@PathVariable` |
+
+**Regla de Reutilización:**
+- ✅ Existe → Reutilizar y agregar SOLO campos faltantes
+- ✅ Endpoint con path variable → Pasar parámetro dinámico
+- ❌ Solo crear nuevo si NO existe alternativa
+
+**🚫 PROHIBIDO al reutilizar DTOs/Modelos:**
+- ❌ **NO cambiar tipos de datos** de campos existentes (ej: `boolean` → `Boolean`)
+- ❌ **NO cambiar nombres** de campos existentes
+- ❌ **NO cambiar anotaciones** existentes (`@JsonProperty`, `@Field`)
+- ❌ **NO modificar JavaDoc** de campos existentes
+- ✅ **SOLO agregar** campos nuevos al final
+
+**Beneficios:** ~100-200 líneas menos, sin mapeos, mantenimiento único
+
+### Arquitectura con Servicios External
+
+**Patrón completo para consumir APIs externas:**
+
+```
+controller/
+└── {Dominio}Controller.java
+    ↓ inyecta
+service/{dominio}/
+├── {Dominio}Service.java (Interface)
+├── {Dominio}ServiceImpl.java (Principal)
+│   ↓ inyecta
+└── external/
+    ├── External{Servicio}Client.java (Feign)
+    ├── External{Servicio}Service.java (Interface)
+    └── External{Servicio}ServiceImpl.java (Implementación)
+```
+
+**Flujo de responsabilidades:**
+1. **Controller**: Recibe request, valida entrada, delega a servicio principal (⚠️ SOLO si el usuario aprobó exponer la API)
+2. **Servicio Principal**: Coordina operaciones, aplica reglas de negocio, valida respuestas
+3. **Servicio External**: Maneja comunicación con API externa, valida respuestas técnicas
+4. **Feign Client**: Define contrato de API externa
+5. **Servicio Organization** (opcional): Procesa/organiza datos internamente - NO expuesto en controller
+
+> **Nota**: Si hay ≥2 capacidades en `external/` (ej: auth + questions), organizar en subcarpetas por capacidad.  
+> Ver [servicios-09-organizacion-capacidades.mdc](./servicios-09-organizacion-capacidades.mdc) para detalles.
+
+## ✅ Ejemplos
+
+### Ejemplo 1: Arquitectura Completa con Servicio External
+
+**Controller (SOLO si usuario aprueba exposición):**
+```java
+@RestController
+@RequestMapping("/api/v1/declaracion-asegurabilidad")
+@RequiredArgsConstructor
+public class InsurabilityController {
+    private final InsurabilityService insurabilityService;
+
+    @PostMapping("/preguntas")
+    public InsurabilityQuestionsResponseDto getInsurabilityQuestions(
+            @RequestHeader("Authorization") String authorization,
+            @Valid @RequestBody InsurabilityQuestionsRequestDto request) {
+        return insurabilityService.getInsurabilityQuestions(request, authorization);
+    }
+}
+```
+
+**Servicio Principal (coordina y valida negocio):**
+```java
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class InsurabilityServiceImpl implements InsurabilityService {
+    private final ExternalInsurabilityQuestionsService externalInsurabilityQuestionsService;
+
+    @Override
+    public InsurabilityQuestionsResponseDto getInsurabilityQuestions(
+            InsurabilityQuestionsRequestDto request, String authorization) {
+        // 1. Validar entrada
+        if (authorization == null || authorization.trim().isEmpty()) {
+            throw new ParametersException("Token requerido", CODE_AUTH_REQUIRED);
+        }
+        // 2. Delegar a servicio external
+        InsurabilityQuestionsResponseDto response = 
+            externalInsurabilityQuestionsService.getInsurabilityQuestions(request, authorization);
+        // 3. Validar respuesta de negocio
+        if (!response.isSuccess()) {
+            throw new ParametersException("Error: " + response.getMessage(), CODE_ERROR);
+        }
+        return response;
+    }
+}
+```
+
+**Servicio External (service/insurability/external/):**
+```java
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class ExternalInsurabilityQuestionsServiceImpl 
+        implements ExternalInsurabilityQuestionsService {
+    private final ExternalInsurabilityQuestionsClient client;
+
+    @Override
+    public InsurabilityQuestionsResponseDto getInsurabilityQuestions(
+            InsurabilityQuestionsRequestDto request, String authorization) {
+        try {
+            InsurabilityQuestionsResponseDto response = client.getInsurabilityQuestions(authorization, request);
+            if (response == null) throw new ParametersException("Respuesta nula", CODE_NULL_RESPONSE);
+            return response;
+        } catch (ParametersException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new ParametersException("Error externo: " + e.getMessage(), CODE_EXTERNAL_ERROR, e);
+        }
+    }
+}
+```
+
+**Feign Client (service/insurability/external/):**
+```java
+@FeignClient(name = "insurability-questions-client", url = "${domain.gestor.url}")
+public interface ExternalInsurabilityQuestionsClient {
+    @PostMapping("${domain.gestor.endpoints.insurability-questions}")
+    InsurabilityQuestionsResponseDto getInsurabilityQuestions(
+            @RequestHeader("Authorization") String authorization,
+            @RequestBody InsurabilityQuestionsRequestDto request);
+}
+```
+
+### Ejemplo 2: Servicio que Coordina Múltiples Servicios
+
+```java
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class ShortUrlServiceImpl implements ShortUrlService {
+    private final ShortUrlParameterResolutionService parameterService;
+    private final ExternalUrlShortenerService externalService;
+
+    @Override
+    public ShortUrlResponse shortenUrl(ShortUrlRequest request) {
+        // 1. Resolver parámetros → 2. Acortar URL → 3. Construir respuesta
+        ResolvedShortUrlParametersDto params = parameterService.resolveParameters(request);
+        String urlCorta = externalService.shortenUrl(request.longURL(), params.idSistemaOrigen(), params.diasVigencia());
+        return new ShortUrlResponse(request.longURL(), urlCorta, params.diasVigencia());
+    }
+}
+```
+
+
+### Ejemplo 3: Reutilización (CRÍTICO)
+
+| Elemento | ❌ Crear nuevo | ✅ Reutilizar existente |
+|----------|--------------|------------------------|
+| **Endpoint** | Duplicar método | `parameterClient.consultChannelParameters("recortarUrl")` |
+| **DTO** | Nuevo archivo | Agregar campos al DTO existente (NO modificar tipos) |
+| **Servicio** | Nueva clase | `transactionService.saveTransactionStep(id, "paso", dto)` |
+
+**Beneficios**: ~100-200 líneas menos, sin mapeos, mantenimiento único
+
+### Ejemplo 4: Servicio Organization (Uso Interno)
+
+**Ubicación**: `service/insurability/organization/`
+
+```java
+@Slf4j
+@Service
+public class InsurabilityQuestionsOrganizationServiceImpl 
+        implements InsurabilityQuestionsOrganizationService {
+
+    @Override
+    public Map<Integer, List<InsurabilityQuestionDto>> groupQuestionsByParentIdAscending(
+            List<InsurabilityQuestionDto> questions) {
+        if (questions == null || questions.isEmpty()) return Collections.emptyMap();
+
+        Map<Integer, List<InsurabilityQuestionDto>> grouped = questions.stream()
+                .collect(Collectors.groupingBy(q -> q.getParentQuestionId() != null ? q.getParentQuestionId() : 0));
+        grouped.forEach((parentId, list) -> list.sort(Comparator.comparing(q -> q.getOrder() != null ? q.getOrder() : Integer.MAX_VALUE)));
+        return grouped;
+    }
+}
+```
+
+**Características:**
+- ✅ Uso INTERNO - NO exponer sin aprobación del usuario
+- ✅ Sin DTOs propios (reutiliza DTOs existentes)
+- ✅ Sin Feign Clients
+- ⚠️ Si usuario solicita exponer → PREGUNTAR antes de crear endpoint
+
+## 🚫 Restricciones
+
+1. **NO** crear DTOs/modelos/servicios sin verificar existentes en `dto/`, `documents/`, `models/`, `service/`
+2. **NO** modificar tipos de datos ni nombres de campos existentes al reutilizar (solo agregar nuevos)
+3. **NO** crear servicios sin URL, CURL y responses JSON reales (no inventar estructura)
+4. **NO** inyectar implementaciones (`*ServiceImpl`) ni usar `@Autowired` (usar interfaces + `@RequiredArgsConstructor`)
+5. **NO** llamar Feign Clients directamente desde servicios principales (usar servicio External en `external/`)
+6. **NO** crear o modificar controllers sin preguntar PRIMERO al usuario si desea exponer la API
+7. **NO** exponer servicios de procesamiento/organización sin aprobación explícita del usuario
+8. **NO** crear servicios sin interfaz correspondiente
+9. **NO** hardcodear mensajes de error (usar constantes en `Constants.java`)
+10. **NO** usar nomenclatura inconsistente (`premiumcalculation` vs `premiumCalculation` - usar camelCase)
+11. **NO** crear servicios external fuera del paquete `service/{dominio}/external/`
+12. **NO** crear servicios de organización/procesamiento fuera del paquete `service/{dominio}/organization/`
+
+## ✅ Validación Automática
+
+Cursor debe detectar:
+
+- ❌ Creación sin verificar DTOs/modelos/servicios existentes
+- ❌ Modificación de tipos de datos (`boolean` → `Boolean`) o nombres de campos existentes
+- ❌ Creación de servicios sin URL, CURL y responses JSON
+- ❌ Creación o modificación de controller sin preguntar PRIMERO al usuario
+- ❌ Exposición automática de servicios de procesamiento/organización sin aprobación
+- ❌ Inyección de implementaciones (`*ServiceImpl`) en lugar de interfaces
+- ❌ Servicios external fuera del paquete `external/`
+- ❌ Servicios de organización fuera del paquete `organization/`
+- ❌ Servicios sin `@Service`, `@Slf4j` o interfaz
+- ❌ Uso de `@Autowired` en lugar de constructor
+- ❌ Nomenclatura inconsistente (`premiumcalculation` vs `premiumCalculation`)
+- ❌ Llamadas directas a Feign Clients desde servicios principales
+- ❌ Estructura inventada de DTOs o campos "TODO"
+
+## 🎯 Objetivo + Regla de Oro
+
+**Objetivo**: Crear servicios mantenibles, testables y que cumplan principios SOLID con arquitectura en capas clara.
+
+**REGLA DE ORO**: "PRIMERO verificar existentes (dto/, documents/, models/, service/), LUEGO solicitar URL + CURL + responses, DESPUÉS preguntar si desea exponer API (servicios de procesamiento/organización son internos por defecto), FINALMENTE preguntar sobre controller (nuevo vs reutilizar). Reutilizar sin modificar tipos/nombres. Arquitectura: Controller (solo si aprobado) → Service → External (en external/) / Organization (en organization/) → Feign. Una responsabilidad por servicio. Interfaces siempre."
+
+
+> **Ver también**: 
+> - [servicios-02-feign-client.mdc](./servicios-02-feign-client.mdc) - Feign Clients
+> - [servicios-03-feign-config.mdc](./servicios-03-feign-config.mdc) - Configuración Feign
+> - [servicios-04-excepciones.mdc](./servicios-04-excepciones.mdc) - Excepciones
+> - [servicios-05-dtos.mdc](./servicios-05-dtos.mdc) - DTOs
+> - [servicios-09-organizacion-capacidades.mdc](./servicios-09-organizacion-capacidades.mdc) - Organización por capacidades

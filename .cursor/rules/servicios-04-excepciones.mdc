@@ -1,0 +1,209 @@
+---
+description: Manejo de excepciones personalizadas con códigos de error estandarizados
+globs: ["**/exception/**/*.java", "**/controller/ExceptionHandlerController.java"]
+alwaysApply: true
+---
+
+# ⚠️ Manejo de Excepciones Personalizadas
+
+## 📋 TL;DR
+
+- ✅ Una excepción personalizada por funcionalidad
+- ✅ Código de error formato: `TDTC-XX-NNNN`
+- ✅ Constantes en `Constants.java`
+- ✅ Handler en `ExceptionHandlerController`
+- ✅ **Para módulos completos:** Organizar en `exception/{modulo}/`
+- ❌ NO usar excepciones genéricas
+
+## 🚨 Reglas Principales
+
+1. Cada funcionalidad tiene su propia excepción (`*Exception extends RuntimeException`)
+2. Incluir campo `errorCode` con formato `TDTC-XX-NNNN`
+3. Dos constructores: simple (mensaje + código) y con causa (mensaje + código + Throwable)
+4. Constantes de mensajes y códigos en `Constants.java`
+5. Handler específico en `ExceptionHandlerController` con `@ExceptionHandler`
+6. **Para módulos completos:** Organizar en `exception/{modulo}/` (ver Organización Modular)
+
+## 📊 Referencia Rápida - Formato de Códigos
+
+| Módulo | Prefijo | Ejemplo | Descripción |
+|--------|---------|---------|-------------|
+| Short URL | `TDTC-SU-` | `TDTC-SU-0001` | Errores de acortamiento de URLs |
+| Transaction | `TDTC-TX-` | `TDTC-TX-0001` | Errores de transacciones |
+| Cumulus | `TDTC-CU-` | `TDTC-CU-0001` | Errores de cúmulos/acumulación |
+| Parameter | `TDTC-PA-` | `TDTC-PA-0001` | Errores de parametrización |
+
+**Formato**: `TDTC-XX-NNNN`
+- `TDTC` = Tienda Digital Transaccional Comunes
+- `XX` = Identificador del módulo (2 letras)
+- `NNNN` = Número secuencial (4 dígitos: 0001, 0002, ...)
+
+## ✅ Ejemplos
+
+### Ejemplo 1: Crear Excepción Personalizada
+
+```java
+package com.bolivar.tienda.digital.transaccional.comunes.ms.exception;
+
+import lombok.Getter;
+
+/**
+ * Excepción personalizada para operaciones de acortamiento de URLs.
+ * Se lanza cuando ocurren errores en el proceso de acortamiento de URLs,
+ * tales como errores de parametrización, servicio externo o almacenamiento.
+ *
+ * @author Team Tienda Digital
+ * @since 1.0.0
+ */
+@Getter
+public class ShortUrlException extends RuntimeException {
+
+    /**
+     * Código de error específico de la excepción
+     */
+    private final String errorCode;
+
+    /**
+     * Constructor para crear una excepción con mensaje y código de error.
+     *
+     * @param message Mensaje descriptivo del error
+     * @param errorCode Código de error específico (ver Constants.CODE_*)
+     */
+    public ShortUrlException(String message, String errorCode) {
+        super(message);
+        this.errorCode = errorCode;
+    }
+
+    /**
+     * Constructor para crear una excepción con mensaje, código de error y causa.
+     *
+     * @param message Mensaje descriptivo del error
+     * @param errorCode Código de error específico (ver Constants.CODE_*)
+     * @param cause Excepción original que causó este error
+     */
+    public ShortUrlException(String message, String errorCode, Throwable cause) {
+        super(message, cause);
+        this.errorCode = errorCode;
+    }
+}
+```
+
+### Ejemplo 2: Definir Constantes
+
+```java
+public class Constants {
+    
+    // Short URL - Error Messages
+    public static final String ERROR_SHORT_URL_SAVE = "Error al guardar URL acortada en base de datos";
+    public static final String ERROR_SHORT_URL_EXTERNAL_SERVICE = "Error al llamar servicio externo de acortamiento";
+    public static final String ERROR_SHORT_URL_PARAMETRIZACION = "Error al resolver parámetros de configuración";
+    
+    // Short URL - Error Codes
+    public static final String CODE_PARAMETRIZACION_NOT_FOUND = "TDTC-SU-0001";
+    public static final String CODE_EXTERNAL_SERVICE_ERROR = "TDTC-SU-0002";
+    public static final String CODE_DATABASE_ERROR = "TDTC-SU-0003";
+}
+```
+
+### Ejemplo 3: Usar en Servicios
+
+```java
+@Override
+public String shortenUrl(String longUrl, String idSistema, Integer dias) {
+    try {
+        ExternalShortUrlResponseDto response = urlShortenerClient.shortenUrl(buildRequest(longUrl, idSistema, dias));
+        validateExternalResponse(response);
+        return response.getShortUrl();
+        
+    } catch (ShortUrlException e) {
+        throw e; // ✅ Relanzar excepciones de negocio
+    } catch (Exception e) {
+        // ✅ Envolver excepciones técnicas con contexto
+        throw new ShortUrlException(
+            Constants.ERROR_SHORT_URL_EXTERNAL_SERVICE + ": " + e.getMessage(),
+            Constants.CODE_EXTERNAL_SERVICE_ERROR, e
+        );
+    }
+}
+```
+
+### Ejemplo 4: Handler en Controller
+
+```java
+@ExceptionHandler({ShortUrlException.class})
+public Response<Object> shortUrlException(ShortUrlException e, HttpServletRequest request) {
+    log.error("ShortUrlException: Url Request: {} | ErrorCode: {} | Message: {} ", 
+            request.getRequestURI(), e.getErrorCode(), e.getMessage());
+
+    String messageWithCode = String.format("[%s] %s", e.getErrorCode(), e.getMessage());
+
+    return Response.builder()
+            .failure(true)
+            .code(HttpStatus.BAD_REQUEST.value())
+            .message(messageWithCode)
+            .timestamp(String.valueOf(System.currentTimeMillis()))
+            .build();
+}
+```
+
+## 🚫 Restricciones
+
+1. **NO** usar excepciones genéricas (`RuntimeException`, `Exception`)
+2. **NO** hardcodear mensajes de error en el código
+3. **NO** omitir el campo `errorCode`
+4. **NO** perder contexto de la causa raíz (pasar `Throwable cause`)
+5. **NO** envolver excepciones de negocio (relanzarlas sin modificar)
+6. **NO** omitir logs en puntos de lanzamiento de excepciones
+7. **NO** usar códigos de error sin formato estándar
+8. **NO** duplicar códigos de error entre módulos
+9. **NO** omitir JavaDoc en excepciones personalizadas
+10. **NO** retornar null en lugar de lanzar excepción
+11. **NO** crear excepciones de módulos completos en la raíz de `exception/`
+
+## 📦 Organización Modular de Excepciones
+
+### Cuándo Usar Paquetes Específicos
+
+| Criterio | Raíz `exception/` | Paquete `exception/{modulo}/` |
+|----------|-------------------|-------------------------------|
+| Excepción transversal | ✅ Sí (ej: `AllieException`) | ❌ No |
+| Excepción de módulo simple | ✅ Sí (ej: `CipherException`) | ❌ No |
+| **Excepción de módulo completo** | ❌ No | ✅ Sí (controller + service + dto) |
+| Múltiples excepciones relacionadas | ❌ No | ✅ Sí (agrupar en paquete) |
+
+**Estructura Modular:**
+```
+exception/
+├── {modulo}/
+│   └── {Modulo}Exception.java
+└── ExceptionHandlerController.java (raíz, handler global)
+```
+
+**Import correcto:**
+```java
+// ✅ CORRECTO: Import desde paquete específico
+import com.bolivar.tiendaseguros.ms.exception.processconfig.ProcessConfigurationException;
+```
+
+## ✅ Validación Automática
+
+Cursor debe detectar:
+
+- ❌ `throw new RuntimeException(...)` en servicios
+- ❌ Mensajes hardcodeados: `throw new Exception("Error al...")`
+- ❌ Excepciones sin campo `errorCode`
+- ❌ Códigos de error sin formato `TDTC-XX-NNNN`
+- ❌ Falta de `@ExceptionHandler` para excepciones personalizadas
+- ❌ Handlers que no loguean código de error
+- ❌ Excepciones sin JavaDoc
+- ❌ Constructor sin parámetro `Throwable cause`
+
+## 🎯 Objetivo + Regla de Oro
+
+**Objetivo**: Manejo consistente de errores con trazabilidad completa mediante códigos únicos y contexto detallado.
+
+**REGLA DE ORO**: "Una excepción por funcionalidad con código `TDTC-XX-NNNN`. Relanzar excepciones de negocio, envolver técnicas. Siempre incluir causa original."
+
+
+> **Ver también**: 
+> - [servicios-01-creacion-servicios.mdc](./servicios-01-creacion-servicios.mdc) - Uso en servicios
