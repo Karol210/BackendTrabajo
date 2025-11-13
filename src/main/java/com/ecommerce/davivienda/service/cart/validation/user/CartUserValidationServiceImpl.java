@@ -1,23 +1,20 @@
-package com.ecommerce.davivienda.service.cart.validation;
+package com.ecommerce.davivienda.service.cart.validation.user;
 
 import com.ecommerce.davivienda.entity.user.User;
 import com.ecommerce.davivienda.entity.user.UserRole;
 import com.ecommerce.davivienda.exception.cart.CartException;
-import com.ecommerce.davivienda.repository.cart.CartRepository;
-import com.ecommerce.davivienda.repository.user.UserRepository;
-import com.ecommerce.davivienda.repository.user.UserRoleRepository;
+import com.ecommerce.davivienda.service.cart.transactional.user.CartUserTransactionalService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 import static com.ecommerce.davivienda.constants.Constants.*;
 
 /**
- * Implementación del servicio de validación para operaciones de carritos.
- * Valida usuarios, roles y existencia de carritos antes de operaciones de negocio.
+ * Implementación del servicio de validación para operaciones de usuarios.
+ * Valida usuarios, roles y reglas de negocio relacionadas con usuarios.
  *
  * @author Team Ecommerce Davivienda
  * @since 1.0.0
@@ -25,18 +22,15 @@ import static com.ecommerce.davivienda.constants.Constants.*;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class CartValidationServiceImpl implements CartValidationService {
+public class CartUserValidationServiceImpl implements CartUserValidationService {
 
-    private final UserRepository userRepository;
-    private final UserRoleRepository userRoleRepository;
-    private final CartRepository cartRepository;
+    private final CartUserTransactionalService transactionalService;
 
     @Override
-    @Transactional(readOnly = true)
     public User validateUserExists(String email) {
         log.debug("Validando existencia del usuario con email: {}", email);
 
-        return userRepository.findByCredenciales_Correo(email)
+        return transactionalService.findUserByEmail(email)
                 .orElseThrow(() -> {
                     log.error("Usuario no encontrado con email: {}", email);
                     return new CartException(ERROR_USER_NOT_FOUND_FOR_CART, CODE_USER_NOT_FOUND_FOR_CART);
@@ -44,24 +38,10 @@ public class CartValidationServiceImpl implements CartValidationService {
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public void validateUserHasNoCart(Integer usuarioRolId) {
-        log.debug("Validando que el usuarioRolId {} no tenga carrito existente", usuarioRolId);
-
-        if (cartRepository.existsByUsuarioRolId(usuarioRolId)) {
-            log.error("Usuario ya tiene un carrito existente: usuarioRolId={}", usuarioRolId);
-            throw new CartException(ERROR_USER_ALREADY_HAS_CART, CODE_USER_ALREADY_HAS_CART);
-        }
-
-        log.debug("Usuario no tiene carrito existente");
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public UserRole getUserPrimaryRole(Integer usuarioId) {
         log.debug("Obteniendo UserRole principal para usuario: {}", usuarioId);
 
-        List<UserRole> userRoles = userRoleRepository.findByUsuarioId(usuarioId);
+        List<UserRole> userRoles = transactionalService.findUserRolesByUserId(usuarioId);
 
         if (userRoles.isEmpty()) {
             log.error("Usuario {} no tiene roles asignados", usuarioId);
@@ -74,6 +54,16 @@ public class CartValidationServiceImpl implements CartValidationService {
                 primaryRole.getRole().getNombreRol());
 
         return primaryRole;
+    }
+
+    @Override
+    public void validateUserRoleExists(Integer userRoleId) {
+        log.debug("Validando existencia del userRoleId: {}", userRoleId);
+
+        if (!transactionalService.existsUserRoleById(userRoleId)) {
+            log.warn("UserRoleId no encontrado: {}", userRoleId);
+            throw new CartException(ERROR_USER_ROLE_NOT_FOUND, CODE_USER_ROLE_NOT_FOUND);
+        }
     }
 }
 

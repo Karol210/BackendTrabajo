@@ -1,16 +1,25 @@
 package com.ecommerce.davivienda.mapper.product;
 
+import com.ecommerce.davivienda.dto.product.ProductFilterDto;
 import com.ecommerce.davivienda.entity.product.Product;
 import com.ecommerce.davivienda.models.product.ProductRequest;
 import com.ecommerce.davivienda.models.product.ProductResponse;
 import com.ecommerce.davivienda.models.product.ProductUpdateRequest;
+import com.ecommerce.davivienda.repository.product.ProductSpecification;
 import org.mapstruct.*;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+
+import java.math.BigDecimal;
 
 import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
 
 /**
  * Mapper para conversiones entre Product y models.
  * MapStruct genera la implementación automáticamente en tiempo de compilación.
+ * Incluye métodos auxiliares para construcción de especificaciones y paginación.
  * 
  * @author Team Ecommerce Davivienda
  * @since 1.0.0
@@ -76,5 +85,59 @@ public interface ProductMapper {
     @Mapping(target = "categoria", ignore = true)
     @Mapping(target = "creationDate", ignore = true)
     void updateEntityFromDto(ProductUpdateRequest request, @MappingTarget Product product);
+
+    /**
+     * Construye una especificación de búsqueda a partir de un FilterDto.
+     *
+     * @param filter Filtros de búsqueda
+     * @return Specification para búsqueda dinámica
+     */
+    default Specification<Product> buildSpecificationFromFilter(ProductFilterDto filter) {
+        return ProductSpecification.withFilters(
+                filter.getCategoryId(),
+                filter.getMinPrice(),
+                filter.getMaxPrice(),
+                filter.getActive(),
+                filter.getSearchTerm()
+        );
+    }
+
+    /**
+     * Construye una especificación de búsqueda a partir de parámetros individuales.
+     *
+     * @param categoryId ID de categoría (opcional)
+     * @param minPrice Precio mínimo (opcional)
+     * @param maxPrice Precio máximo (opcional)
+     * @param active Estado activo/inactivo (opcional)
+     * @param searchTerm Término de búsqueda (opcional)
+     * @return Specification para búsqueda dinámica
+     */
+    default Specification<Product> buildSpecificationFromParams(
+            Integer categoryId,
+            BigDecimal minPrice,
+            BigDecimal maxPrice,
+            Boolean active,
+            String searchTerm) {
+        
+        return ProductSpecification.withFilters(categoryId, minPrice, maxPrice, active, searchTerm);
+    }
+
+    /**
+     * Construye un objeto Pageable con configuración de paginación y ordenamiento.
+     *
+     * @param page Número de página (0-indexed)
+     * @param size Tamaño de página
+     * @param sortBy Campo para ordenar
+     * @param sortDir Dirección de orden (asc/desc)
+     * @return Pageable configurado
+     */
+    default Pageable buildPageable(int page, int size, String sortBy, String sortDir) {
+        Sort.Direction direction = "desc".equalsIgnoreCase(sortDir) 
+                ? Sort.Direction.DESC 
+                : Sort.Direction.ASC;
+        
+        Sort sort = Sort.by(direction, sortBy);
+        return PageRequest.of(page, size, sort);
+    }
 }
 

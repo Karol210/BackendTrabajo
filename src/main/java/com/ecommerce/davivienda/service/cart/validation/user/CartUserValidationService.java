@@ -1,16 +1,16 @@
-package com.ecommerce.davivienda.service.cart.validation;
+package com.ecommerce.davivienda.service.cart.validation.user;
 
 import com.ecommerce.davivienda.entity.user.User;
 import com.ecommerce.davivienda.entity.user.UserRole;
 
 /**
- * Servicio de validación para operaciones de carritos de compras.
- * Proporciona métodos de validación de negocio para usuarios y carritos.
+ * Servicio de validación para operaciones relacionadas con usuarios en contexto de carritos.
+ * Proporciona métodos de validación de negocio para usuarios.
  *
  * @author Team Ecommerce Davivienda
  * @since 1.0.0
  */
-public interface CartValidationService {
+public interface CartUserValidationService {
 
     /**
      * Valida que el usuario exista por su email.
@@ -22,14 +22,6 @@ public interface CartValidationService {
     User validateUserExists(String email);
 
     /**
-     * Valida que el usuario no tenga un carrito existente.
-     *
-     * @param usuarioRolId ID del usuarioRol a verificar
-     * @throws com.ecommerce.davivienda.exception.cart.CartException si ya existe un carrito
-     */
-    void validateUserHasNoCart(Integer usuarioRolId);
-
-    /**
      * Obtiene el UserRole principal del usuario.
      *
      * @param usuarioId ID del usuario
@@ -37,5 +29,13 @@ public interface CartValidationService {
      * @throws com.ecommerce.davivienda.exception.cart.CartException si no tiene roles
      */
     UserRole getUserPrimaryRole(Integer usuarioId);
+
+    /**
+     * Valida que el UserRole exista.
+     *
+     * @param userRoleId ID del UserRole a validar
+     * @throws com.ecommerce.davivienda.exception.cart.CartException si no existe
+     */
+    void validateUserRoleExists(Integer userRoleId);
 }
 

@@ -1,7 +1,6 @@
 package com.ecommerce.davivienda.controller.cart;
 
 import com.ecommerce.davivienda.models.Response;
-import com.ecommerce.davivienda.models.cart.CartCreateResponse;
 import com.ecommerce.davivienda.service.cart.CartService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,22 +34,20 @@ public class CartController {
      * 
      * Endpoint: POST /api/v1/carts/create
      *
-     * @return Response con el ID del carrito creado y el email del usuario
+     * @return Response simple con mensaje de éxito
      */
     @PostMapping("/create")
-    public ResponseEntity<Response<CartCreateResponse>> createCart() {
+    public ResponseEntity<Response<String>> createCart() {
         
         log.info("Request para crear carrito de usuario autenticado");
         
-        CartCreateResponse cartResponse = cartService.createCart();
-        
+        cartService.createCart();
         
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(Response.<CartCreateResponse>builder()
+                .body(Response.<String>builder()
                         .failure(false)
                         .code(HttpStatus.CREATED.value())
                         .message(SUCCESS_CART_CREATED)
-                        .body(cartResponse)
                         .timestamp(String.valueOf(System.currentTimeMillis()))
                         .build());
     }

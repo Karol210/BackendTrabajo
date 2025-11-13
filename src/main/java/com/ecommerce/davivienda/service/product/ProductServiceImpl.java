@@ -7,7 +7,6 @@ import com.ecommerce.davivienda.mapper.product.ProductMapper;
 import com.ecommerce.davivienda.models.product.ProductRequest;
 import com.ecommerce.davivienda.models.product.ProductResponse;
 import com.ecommerce.davivienda.models.product.ProductUpdateRequest;
-import com.ecommerce.davivienda.service.product.builder.ProductBuilderService;
 import com.ecommerce.davivienda.service.product.transactional.product.ProductProductTransactionalService;
 import com.ecommerce.davivienda.service.product.validation.category.ProductCategoryValidationService;
 import com.ecommerce.davivienda.service.product.validation.common.ProductCommonValidationService;
@@ -46,7 +45,6 @@ public class ProductServiceImpl implements ProductService {
     private final ProductProductTransactionalService transactionalService;
 
     private final ProductMapper productMapper;
-    private final ProductBuilderService builderService;
     private final StockService stockService;
 
     @Override
@@ -113,7 +111,7 @@ public class ProductServiceImpl implements ProductService {
     public List<ProductResponse> searchProducts(ProductFilterDto filter) {
         log.info("Buscando productos con filtros: {}", filter);
 
-        Specification<Product> spec = builderService.buildSpecificationFromFilter(filter);
+        Specification<Product> spec = productMapper.buildSpecificationFromFilter(filter);
         List<Product> products = transactionalService.findAllProducts(spec);
 
         return products.stream()
@@ -136,9 +134,9 @@ public class ProductServiceImpl implements ProductService {
 
         log.info("Buscando productos paginados: page={}, size={}", page, size);
 
-        Specification<Product> spec = builderService.buildSpecificationFromParams(
+        Specification<Product> spec = productMapper.buildSpecificationFromParams(
                 categoryId, minPrice, maxPrice, active, searchTerm);
-        Pageable pageable = builderService.buildPageable(page, size, sortBy, sortDir);
+        Pageable pageable = productMapper.buildPageable(page, size, sortBy, sortDir);
 
         Page<Product> productsPage = transactionalService.findAllProducts(spec, pageable);
         return productsPage.map(productMapper::toResponseDto);
