@@ -37,12 +37,5 @@ public interface ProductProductValidationService {
      */
     Product findProductByIdOrThrow(Integer productId);
 
-    /**
-     * Valida que la cantidad de inventario sea válida.
-     *
-     * @param quantity Cantidad de inventario
-     * @throws com.ecommerce.davivienda.exception.product.ProductException si la cantidad es inválida
-     */
-    void validateInventoryQuantity(Integer quantity);
 }
 
