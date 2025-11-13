@@ -24,13 +24,6 @@ public interface ProductRepository extends JpaRepository<Product, Integer>, JpaS
      */
     List<Product> findByEstadoProductoId(Integer estadoProductoId);
 
-    /**
-     * Lista productos por categoría.
-     *
-     * @param categoriaId ID de la categoría
-     * @return Lista de productos de la categoría
-     */
-    List<Product> findByCategoria_CategoriaId(Integer categoriaId);
 
     /**
      * Verifica si existe un producto con el nombre dado.

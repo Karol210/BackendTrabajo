@@ -23,12 +23,5 @@ public interface CredentialsRepository extends JpaRepository<Credentials, Intege
      */
     Optional<Credentials> findByCorreo(String correo);
 
-    /**
-     * Verifica si existe un correo electrónico registrado.
-     *
-     * @param correo Correo electrónico a verificar
-     * @return true si el correo existe, false en caso contrario
-     */
-    boolean existsByCorreo(String correo);
 }
 

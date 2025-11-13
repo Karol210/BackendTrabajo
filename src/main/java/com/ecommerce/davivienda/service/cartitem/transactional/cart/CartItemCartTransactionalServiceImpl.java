@@ -46,12 +46,6 @@ public class CartItemCartTransactionalServiceImpl implements CartItemCartTransac
                 });
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public Optional<Cart> findCartByIdAndUser(Integer cartId, Integer userRoleId) {
-        log.debug("Buscando carrito {} para usuario {}", cartId, userRoleId);
-        return cartRepository.findByCarritoIdAndUsuarioRolId(cartId, userRoleId);
-    }
 
     @Override
     @Transactional(readOnly = true)
@@ -60,23 +54,6 @@ public class CartItemCartTransactionalServiceImpl implements CartItemCartTransac
         return cartItemRepository.findByCartAndProduct(cartId, productId);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public CartItem findCartItemById(Integer itemId) {
-        log.debug("Buscando CartItem con ID: {}", itemId);
-        
-        return cartItemRepository.findById(itemId)
-                .orElseThrow(() -> {
-                    return new CartException(ERROR_CART_ITEM_NOT_FOUND, CODE_CART_ITEM_NOT_FOUND);
-                });
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public boolean existsCartItemByCartAndProduct(Integer cartId, Integer productId) {
-        log.debug("Verificando existencia de producto {} en carrito {}", productId, cartId);
-        return cartItemRepository.existsByCartAndProduct(cartId, productId);
-    }
 
     @Override
     @Transactional(readOnly = true)
@@ -98,20 +75,6 @@ public class CartItemCartTransactionalServiceImpl implements CartItemCartTransac
     public void deleteCartItem(CartItem cartItem) {
         log.debug("Eliminando CartItem con ID: {}", cartItem.getProductosCarritoId());
         cartItemRepository.delete(cartItem);
-    }
-
-    @Override
-    @Transactional
-    public void deleteCartItemsByCartId(Integer cartId) {
-        log.debug("Eliminando todos los items del carrito {}", cartId);
-        cartItemRepository.deleteByCartCarritoId(cartId);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Optional<CartItem> findCartItemByProductAndUser(Integer productId, Integer userRoleId) {
-        log.debug("Buscando CartItem del producto {} para usuario {}", productId, userRoleId);
-        return cartItemRepository.findByProductIdAndUserRole(productId, userRoleId);
     }
 
     @Override

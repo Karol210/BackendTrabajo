@@ -23,12 +23,5 @@ public interface UserStatusRepository extends JpaRepository<UserStatus, Integer>
      */
     Optional<UserStatus> findByNombre(String nombre);
 
-    /**
-     * Verifica si existe un estado de usuario con el nombre especificado.
-     *
-     * @param nombre Nombre del estado a verificar
-     * @return true si existe el estado, false en caso contrario
-     */
-    boolean existsByNombre(String nombre);
 }
 

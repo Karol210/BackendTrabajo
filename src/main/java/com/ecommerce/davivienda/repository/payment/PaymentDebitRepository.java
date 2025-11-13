@@ -18,13 +18,5 @@ import java.util.Optional;
 @Repository
 public interface PaymentDebitRepository extends JpaRepository<PaymentDebit, Integer> {
 
-    /**
-     * Busca un pago débito por ID de pago.
-     *
-     * @param paymentId ID del pago
-     * @return Optional con el pago débito si existe
-     */
-    @Query("SELECT pd FROM PaymentDebit pd WHERE pd.payment.paymentId = :paymentId")
-    Optional<PaymentDebit> findByPaymentId(@Param("paymentId") Integer paymentId);
 }
 

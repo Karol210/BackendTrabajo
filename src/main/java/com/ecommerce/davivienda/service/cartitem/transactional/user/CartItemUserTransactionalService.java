@@ -15,21 +15,6 @@ import java.util.Optional;
  */
 public interface CartItemUserTransactionalService {
 
-    /**
-     * Verifica si existe un UserRole por ID.
-     *
-     * @param userRoleId ID del UserRole
-     * @return true si existe, false en caso contrario
-     */
-    boolean existsUserRoleById(Integer userRoleId);
-
-    /**
-     * Busca un UserRole por ID.
-     *
-     * @param userRoleId ID del UserRole
-     * @return Optional con el UserRole si existe
-     */
-    Optional<UserRole> findUserRoleById(Integer userRoleId);
 
     /**
      * Busca un tipo de documento por código.
@@ -48,12 +33,5 @@ public interface CartItemUserTransactionalService {
      */
     Optional<User> findUserByDocumentTypeAndNumber(Integer documentoId, String numeroDeDoc);
 
-    /**
-     * Busca un usuario por correo electrónico.
-     *
-     * @param email Correo electrónico del usuario
-     * @return Optional con el usuario si existe
-     */
-    Optional<User> findUserByEmail(String email);
 }
 

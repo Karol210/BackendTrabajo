@@ -24,38 +24,7 @@ import static com.ecommerce.davivienda.constants.Constants.*;
 public class CartItemCartValidationServiceImpl implements CartItemCartValidationService {
 
     private final CartItemCartTransactionalService transactionalService;
-    private final CartAutoCreateService autoCreateService;
 
-    @Override
-    public Cart validateCartExistsAndBelongsToUser(Integer cartId, Integer userRoleId) {
-        log.debug("Validando existencia del carrito {} y ownership del usuario {}", cartId, userRoleId);
-        
-        if (cartId == null) {
-            throw new CartException(ERROR_CART_NOT_FOUND, CODE_CART_NOT_FOUND);
-        }
-        
-        if (userRoleId == null) {
-            throw new CartException(ERROR_USER_ROLE_NOT_FOUND, CODE_USER_ROLE_NOT_FOUND);
-        }
-        
-        return transactionalService.findCartByIdAndUser(cartId, userRoleId)
-                .orElseThrow(() -> new CartException(ERROR_CART_UNAUTHORIZED, CODE_CART_UNAUTHORIZED));
-    }
-    
-    @Override
-    public Cart validateOrCreateCart(Integer cartId, Integer userRoleId) {
-        log.debug("Validando o creando carrito con ID: {} y userRoleId: {}", cartId, userRoleId);
-        return autoCreateService.getOrCreateCart(cartId, userRoleId);
-    }
-
-    @Override
-    public void validateProductNotInCart(Integer cartId, Integer productId) {
-        if (transactionalService.existsCartItemByCartAndProduct(cartId, productId)) {
-            log.warn("El producto {} ya existe en el carrito {}", productId, cartId);
-            throw new CartException(ERROR_CART_ITEM_ALREADY_EXISTS, CODE_CART_ITEM_ALREADY_EXISTS);
-        }
-    }
-    
     @Override
     public CartItem validateItemBelongsToUser(Integer itemId, Integer userRoleId) {
         log.debug("Validando que el item {} pertenece al carrito del usuario {}", itemId, userRoleId);
@@ -77,25 +46,5 @@ public class CartItemCartValidationServiceImpl implements CartItemCartValidation
         
     }
 
-    @Override
-    public void validateProductBelongsToUser(Integer productId, Integer userRoleId) {
-        log.debug("Validando que el producto {} pertenece al carrito del usuario {}", productId, userRoleId);
-        
-        if (productId == null) {
-            throw new CartException(ERROR_CART_ITEM_NOT_FOUND, CODE_CART_ITEM_NOT_FOUND);
-        }
-        
-        if (userRoleId == null) {
-            throw new CartException(ERROR_USER_ROLE_NOT_FOUND, CODE_USER_ROLE_NOT_FOUND);
-        }
-        
-        transactionalService.findCartItemByProductAndUser(productId, userRoleId)
-                .orElseThrow(() -> {
-                    log.warn("El producto {} no existe en el carrito del usuario {}", productId, userRoleId);
-                    return new CartException(ERROR_CART_ITEM_UNAUTHORIZED, CODE_CART_ITEM_UNAUTHORIZED);
-                });
-        
-        log.info("Validación exitosa: Producto {} pertenece al carrito del usuario {}", productId, userRoleId);
-    }
 }
 

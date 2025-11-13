@@ -40,32 +40,6 @@ public interface CartItemRepository extends JpaRepository<CartItem, Integer> {
                                             @Param("productoId") Integer productoId);
 
     /**
-     * Verifica si existe un item en el carrito para un producto específico.
-     *
-     * @param carritoId ID del carrito
-     * @param productoId ID del producto
-     * @return true si el producto ya está en el carrito
-     */
-    @Query("SELECT CASE WHEN COUNT(ci) > 0 THEN true ELSE false END FROM CartItem ci WHERE ci.cart.carritoId = :carritoId AND ci.product.productoId = :productoId")
-    boolean existsByCartAndProduct(@Param("carritoId") Integer carritoId, 
-                                   @Param("productoId") Integer productoId);
-
-    /**
-     * Elimina todos los items de un carrito específico.
-     *
-     * @param carritoId ID del carrito
-     */
-    void deleteByCartCarritoId(Integer carritoId);
-
-    /**
-     * Cuenta la cantidad de items en un carrito.
-     *
-     * @param carritoId ID del carrito
-     * @return Número de items
-     */
-    long countByCartCarritoId(Integer carritoId);
-
-    /**
      * Busca un item por ID del producto validando que pertenece al usuario.
      * Realiza JOIN con carrito para validar ownership en una sola query.
      *

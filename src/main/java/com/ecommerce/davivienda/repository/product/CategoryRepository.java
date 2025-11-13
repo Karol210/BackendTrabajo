@@ -23,12 +23,5 @@ public interface CategoryRepository extends JpaRepository<Category, Integer> {
      */
     Optional<Category> findByNombre(String nombre);
 
-    /**
-     * Verifica si existe una categoría con el nombre dado.
-     *
-     * @param nombre Nombre de la categoría
-     * @return true si existe, false en caso contrario
-     */
-    boolean existsByNombre(String nombre);
 }
 

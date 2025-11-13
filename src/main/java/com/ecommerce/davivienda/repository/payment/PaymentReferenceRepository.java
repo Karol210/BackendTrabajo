@@ -17,14 +17,6 @@ import java.util.Optional;
 public interface PaymentReferenceRepository extends JpaRepository<PaymentReference, Integer> {
 
     /**
-     * Busca una referencia por número de referencia.
-     *
-     * @param referenceNumber Número de referencia
-     * @return Optional con la referencia si existe
-     */
-    Optional<PaymentReference> findByReferenceNumber(String referenceNumber);
-
-    /**
      * Verifica si existe una referencia con el número dado.
      *
      * @param referenceNumber Número de referencia

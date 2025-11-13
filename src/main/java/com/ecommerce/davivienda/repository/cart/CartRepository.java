@@ -27,25 +27,6 @@ public interface CartRepository extends JpaRepository<Cart, Integer> {
     Optional<Cart> findByUsuarioRolId(Integer usuarioRolId);
 
     /**
-     * Busca un carrito por ID validando que pertenece al usuario.
-     * Valida ownership del carrito.
-     *
-     * @param carritoId ID del carrito
-     * @param usuarioRolId ID del usuario_rol propietario
-     * @return Optional con el carrito si existe y pertenece al usuario
-     */
-    Optional<Cart> findByCarritoIdAndUsuarioRolId(Integer carritoId, Integer usuarioRolId);
-
-    /**
-     * Busca un carrito con sus items cargados (fetch join).
-     *
-     * @param carritoId ID del carrito
-     * @return Optional con el carrito y sus items
-     */
-    @Query("SELECT c FROM Cart c LEFT JOIN FETCH c.items WHERE c.carritoId = :carritoId")
-    Optional<Cart> findByIdWithItems(@Param("carritoId") Integer carritoId);
-
-    /**
      * Verifica si existe un carrito para un usuario_rol específico.
      *
      * @param usuarioRolId ID del usuario_rol

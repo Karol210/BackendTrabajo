@@ -18,13 +18,5 @@ import java.util.Optional;
 @Repository
 public interface PaymentCreditRepository extends JpaRepository<PaymentCredit, Integer> {
 
-    /**
-     * Busca un pago crédito por ID de pago.
-     *
-     * @param paymentId ID del pago
-     * @return Optional con el pago crédito si existe
-     */
-    @Query("SELECT pc FROM PaymentCredit pc WHERE pc.payment.paymentId = :paymentId")
-    Optional<PaymentCredit> findByPaymentId(@Param("paymentId") Integer paymentId);
 }
 

@@ -28,15 +28,6 @@ public interface StockRepository extends JpaRepository<Stock, Integer> {
     Optional<Stock> findByProductoId(Integer productoId);
 
     /**
-     * Busca el stock de múltiples productos.
-     *
-     * @param productIds Lista de IDs de productos
-     * @return Lista de registros de stock
-     */
-    @Query("SELECT s FROM Stock s WHERE s.productoId IN :productIds")
-    List<Stock> findByProductoIdIn(@Param("productIds") List<Integer> productIds);
-
-    /**
      * Verifica si existe stock para un producto.
      *
      * @param productoId ID del producto

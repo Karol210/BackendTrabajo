@@ -29,19 +29,6 @@ public class CartItemUserTransactionalServiceImpl implements CartItemUserTransac
     private final DocumentTypeRepository documentTypeRepository;
     private final UserRepository userRepository;
 
-    @Override
-    @Transactional(readOnly = true)
-    public boolean existsUserRoleById(Integer userRoleId) {
-        log.debug("Verificando existencia de UserRole con ID: {}", userRoleId);
-        return userRoleRepository.existsById(userRoleId);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Optional<UserRole> findUserRoleById(Integer userRoleId) {
-        log.debug("Buscando UserRole con ID: {}", userRoleId);
-        return userRoleRepository.findById(userRoleId);
-    }
 
     @Override
     @Transactional(readOnly = true)
@@ -57,11 +44,5 @@ public class CartItemUserTransactionalServiceImpl implements CartItemUserTransac
         return userRepository.findByDocumentType_DocumentoIdAndNumeroDeDoc(documentoId, numeroDeDoc);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public Optional<User> findUserByEmail(String email) {
-        log.debug("Buscando usuario con email: {}", email);
-        return userRepository.findByCredenciales_Correo(email);
-    }
 }
 

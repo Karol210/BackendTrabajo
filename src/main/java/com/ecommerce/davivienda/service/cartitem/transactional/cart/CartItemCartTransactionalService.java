@@ -24,15 +24,6 @@ public interface CartItemCartTransactionalService {
     Cart findOrCreateCart(Integer userRoleId);
 
     /**
-     * Busca un carrito por ID validando que pertenece al usuario.
-     *
-     * @param cartId ID del carrito
-     * @param userRoleId ID del rol de usuario propietario
-     * @return Optional con el carrito si existe y pertenece al usuario
-     */
-    Optional<Cart> findCartByIdAndUser(Integer cartId, Integer userRoleId);
-
-    /**
      * Busca un CartItem por carrito y producto.
      *
      * @param cartId ID del carrito
@@ -40,24 +31,6 @@ public interface CartItemCartTransactionalService {
      * @return Optional con el CartItem si existe
      */
     Optional<CartItem> findCartItemByCartAndProduct(Integer cartId, Integer productId);
-
-    /**
-     * Busca un CartItem por ID o lanza excepción.
-     *
-     * @param itemId ID del item
-     * @return CartItem encontrado
-     * @throws com.ecommerce.davivienda.exception.CartException si el item no existe
-     */
-    CartItem findCartItemById(Integer itemId);
-
-    /**
-     * Verifica si existe un CartItem para el carrito y producto.
-     *
-     * @param cartId ID del carrito
-     * @param productId ID del producto
-     * @return true si existe, false en caso contrario
-     */
-    boolean existsCartItemByCartAndProduct(Integer cartId, Integer productId);
 
     /**
      * Obtiene todos los items de un carrito.
@@ -81,23 +54,6 @@ public interface CartItemCartTransactionalService {
      * @param cartItem Item a eliminar
      */
     void deleteCartItem(CartItem cartItem);
-
-    /**
-     * Elimina todos los items de un carrito.
-     *
-     * @param cartId ID del carrito
-     */
-    void deleteCartItemsByCartId(Integer cartId);
-
-    /**
-     * Busca un CartItem por producto validando ownership del usuario.
-     * Valida que el producto pertenece al carrito del usuario autenticado.
-     *
-     * @param productId ID del producto
-     * @param userRoleId ID del usuario_rol propietario
-     * @return Optional con el CartItem si existe y pertenece al usuario
-     */
-    Optional<CartItem> findCartItemByProductAndUser(Integer productId, Integer userRoleId);
 
     /**
      * Busca un CartItem por ID validando ownership del usuario.

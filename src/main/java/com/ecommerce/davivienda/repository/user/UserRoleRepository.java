@@ -25,22 +25,5 @@ public interface UserRoleRepository extends JpaRepository<UserRole, Integer> {
      */
     List<UserRole> findByUsuarioId(Integer usuarioId);
 
-    /**
-     * Busca una relación específica usuario-rol.
-     *
-     * @param usuarioId ID del usuario
-     * @param rolId ID del rol
-     * @return Optional con la relación encontrada, o vacío si no existe
-     */
-    Optional<UserRole> findByUsuarioIdAndRole_RolId(Integer usuarioId, Integer rolId);
-
-    /**
-     * Verifica si existe una relación usuario-rol específica.
-     *
-     * @param usuarioId ID del usuario
-     * @param rolId ID del rol
-     * @return true si existe la relación, false en caso contrario
-     */
-    boolean existsByUsuarioIdAndRole_RolId(Integer usuarioId, Integer rolId);
 }
 
