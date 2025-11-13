@@ -33,20 +33,6 @@ public class UserDocumentTransactionalServiceImpl implements UserDocumentTransac
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<DocumentType> findDocumentTypeByNombre(String nombre) {
-        log.debug("Buscando tipo de documento por nombre: {}", nombre);
-        return documentTypeRepository.findByNombre(nombre);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Optional<DocumentType> findDocumentTypeByCodigo(String codigo) {
-        log.debug("Buscando tipo de documento por código: {}", codigo);
-        return documentTypeRepository.findByCodigo(codigo);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public Optional<DocumentType> findDocumentTypeByNameOrCode(String documentType) {
         log.debug("Buscando tipo de documento por nombre o código: {}", documentType);
         

@@ -23,12 +23,5 @@ public interface RoleRepository extends JpaRepository<Role, Integer> {
      */
     Optional<Role> findByNombreRol(String nombreRol);
 
-    /**
-     * Verifica si existe un rol con el nombre especificado.
-     *
-     * @param nombreRol Nombre del rol a verificar
-     * @return true si existe el rol, false en caso contrario
-     */
-    boolean existsByNombreRol(String nombreRol);
 }
 

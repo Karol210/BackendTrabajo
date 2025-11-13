@@ -22,22 +22,6 @@ public interface UserDocumentTransactionalService {
     Optional<DocumentType> findDocumentTypeById(Integer documentTypeId);
 
     /**
-     * Busca un tipo de documento por nombre.
-     *
-     * @param nombre Nombre del tipo de documento
-     * @return Optional con el DocumentType si existe
-     */
-    Optional<DocumentType> findDocumentTypeByNombre(String nombre);
-
-    /**
-     * Busca un tipo de documento por código.
-     *
-     * @param codigo Código del tipo de documento (ej: "CC", "PA")
-     * @return Optional con el DocumentType si existe
-     */
-    Optional<DocumentType> findDocumentTypeByCodigo(String codigo);
-
-    /**
      * Busca un tipo de documento por nombre o código.
      * Intenta primero por código (más rápido), luego por nombre.
      *

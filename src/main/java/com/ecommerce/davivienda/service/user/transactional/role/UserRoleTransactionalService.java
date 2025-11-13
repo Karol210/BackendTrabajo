@@ -40,13 +40,6 @@ public interface UserRoleTransactionalService {
     List<UserRole> saveAllUserRoles(List<UserRole> userRoles);
 
     /**
-     * Elimina todos los UserRole de un usuario.
-     *
-     * @param userRoles Lista de UserRole a eliminar
-     */
-    void deleteAllUserRoles(List<UserRole> userRoles);
-
-    /**
      * Elimina todos los UserRole de un usuario por su userId.
      * Este método elimina TODOS los roles del usuario de la BD.
      *
@@ -54,13 +47,5 @@ public interface UserRoleTransactionalService {
      */
     void deleteAllUserRolesByUserId(Integer userId);
 
-    /**
-     * Busca todos los UserRole de un usuario por su userId.
-     * Útil para recargar los roles después de modificaciones en BD.
-     *
-     * @param userId ID del usuario
-     * @return Lista de UserRole del usuario
-     */
-    List<UserRole> findUserRolesByUserId(Integer userId);
 }
 

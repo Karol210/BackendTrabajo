@@ -51,24 +51,10 @@ public class UserRoleTransactionalServiceImpl implements UserRoleTransactionalSe
 
     @Override
     @Transactional
-    public void deleteAllUserRoles(List<UserRole> userRoles) {
-        log.debug("Eliminando {} UserRoles", userRoles.size());
-        userRoleRepository.deleteAll(userRoles);
-    }
-
-    @Override
-    @Transactional
     public void deleteAllUserRolesByUserId(Integer userId) {
         log.debug("Eliminando todos los UserRoles del usuario: {}", userId);
         userRoleRepository.deleteByUsuarioId(userId);
         log.info("Todos los roles del usuario {} eliminados exitosamente", userId);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<UserRole> findUserRolesByUserId(Integer userId) {
-        log.debug("Recargando UserRoles del usuario: {}", userId);
-        return userRoleRepository.findByUsuarioId(userId);
     }
 }
 

@@ -31,12 +31,5 @@ public interface DocumentTypeRepository extends JpaRepository<DocumentType, Inte
      */
     Optional<DocumentType> findByNombre(String nombre);
 
-    /**
-     * Verifica si existe un tipo de documento con el código especificado.
-     *
-     * @param codigo Código a verificar
-     * @return true si existe el tipo de documento, false en caso contrario
-     */
-    boolean existsByCodigo(String codigo);
 }
 
