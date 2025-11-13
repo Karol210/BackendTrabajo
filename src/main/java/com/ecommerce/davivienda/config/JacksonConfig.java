@@ -27,7 +27,6 @@ public class JacksonConfig {
     public ObjectMapper objectMapper(Jackson2ObjectMapperBuilder builder) {
         ObjectMapper objectMapper = builder.build();
         
-        // Registrar módulo para Java 8 Date/Time API
         objectMapper.registerModule(new JavaTimeModule());
         
         // Deshabilitar serialización de fechas como timestamps
