@@ -40,15 +40,18 @@ public class ExceptionHandlerController {
      * @return Response con error de usuario
      */
     @ExceptionHandler({UserException.class})
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Response<Object> handleUserException(UserException e, HttpServletRequest request) {
         log.error("UserException: URL={} | ErrorCode={} | Message={}", 
                 request.getRequestURI(), e.getErrorCode(), e.getMessage());
 
+        // Usar 404 para errores de "no encontrado"
+        HttpStatus status = Constants.CODE_USER_NOT_FOUND.equals(e.getErrorCode())
+                ? HttpStatus.NOT_FOUND
+                : HttpStatus.BAD_REQUEST;
 
         return Response.builder()
                 .failure(true)
-                .code(HttpStatus.BAD_REQUEST.value())
+                .code(status.value())
                 .errorCode(e.getErrorCode())
                 .message(e.getMessage())
                 .timestamp(String.valueOf(System.currentTimeMillis()))
@@ -63,14 +66,18 @@ public class ExceptionHandlerController {
      * @return Response con error de producto
      */
     @ExceptionHandler({ProductException.class})
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Response<Object> handleProductException(ProductException e, HttpServletRequest request) {
         log.error("ProductException: URL={} | ErrorCode={} | Message={}", 
                 request.getRequestURI(), e.getErrorCode(), e.getMessage());
 
+        // Usar 404 para errores de "no encontrado"
+        HttpStatus status = Constants.CODE_PRODUCT_NOT_FOUND.equals(e.getErrorCode())
+                ? HttpStatus.NOT_FOUND
+                : HttpStatus.BAD_REQUEST;
+
         return Response.builder()
                 .failure(true)
-                .code(HttpStatus.BAD_REQUEST.value())
+                .code(status.value())
                 .errorCode(e.getErrorCode())
                 .message(e.getMessage())
                 .timestamp(String.valueOf(System.currentTimeMillis()))
@@ -85,14 +92,20 @@ public class ExceptionHandlerController {
      * @return Response con error de carrito
      */
     @ExceptionHandler({CartException.class})
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Response<Object> handleCartException(CartException e, HttpServletRequest request) {
         log.error("CartException: URL={} | ErrorCode={} | Message={}", 
                 request.getRequestURI(), e.getErrorCode(), e.getMessage());
 
+        // Usar 404 para errores de "no encontrado"
+        HttpStatus status = (Constants.CODE_CART_NOT_FOUND.equals(e.getErrorCode())
+                || Constants.CODE_CART_ITEM_NOT_FOUND.equals(e.getErrorCode())
+                || Constants.CODE_USER_NOT_FOUND_BY_DOCUMENT.equals(e.getErrorCode()))
+                ? HttpStatus.NOT_FOUND
+                : HttpStatus.BAD_REQUEST;
+
         return Response.builder()
                 .failure(true)
-                .code(HttpStatus.BAD_REQUEST.value())
+                .code(status.value())
                 .errorCode(e.getErrorCode())
                 .message(e.getMessage())
                 .timestamp(String.valueOf(System.currentTimeMillis()))
