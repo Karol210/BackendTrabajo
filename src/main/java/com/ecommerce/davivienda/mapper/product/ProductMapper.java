@@ -1,14 +1,15 @@
 package com.ecommerce.davivienda.mapper.product;
 
-import com.ecommerce.davivienda.dto.product.ProductRequestDto;
-import com.ecommerce.davivienda.dto.product.ProductResponseDto;
 import com.ecommerce.davivienda.entity.product.Product;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
+import com.ecommerce.davivienda.models.product.ProductRequest;
+import com.ecommerce.davivienda.models.product.ProductResponse;
+import com.ecommerce.davivienda.models.product.ProductUpdateRequest;
+import org.mapstruct.*;
+
+import static org.mapstruct.NullValuePropertyMappingStrategy.IGNORE;
 
 /**
- * Mapper para conversiones entre Product y DTOs.
+ * Mapper para conversiones entre Product y models.
  * MapStruct genera la implementación automáticamente en tiempo de compilación.
  * 
  * @author Team Ecommerce Davivienda
@@ -18,10 +19,10 @@ import org.mapstruct.MappingTarget;
 public interface ProductMapper {
 
     /**
-     * Convierte ProductRequestDto a entidad Product.
+     * Convierte ProductRequest a entidad Product.
      * Ignora campos que se asignan después (ID, fechas, categoría).
      *
-     * @param requestDto DTO con datos del producto
+     * @param request Request con datos del producto
      * @return Entidad Product
      */
     @Mapping(target = "productoId", ignore = true)
@@ -33,14 +34,14 @@ public interface ProductMapper {
     @Mapping(target = "estadoProductoId", source = "estadoProductoId")
     @Mapping(target = "categoria", ignore = true)
     @Mapping(target = "creationDate", ignore = true)
-    Product toEntity(ProductRequestDto requestDto);
+    Product toEntity(ProductRequest request);
 
     /**
-     * Convierte entidad Product a ProductResponseDto.
+     * Convierte entidad Product a ProductResponse.
      * Mapea campos anidados de la categoría y calcula precio con IVA.
      *
      * @param product Entidad Product
-     * @return ProductResponseDto con datos del producto
+     * @return ProductResponse con datos del producto
      */
     @Mapping(target = "id", source = "productoId")
     @Mapping(target = "name", source = "nombre")
@@ -55,24 +56,25 @@ public interface ProductMapper {
     @Mapping(target = "categoryId", source = "categoria.categoriaId")
     @Mapping(target = "categoryName", source = "categoria.nombre")
     @Mapping(target = "createdAt", source = "creationDate")
-    ProductResponseDto toResponseDto(Product product);
+    ProductResponse toResponseDto(Product product);
 
     /**
-     * Actualiza campos de Product desde ProductRequestDto.
+     * Actualiza campos de Product desde ProductUpdateRequest.
+     * Solo actualiza campos no nulos (actualización parcial).
      * Ignora ID, fechas y categoría (se actualizan por separado).
      *
-     * @param requestDto DTO con datos actualizados
+     * @param request Request con datos actualizados
      * @param product Entidad Product a actualizar
      */
     @Mapping(target = "productoId", ignore = true)
-    @Mapping(target = "nombre", source = "name")
-    @Mapping(target = "descripcion", source = "description")
-    @Mapping(target = "valorUnitario", source = "unitValue")
-    @Mapping(target = "iva", source = "iva")
-    @Mapping(target = "imagen", source = "imageUrl")
-    @Mapping(target = "estadoProductoId", source = "estadoProductoId")
+    @Mapping(target = "nombre", source = "name", nullValuePropertyMappingStrategy = IGNORE)
+    @Mapping(target = "descripcion", source = "description", nullValuePropertyMappingStrategy = IGNORE)
+    @Mapping(target = "valorUnitario", source = "unitValue", nullValuePropertyMappingStrategy = IGNORE)
+    @Mapping(target = "iva", source = "iva", nullValuePropertyMappingStrategy = IGNORE)
+    @Mapping(target = "imagen", source = "imageUrl", nullValuePropertyMappingStrategy = IGNORE)
+    @Mapping(target = "estadoProductoId", source = "estadoProductoId", nullValuePropertyMappingStrategy = IGNORE)
     @Mapping(target = "categoria", ignore = true)
     @Mapping(target = "creationDate", ignore = true)
-    void updateEntityFromDto(ProductRequestDto requestDto, @MappingTarget Product product);
+    void updateEntityFromDto(ProductUpdateRequest request, @MappingTarget Product product);
 }
 

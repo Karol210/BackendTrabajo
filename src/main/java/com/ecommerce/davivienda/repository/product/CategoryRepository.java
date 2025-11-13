@@ -23,5 +23,13 @@ public interface CategoryRepository extends JpaRepository<Category, Integer> {
      */
     Optional<Category> findByNombre(String nombre);
 
+    /**
+     * Busca una categoría por su nombre ignorando mayúsculas/minúsculas.
+     *
+     * @param nombre Nombre de la categoría (case insensitive)
+     * @return Optional con la categoría si existe
+     */
+    Optional<Category> findByNombreIgnoreCase(String nombre);
+
 }
 

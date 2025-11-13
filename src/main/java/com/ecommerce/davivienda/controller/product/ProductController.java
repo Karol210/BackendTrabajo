@@ -1,8 +1,12 @@
 package com.ecommerce.davivienda.controller.product;
 
 import com.ecommerce.davivienda.constants.Constants;
-import com.ecommerce.davivienda.dto.product.*;
+import com.ecommerce.davivienda.dto.product.PagedProductResponseDto;
+import com.ecommerce.davivienda.dto.product.ProductFilterDto;
 import com.ecommerce.davivienda.models.Response;
+import com.ecommerce.davivienda.models.product.ProductRequest;
+import com.ecommerce.davivienda.models.product.ProductResponse;
+import com.ecommerce.davivienda.models.product.ProductUpdateRequest;
 import com.ecommerce.davivienda.service.product.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -35,24 +39,23 @@ public class ProductController {
      * Crea un nuevo producto en el catálogo.
      * Requiere rol ADMIN.
      *
-     * @param requestDto Datos del producto a crear
-     * @return Response con el producto creado
+     * @param request Datos del producto a crear
+     * @return Response con mensaje de éxito
      */
     @PostMapping("/create")
     @PreAuthorize("hasAuthority('Administrador')")
-    public ResponseEntity<Response<ProductResponseDto>> createProduct(
-            @Valid @RequestBody ProductRequestDto requestDto) {
-        log.info("Request POST /api/v1/products/create - Crear producto: {}", requestDto.getName());
+    public ResponseEntity<Response<String>> createProduct(
+            @Valid @RequestBody ProductRequest request) {
+        log.info("Request POST /api/v1/products/create - Crear producto: {}", request.getName());
 
-        ProductResponseDto product = productService.createProduct(requestDto);
+        productService.createProduct(request);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(Response.<ProductResponseDto>builder()
+                .body(Response.<String>builder()
                         .failure(false)
                         .code(HttpStatus.CREATED.value())
                         .message(Constants.SUCCESS_PRODUCT_CREATED)
-                        .body(product)
                         .timestamp(String.valueOf(System.currentTimeMillis()))
                         .build());
     }
@@ -64,12 +67,12 @@ public class ProductController {
      * @return Response con el producto encontrado
      */
     @GetMapping("/get-by-id/{id}")
-    public ResponseEntity<Response<ProductResponseDto>> getProductById(@PathVariable Integer id) {
+    public ResponseEntity<Response<ProductResponse>> getProductById(@PathVariable Integer id) {
         log.info("Request GET /api/v1/products/get-by-id/{} - Obtener producto", id);
 
-        ProductResponseDto product = productService.getProductById(id);
+        ProductResponse product = productService.getProductById(id);
 
-        return ResponseEntity.ok(Response.<ProductResponseDto>builder()
+        return ResponseEntity.ok(Response.<ProductResponse>builder()
                 .failure(false)
                 .code(HttpStatus.OK.value())
                 .message(Constants.SUCCESS_PRODUCT_FOUND)
@@ -84,12 +87,12 @@ public class ProductController {
      * @return Response con la lista de productos
      */
     @GetMapping("/list-all")
-    public ResponseEntity<Response<List<ProductResponseDto>>> getAllProducts() {
+    public ResponseEntity<Response<List<ProductResponse>>> getAllProducts() {
         log.info("Request GET /api/v1/products/list-all - Listar todos los productos");
 
-        List<ProductResponseDto> products = productService.getAllProducts();
+        List<ProductResponse> products = productService.getAllProducts();
 
-        return ResponseEntity.ok(Response.<List<ProductResponseDto>>builder()
+        return ResponseEntity.ok(Response.<List<ProductResponse>>builder()
                 .failure(false)
                 .code(HttpStatus.OK.value())
                 .message(Constants.SUCCESS_PRODUCTS_LISTED)
@@ -104,12 +107,12 @@ public class ProductController {
      * @return Response con la lista de productos activos
      */
     @GetMapping("/list-active")
-    public ResponseEntity<Response<List<ProductResponseDto>>> getActiveProducts() {
+    public ResponseEntity<Response<List<ProductResponse>>> getActiveProducts() {
         log.info("Request GET /api/v1/products/list-active - Listar productos activos");
 
-        List<ProductResponseDto> products = productService.getActiveProducts();
+        List<ProductResponse> products = productService.getActiveProducts();
 
-        return ResponseEntity.ok(Response.<List<ProductResponseDto>>builder()
+        return ResponseEntity.ok(Response.<List<ProductResponse>>builder()
                 .failure(false)
                 .code(HttpStatus.OK.value())
                 .message(Constants.SUCCESS_PRODUCTS_LISTED)
@@ -125,13 +128,13 @@ public class ProductController {
      * @return Response con la lista de productos filtrados
      */
     @PostMapping("/search")
-    public ResponseEntity<Response<List<ProductResponseDto>>> searchProducts(
+    public ResponseEntity<Response<List<ProductResponse>>> searchProducts(
             @RequestBody ProductFilterDto filter) {
         log.info("Request POST /api/v1/products/search - Buscar productos con filtros");
 
-        List<ProductResponseDto> products = productService.searchProducts(filter);
+        List<ProductResponse> products = productService.searchProducts(filter);
 
-        return ResponseEntity.ok(Response.<List<ProductResponseDto>>builder()
+        return ResponseEntity.ok(Response.<List<ProductResponse>>builder()
                 .failure(false)
                 .code(HttpStatus.OK.value())
                 .message(Constants.SUCCESS_PRODUCTS_SEARCH)
@@ -169,7 +172,7 @@ public class ProductController {
 
         log.info("GET /api/v1/products/search/paginated - Buscar con filtros y paginación");
 
-        Page<ProductResponseDto> productsPage = productService.searchProductsPaginated(
+        Page<ProductResponse> productsPage = productService.searchProductsPaginated(
                 categoryId, minPrice, maxPrice, active, searchTerm,
                 page, size, sortBy, sortDir);
 
@@ -185,102 +188,31 @@ public class ProductController {
     }
 
     /**
-     * Actualiza un producto existente.
+     * Actualiza un producto existente por cualquier criterio.
      * Requiere rol ADMIN.
+     * Permite actualización parcial o completa de campos.
+     * Solo los campos proporcionados en el request serán actualizados.
      *
      * @param id ID del producto a actualizar
-     * @param requestDto Nuevos datos del producto
-     * @return Response con el producto actualizado
+     * @param request Datos del producto a actualizar (todos los campos opcionales)
+     * @return Response con mensaje de actualización exitosa
      */
     @PutMapping("/update/{id}")
-    @PreAuthorize("hasAuthority('ADMIN')")
-    public ResponseEntity<Response<ProductResponseDto>> updateProduct(
+    @PreAuthorize("hasAuthority('Administrador')")
+    public ResponseEntity<Response<String>> updateProduct(
             @PathVariable Integer id,
-            @Valid @RequestBody ProductRequestDto requestDto) {
+            @Valid @RequestBody ProductUpdateRequest request) {
         log.info("Request PUT /api/v1/products/update/{} - Actualizar producto", id);
 
-        ProductResponseDto product = productService.updateProduct(id, requestDto);
+        productService.updateProduct(id, request);
 
-        return ResponseEntity.ok(Response.<ProductResponseDto>builder()
+        return ResponseEntity.ok(Response.<String>builder()
                 .failure(false)
                 .code(HttpStatus.OK.value())
                 .message(Constants.SUCCESS_PRODUCT_UPDATED)
-                .body(product)
                 .timestamp(String.valueOf(System.currentTimeMillis()))
                 .build());
     }
 
-    /**
-     * Elimina lógicamente un producto (lo marca como inactivo).
-     * Requiere rol ADMIN.
-     *
-     * @param id ID del producto a eliminar
-     * @return Response de confirmación
-     */
-    @DeleteMapping("/delete/{id}")
-    @PreAuthorize("hasAuthority('Administrador')")
-    public ResponseEntity<Response<Void>> deleteProduct(@PathVariable Integer id) {
-        log.info("Request DELETE /api/v1/products/delete/{} - Eliminar producto", id);
-
-        productService.deleteProduct(id);
-
-        return ResponseEntity.ok(Response.<Void>builder()
-                .failure(false)
-                .code(HttpStatus.OK.value())
-                .message(Constants.SUCCESS_PRODUCT_DELETED)
-                .timestamp(String.valueOf(System.currentTimeMillis()))
-                .build());
-    }
-
-    /**
-     * Activa un producto previamente desactivado.
-     * Requiere rol ADMIN.
-     *
-     * @param id ID del producto a activar
-     * @return Response con el producto activado
-     */
-    @PatchMapping("/{id}/activate")
-    @PreAuthorize("hasAuthority('Administrador')")
-    public ResponseEntity<Response<ProductResponseDto>> activateProduct(@PathVariable Integer id) {
-        log.info("Request PATCH /api/v1/products/{}/activate - Activar producto", id);
-
-        ProductResponseDto product = productService.activateProduct(id);
-
-        return ResponseEntity.ok(Response.<ProductResponseDto>builder()
-                .failure(false)
-                .code(HttpStatus.OK.value())
-                .message(Constants.SUCCESS_PRODUCT_ACTIVATED)
-                .body(product)
-                .timestamp(String.valueOf(System.currentTimeMillis()))
-                .build());
-    }
-
-    /**
-     * Agrega inventario a un producto existente.
-     * Suma la cantidad especificada al inventario actual del producto.
-     * Requiere rol ADMIN.
-     *
-     * @param id ID del producto
-     * @param requestDto Cantidad de inventario a agregar
-     * @return Response con el producto actualizado
-     */
-    @PatchMapping("/{id}/inventory/add")
-    @PreAuthorize("hasAuthority('Administrador')")
-    public ResponseEntity<Response<ProductResponseDto>> addInventory(
-            @PathVariable Integer id,
-            @Valid @RequestBody InventoryAddRequestDto requestDto) {
-        log.info("Request PATCH /api/v1/products/{}/inventory/add - Agregar {} unidades de inventario",
-                id, requestDto.getQuantity());
-
-        ProductResponseDto product = productService.addInventory(id, requestDto.getQuantity());
-
-        return ResponseEntity.ok(Response.<ProductResponseDto>builder()
-                .failure(false)
-                .code(HttpStatus.OK.value())
-                .message(Constants.SUCCESS_INVENTORY_ADDED)
-                .body(product)
-                .timestamp(String.valueOf(System.currentTimeMillis()))
-                .build());
-    }
 }
 

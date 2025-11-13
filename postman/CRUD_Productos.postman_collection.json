@@ -1,758 +1,13 @@
 {
 	"info": {
-		"_postman_id": "d8f9e2c1-4b5a-6c7d-8e9f-0a1b2c3d4e5f",
+		"_postman_id": "aa82767d-85ce-407b-8074-cb0295de9717",
 		"name": "CRUD Productos - Ecommerce Davivienda",
-		"description": "Colección completa de endpoints para el CRUD de productos con actualización automática de stock.\n\n**✨ NUEVA FUNCIONALIDAD:**\n- Al crear o actualizar un producto con el campo `inventory`, se actualiza automáticamente la tabla `stock`\n- La tabla `stock` mantiene un registro separado del inventario de cada producto\n- El campo `inventory` es opcional en requests de creación/actualización\n\n**Requisitos:**\n- Autenticación con JWT para endpoints protegidos (rol ADMIN)\n- Variable de entorno `{{base_url}}` configurada (ej: http://localhost:8080)\n- Variable de entorno `{{jwt_token}}` con token de autenticación\n\n**Flujo recomendado:**\n1. Autenticarse con usuario ADMIN\n2. Crear categorías (si no existen)\n3. Crear productos con `inventory` para actualizar stock automáticamente\n4. Probar endpoints de consulta\n5. Probar actualización de productos e inventario\n6. Validar stock con endpoint de validación",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+		"description": "Colección de endpoints para CRUD completo de productos.\n\n**Endpoints disponibles:**\n- Crear producto (requiere rol ADMIN)\n- Actualizar producto (requiere rol ADMIN)\n- Obtener producto por ID (público)\n- Listar todos los productos (público)\n- Listar productos activos (público)\n- Buscar productos con filtros (público)\n- Buscar productos con paginación (público)\n\n**Requisitos:**\n- Autenticación con JWT para endpoints protegidos (rol ADMIN)\n- Variable de entorno `{{base_url}}` configurada (ej: http://localhost:8080)\n- Variable de entorno `{{jwt_token}}` con token de autenticación\n\n**Flujo recomendado:**\n1. Autenticarse con usuario ADMIN\n2. Crear categorías (si no existen)\n3. Crear productos con todos los datos\n4. Actualizar productos existentes (parcial o completo)\n5. Probar endpoints de consulta\n6. Probar búsquedas con filtros y paginación",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "18867414",
+		"_collection_link": "https://ecommers-2960.postman.co/workspace/ecommer~52306ab3-2e24-474b-bbb0-b016a3973e77/collection/18867414-aa82767d-85ce-407b-8074-cb0295de9717?action=share&source=collection_link&creator=18867414"
 	},
 	"item": [
-		{
-			"name": "1. Crear Producto",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Authorization",
-						"value": "Bearer {{jwt_token}}",
-						"type": "text",
-						"description": "Token JWT de usuario con rol ADMIN"
-					},
-					{
-						"key": "Content-Type",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"name\": \"Laptop HP Pavilion 15\",\n    \"description\": \"Laptop HP Pavilion 15 pulgadas, Intel Core i5, 8GB RAM, 256GB SSD\",\n    \"unitValue\": 2500000.00,\n    \"iva\": 19.00,\n    \"imageUrl\": \"https://example.com/images/laptop-hp.jpg\",\n    \"inventory\": 15,\n    \"categoryId\": 1,\n    \"estadoProductoId\": 1\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{base_url}}/api/v1/products/create",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"products",
-						"create"
-					]
-				},
-				"description": "Crea un nuevo producto en el catálogo.\n\n**Requiere:** Rol ADMIN\n\n**✨ ACTUALIZACIÓN AUTOMÁTICA DE STOCK:**\n- Si se incluye el campo `inventory` (ej: 15), se crea automáticamente un registro en la tabla `stock`\n- Si NO se incluye `inventory` o es `null`, NO se crea registro de stock\n- La tabla `stock` mantiene el inventario separado del producto\n\n**Validaciones:**\n- Nombre único (no puede existir otro producto con el mismo nombre)\n- Categoría debe existir y estar activa\n- Todos los campos obligatorios presentes\n- Si se proporciona `inventory`, debe ser ≥ 0"
-			},
-			"response": [
-				{
-					"name": "201 - Producto Creado",
-					"originalRequest": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"name\": \"Laptop HP Pavilion 15\",\n    \"description\": \"Laptop HP Pavilion 15 pulgadas, Intel Core i5, 8GB RAM, 256GB SSD\",\n    \"unitPrice\": 2500000.00,\n    \"price\": 2299000.00,\n    \"inventory\": 15,\n    \"categoryId\": 1,\n    \"active\": true\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{base_url}}/api/v1/products/create",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"products",
-								"create"
-							]
-						}
-					},
-					"status": "Created",
-					"code": 201,
-					"_postman_previewlanguage": "json",
-					"header": [],
-					"cookie": [],
-					"body": "{\n    \"failure\": false,\n    \"code\": 201,\n    \"message\": \"Producto creado exitosamente\",\n    \"body\": {\n        \"id\": 1,\n        \"name\": \"Laptop HP Pavilion 15\",\n        \"description\": \"Laptop HP Pavilion 15 pulgadas, Intel Core i5, 8GB RAM, 256GB SSD\",\n        \"unitValue\": 2500000.00,\n        \"iva\": 19.00,\n        \"totalPrice\": 2975000.00,\n        \"imageUrl\": \"https://example.com/images/laptop-hp.jpg\",\n        \"estadoProductoId\": 1,\n        \"estadoProducto\": \"Activo\",\n        \"inventory\": 15,\n        \"categoryId\": 1,\n        \"categoryName\": \"Electrónica\",\n        \"createdAt\": \"2025-01-10T10:30:00\"\n    },\n    \"timestamp\": \"1704888600000\"\n}"
-				},
-				{
-					"name": "400 - Nombre Duplicado",
-					"originalRequest": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"name\": \"Laptop HP Pavilion 15\",\n    \"description\": \"Otro producto\",\n    \"unitValue\": 2000000.00,\n    \"iva\": 19.00,\n    \"inventory\": 10,\n    \"categoryId\": 1\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{base_url}}/api/v1/products/create",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"products",
-								"create"
-							]
-						}
-					},
-					"status": "Bad Request",
-					"code": 400,
-					"_postman_previewlanguage": "json",
-					"header": [],
-					"cookie": [],
-					"body": "{\n    \"failure\": true,\n    \"code\": 400,\n    \"errorCode\": \"ED-PRO-04\",\n    \"message\": \"[ED-PRO-04] Ya existe un producto con ese nombre\",\n    \"timestamp\": \"1704888600000\"\n}"
-				}
-			]
-		},
-		{
-			"name": "2. Obtener Producto por ID",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{base_url}}/api/v1/products/get-by-id/1",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"products",
-						"get-by-id",
-						"1"
-					]
-				},
-				"description": "Obtiene un producto por su ID.\n\n**Público:** No requiere autenticación"
-			},
-			"response": [
-				{
-					"name": "200 - Producto Encontrado",
-					"originalRequest": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/v1/products/get-by-id/1",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"products",
-								"get-by-id",
-								"1"
-							]
-						}
-					},
-					"status": "OK",
-					"code": 200,
-					"_postman_previewlanguage": "json",
-					"header": [],
-					"cookie": [],
-					"body": "{\n    \"failure\": false,\n    \"code\": 200,\n    \"message\": \"Producto encontrado\",\n    \"body\": {\n        \"id\": 1,\n        \"name\": \"Laptop HP Pavilion 15\",\n        \"description\": \"Laptop HP Pavilion 15 pulgadas, Intel Core i5, 8GB RAM, 256GB SSD\",\n        \"unitValue\": 2500000.00,\n        \"iva\": 19.00,\n        \"totalPrice\": 2975000.00,\n        \"imageUrl\": \"https://example.com/images/laptop-hp.jpg\",\n        \"estadoProductoId\": 1,\n        \"estadoProducto\": \"Activo\",\n        \"inventory\": 15,\n        \"categoryId\": 1,\n        \"categoryName\": \"Electrónica\",\n        \"createdAt\": \"2025-01-10T10:30:00\"\n    },\n    \"timestamp\": \"1704888600000\"\n}"
-				},
-				{
-					"name": "400 - Producto No Encontrado",
-					"originalRequest": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/v1/products/get-by-id/999",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"products",
-								"get-by-id",
-								"999"
-							]
-						}
-					},
-					"status": "Bad Request",
-					"code": 400,
-					"_postman_previewlanguage": "json",
-					"header": [],
-					"cookie": [],
-					"body": "{\n    \"failure\": true,\n    \"code\": 400,\n    \"errorCode\": \"ED-PRO-01\",\n    \"message\": \"[ED-PRO-01] Producto no encontrado\",\n    \"timestamp\": \"1704888600000\"\n}"
-				}
-			]
-		},
-		{
-			"name": "3. Listar Todos los Productos",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{base_url}}/api/v1/products/list-all",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"products",
-						"list-all"
-					]
-				},
-				"description": "Lista todos los productos del catálogo (activos e inactivos).\n\n**Público:** No requiere autenticación"
-			},
-			"response": [
-				{
-					"name": "200 - Productos Listados",
-					"originalRequest": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/v1/products/list-all",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"products",
-								"list-all"
-							]
-						}
-					},
-					"status": "OK",
-					"code": 200,
-					"_postman_previewlanguage": "json",
-					"header": [],
-					"cookie": [],
-					"body": "{\n    \"failure\": false,\n    \"code\": 200,\n    \"message\": \"Productos listados exitosamente\",\n    \"body\": [\n        {\n            \"id\": 1,\n            \"name\": \"Laptop HP Pavilion 15\",\n            \"description\": \"Laptop HP Pavilion 15 pulgadas\",\n            \"unitValue\": 2500000.00,\n            \"iva\": 19.00,\n            \"totalPrice\": 2975000.00,\n            \"imageUrl\": \"https://example.com/images/laptop-hp.jpg\",\n            \"estadoProductoId\": 1,\n            \"estadoProducto\": \"Activo\",\n            \"inventory\": 15,\n            \"categoryId\": 1,\n            \"categoryName\": \"Electrónica\",\n            \"createdAt\": \"2025-01-10T10:30:00\"\n        },\n        {\n            \"id\": 2,\n            \"name\": \"Mouse Logitech MX Master 3\",\n            \"description\": \"Mouse inalámbrico ergonómico\",\n            \"unitValue\": 350000.00,\n            \"iva\": 19.00,\n            \"totalPrice\": 416500.00,\n            \"imageUrl\": \"https://example.com/images/mouse-logitech.jpg\",\n            \"estadoProductoId\": 1,\n            \"estadoProducto\": \"Activo\",\n            \"inventory\": 50,\n            \"categoryId\": 1,\n            \"categoryName\": \"Electrónica\",\n            \"createdAt\": \"2025-01-10T11:00:00\"\n        }\n    ],\n    \"timestamp\": \"1704888600000\"\n}"
-				}
-			]
-		},
-		{
-			"name": "4. Listar Productos Activos",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{base_url}}/api/v1/products/list-active",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"products",
-						"list-active"
-					]
-				},
-				"description": "Lista solo los productos activos del catálogo.\n\n**Público:** No requiere autenticación"
-			},
-			"response": []
-		},
-		{
-			"name": "5. Buscar Productos (con Filtros)",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"categoryId\": 1,\n    \"minPrice\": 100000,\n    \"maxPrice\": 3000000,\n    \"active\": true,\n    \"searchTerm\": \"laptop\"\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{base_url}}/api/v1/products/search",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"products",
-						"search"
-					]
-				},
-				"description": "Busca productos aplicando múltiples filtros.\n\n**Filtros disponibles:**\n- `categoryId`: ID de categoría\n- `minPrice`: Precio mínimo\n- `maxPrice`: Precio máximo\n- `active`: Estado (true/false)\n- `searchTerm`: Búsqueda en nombre o descripción\n\n**Público:** No requiere autenticación"
-			},
-			"response": [
-				{
-					"name": "200 - Búsqueda Completada",
-					"originalRequest": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"categoryId\": 1,\n    \"minPrice\": 100000,\n    \"maxPrice\": 3000000,\n    \"active\": true,\n    \"searchTerm\": \"laptop\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{base_url}}/api/v1/products/search",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"products",
-								"search"
-							]
-						}
-					},
-					"status": "OK",
-					"code": 200,
-					"_postman_previewlanguage": "json",
-					"header": [],
-					"cookie": [],
-					"body": "{\n    \"failure\": false,\n    \"code\": 200,\n    \"message\": \"Búsqueda completada\",\n    \"body\": [\n        {\n            \"id\": 1,\n            \"name\": \"Laptop HP Pavilion 15\",\n            \"description\": \"Laptop HP Pavilion 15 pulgadas\",\n            \"unitValue\": 2500000.00,\n            \"iva\": 19.00,\n            \"totalPrice\": 2975000.00,\n            \"imageUrl\": \"https://example.com/images/laptop-hp.jpg\",\n            \"estadoProductoId\": 1,\n            \"estadoProducto\": \"Activo\",\n            \"inventory\": 15,\n            \"categoryId\": 1,\n            \"categoryName\": \"Electrónica\",\n            \"createdAt\": \"2025-01-10T10:30:00\"\n        }\n    ],\n    \"timestamp\": \"1704888600000\"\n}"
-				}
-			]
-		},
-		{
-			"name": "6. Buscar Productos (Paginado)",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{base_url}}/api/v1/products/search/paginated?categoryId=1&minPrice=50000&maxPrice=5000000&active=true&searchTerm=laptop&page=0&size=10&sortBy=precio&sortDir=asc",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"products",
-						"search",
-						"paginated"
-					],
-					"query": [
-						{
-							"key": "categoryId",
-							"value": "1",
-							"description": "ID de categoría (opcional)"
-						},
-						{
-							"key": "minPrice",
-							"value": "50000",
-							"description": "Precio mínimo (opcional)"
-						},
-						{
-							"key": "maxPrice",
-							"value": "5000000",
-							"description": "Precio máximo (opcional)"
-						},
-						{
-							"key": "active",
-							"value": "true",
-							"description": "Filtrar por estado (opcional)"
-						},
-						{
-							"key": "searchTerm",
-							"value": "laptop",
-							"description": "Buscar en nombre/descripción (opcional)"
-						},
-						{
-							"key": "page",
-							"value": "0",
-							"description": "Número de página (default: 0)"
-						},
-						{
-							"key": "size",
-							"value": "10",
-							"description": "Tamaño de página (default: 10)"
-						},
-						{
-							"key": "sortBy",
-							"value": "precio",
-							"description": "Campo para ordenar (default: productoId)"
-						},
-						{
-							"key": "sortDir",
-							"value": "asc",
-							"description": "Dirección de orden: asc/desc (default: asc)"
-						}
-					]
-				},
-				"description": "Busca productos con filtros y paginación.\n\n**Campos ordenables:**\n- `productoId` (default)\n- `precio`\n- `precioUnitario`\n- `nombre`\n- `descripcion`\n- `activo`\n- `fechaCreacion`\n- `fechaActualizacion`\n\n**Público:** No requiere autenticación"
-			},
-			"response": [
-				{
-					"name": "200 - Búsqueda Paginada",
-					"originalRequest": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/v1/products/search/paginated?page=0&size=10&sortBy=precio&sortDir=asc",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"products",
-								"search",
-								"paginated"
-							],
-							"query": [
-								{
-									"key": "page",
-									"value": "0"
-								},
-								{
-									"key": "size",
-									"value": "10"
-								},
-								{
-									"key": "sortBy",
-									"value": "precio"
-								},
-								{
-									"key": "sortDir",
-									"value": "asc"
-								}
-							]
-						}
-					},
-					"status": "OK",
-					"code": 200,
-					"_postman_previewlanguage": "json",
-					"header": [],
-					"cookie": [],
-					"body": "{\n    \"failure\": false,\n    \"code\": 200,\n    \"message\": \"Búsqueda completada\",\n    \"body\": {\n        \"content\": [\n            {\n                \"id\": 1,\n                \"name\": \"Laptop HP Pavilion 15\",\n                \"unitValue\": 2500000.00,\n                \"iva\": 19.00,\n                \"totalPrice\": 2975000.00,\n                \"imageUrl\": \"https://example.com/images/laptop-hp.jpg\",\n                \"estadoProductoId\": 1,\n                \"estadoProducto\": \"Activo\",\n                \"inventory\": 15,\n                \"categoryId\": 1,\n                \"categoryName\": \"Electrónica\"\n            }\n        ],\n        \"pageNumber\": 0,\n        \"pageSize\": 10,\n        \"totalElements\": 25,\n        \"totalPages\": 3,\n        \"first\": true,\n        \"last\": false,\n        \"hasNext\": true,\n        \"hasPrevious\": false\n    },\n    \"timestamp\": \"1704888600000\"\n}"
-				}
-			]
-		},
-		{
-			"name": "7. Actualizar Producto",
-			"request": {
-				"method": "PUT",
-				"header": [
-					{
-						"key": "Authorization",
-						"value": "Bearer {{jwt_token}}",
-						"type": "text",
-						"description": "Token JWT de usuario con rol ADMIN"
-					},
-					{
-						"key": "Content-Type",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"name\": \"Laptop HP Pavilion 15 - Actualizada\",\n    \"description\": \"Laptop HP Pavilion 15 pulgadas, Intel Core i7, 16GB RAM, 512GB SSD - MEJORADA\",\n    \"unitValue\": 3000000.00,\n    \"iva\": 19.00,\n    \"imageUrl\": \"https://example.com/images/laptop-hp-updated.jpg\",\n    \"inventory\": 20,\n    \"categoryId\": 1,\n    \"estadoProductoId\": 1\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{base_url}}/api/v1/products/update/1",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"products",
-						"update",
-						"1"
-					]
-				},
-				"description": "Actualiza todos los campos de un producto existente.\n\n**Requiere:** Rol ADMIN\n\n**✨ ACTUALIZACIÓN AUTOMÁTICA DE STOCK:**\n- Si se incluye el campo `inventory` (ej: 20), se actualiza la cantidad en la tabla `stock`\n- Si NO se incluye `inventory` o es `null`, el stock NO se modifica\n- Si no existe registro de stock, se crea automáticamente\n- La cantidad especificada REEMPLAZA el stock actual (no se suma)\n\n**Validaciones:**\n- Producto debe existir\n- Nombre único (no puede coincidir con otro producto)\n- Categoría debe existir y estar activa\n- Si se proporciona `inventory`, debe ser ≥ 0"
-			},
-			"response": [
-				{
-					"name": "200 - Producto Actualizado",
-					"originalRequest": {
-						"method": "PUT",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"name\": \"Laptop HP Pavilion 15 - Actualizada\",\n    \"description\": \"Laptop HP Pavilion 15 pulgadas, Intel Core i7, 16GB RAM, 512GB SSD\",\n    \"unitValue\": 3000000.00,\n    \"iva\": 19.00,\n    \"imageUrl\": \"https://example.com/images/laptop-hp-updated.jpg\",\n    \"inventory\": 20,\n    \"categoryId\": 1,\n    \"estadoProductoId\": 1\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{base_url}}/api/v1/products/update/1",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"products",
-								"update",
-								"1"
-							]
-						}
-					},
-					"status": "OK",
-					"code": 200,
-					"_postman_previewlanguage": "json",
-					"header": [],
-					"cookie": [],
-					"body": "{\n    \"failure\": false,\n    \"code\": 200,\n    \"message\": \"Producto actualizado exitosamente\",\n    \"body\": {\n        \"id\": 1,\n        \"name\": \"Laptop HP Pavilion 15 - Actualizada\",\n        \"description\": \"Laptop HP Pavilion 15 pulgadas, Intel Core i7, 16GB RAM, 512GB SSD\",\n        \"unitValue\": 3000000.00,\n        \"iva\": 19.00,\n        \"totalPrice\": 3570000.00,\n        \"imageUrl\": \"https://example.com/images/laptop-hp-updated.jpg\",\n        \"estadoProductoId\": 1,\n        \"estadoProducto\": \"Activo\",\n        \"inventory\": 20,\n        \"categoryId\": 1,\n        \"categoryName\": \"Electrónica\",\n        \"createdAt\": \"2025-01-10T10:30:00\"\n    },\n    \"timestamp\": \"1704888600000\"\n}"
-				}
-			]
-		},
-		{
-			"name": "8. Eliminar Producto (Soft Delete)",
-			"request": {
-				"method": "DELETE",
-				"header": [
-					{
-						"key": "Authorization",
-						"value": "Bearer {{jwt_token}}",
-						"type": "text",
-						"description": "Token JWT de usuario con rol ADMIN"
-					}
-				],
-				"url": {
-					"raw": "{{base_url}}/api/v1/products/delete/1",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"products",
-						"delete",
-						"1"
-					]
-				},
-				"description": "Elimina lógicamente un producto (lo marca como inactivo).\n\n**Requiere:** Rol ADMIN\n\n**Nota:** El producto NO se elimina de la base de datos, solo se marca como inactivo (active = false). Puede ser reactivado posteriormente."
-			},
-			"response": [
-				{
-					"name": "200 - Producto Eliminado",
-					"originalRequest": {
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/v1/products/delete/1",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"products",
-								"delete",
-								"1"
-							]
-						}
-					},
-					"status": "OK",
-					"code": 200,
-					"_postman_previewlanguage": "json",
-					"header": [],
-					"cookie": [],
-					"body": "{\n    \"failure\": false,\n    \"code\": 200,\n    \"message\": \"Producto eliminado exitosamente\",\n    \"timestamp\": \"1704888600000\"\n}"
-				}
-			]
-		},
-		{
-			"name": "9. Activar Producto",
-			"request": {
-				"method": "PATCH",
-				"header": [
-					{
-						"key": "Authorization",
-						"value": "Bearer {{jwt_token}}",
-						"type": "text",
-						"description": "Token JWT de usuario con rol ADMIN"
-					}
-				],
-				"url": {
-					"raw": "{{base_url}}/api/v1/products/1/activate",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"products",
-						"1",
-						"activate"
-					]
-				},
-				"description": "Activa un producto previamente desactivado.\n\n**Requiere:** Rol ADMIN\n\n**Uso:** Reactiva productos que fueron eliminados lógicamente (soft delete)."
-			},
-			"response": [
-				{
-					"name": "200 - Producto Activado",
-					"originalRequest": {
-						"method": "PATCH",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/v1/products/1/activate",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"products",
-								"1",
-								"activate"
-							]
-						}
-					},
-					"status": "OK",
-					"code": 200,
-					"_postman_previewlanguage": "json",
-					"header": [],
-					"cookie": [],
-					"body": "{\n    \"failure\": false,\n    \"code\": 200,\n    \"message\": \"Producto activado exitosamente\",\n    \"body\": {\n        \"id\": 1,\n        \"name\": \"Laptop HP Pavilion 15\",\n        \"description\": \"Laptop HP Pavilion 15 pulgadas\",\n        \"unitValue\": 2500000.00,\n        \"iva\": 19.00,\n        \"totalPrice\": 2975000.00,\n        \"imageUrl\": \"https://example.com/images/laptop-hp.jpg\",\n        \"estadoProductoId\": 1,\n        \"estadoProducto\": \"Activo\",\n        \"inventory\": 15,\n        \"categoryId\": 1,\n        \"categoryName\": \"Electrónica\",\n        \"createdAt\": \"2025-01-10T10:30:00\"\n    },\n    \"timestamp\": \"1704888600000\"\n}"
-				}
-			]
-		},
-		{
-			"name": "10. Agregar Inventario",
-			"request": {
-				"method": "PATCH",
-				"header": [
-					{
-						"key": "Authorization",
-						"value": "Bearer {{jwt_token}}",
-						"type": "text",
-						"description": "Token JWT de usuario con rol ADMIN"
-					},
-					{
-						"key": "Content-Type",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"quantity\": 50\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{base_url}}/api/v1/products/1/inventory/add",
-					"host": [
-						"{{base_url}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"products",
-						"1",
-						"inventory",
-						"add"
-					]
-				},
-				"description": "Agrega inventario a un producto existente (operación INCREMENTAL).\n\n**Requiere:** Rol ADMIN\n\n**✨ DIFERENCIA CON ACTUALIZACIÓN:**\n- Este endpoint SUMA la cantidad al stock actual\n- El endpoint de actualización REEMPLAZA el stock\n- Si no existe registro de stock, se crea con la cantidad proporcionada\n\n**Validación:**\n- Cantidad debe ser mayor a 0\n- La cantidad se SUMA al inventario actual en la tabla `stock`\n\n**Ejemplo:** \n- Stock actual: 20 unidades\n- Agregas: 50 unidades\n- Nuevo stock: 70 unidades (20 + 50)"
-			},
-			"response": [
-				{
-					"name": "200 - Inventario Agregado",
-					"originalRequest": {
-						"method": "PATCH",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"quantity\": 50\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{base_url}}/api/v1/products/1/inventory/add",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"products",
-								"1",
-								"inventory",
-								"add"
-							]
-						}
-					},
-					"status": "OK",
-					"code": 200,
-					"_postman_previewlanguage": "json",
-					"header": [],
-					"cookie": [],
-					"body": "{\n    \"failure\": false,\n    \"code\": 200,\n    \"message\": \"Inventario agregado exitosamente\",\n    \"body\": {\n        \"id\": 1,\n        \"name\": \"Laptop HP Pavilion 15\",\n        \"description\": \"Laptop HP Pavilion 15 pulgadas\",\n        \"unitValue\": 2500000.00,\n        \"iva\": 19.00,\n        \"totalPrice\": 2975000.00,\n        \"imageUrl\": \"https://example.com/images/laptop-hp.jpg\",\n        \"estadoProductoId\": 1,\n        \"estadoProducto\": \"Activo\",\n        \"inventory\": 15,\n        \"categoryId\": 1,\n        \"categoryName\": \"Electrónica\",\n        \"createdAt\": \"2025-01-10T10:30:00\"\n    },\n    \"timestamp\": \"1704888600000\"\n}"
-				},
-				{
-					"name": "400 - Cantidad Inválida",
-					"originalRequest": {
-						"method": "PATCH",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"quantity\": 0\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{base_url}}/api/v1/products/1/inventory/add",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"products",
-								"1",
-								"inventory",
-								"add"
-							]
-						}
-					},
-					"status": "Bad Request",
-					"code": 400,
-					"_postman_previewlanguage": "json",
-					"header": [],
-					"cookie": [],
-					"body": "{\n    \"failure\": true,\n    \"code\": 400,\n    \"errorCode\": \"ED-PRO-08\",\n    \"message\": \"[ED-PRO-08] La cantidad de inventario debe ser mayor a 0\",\n    \"timestamp\": \"1704888600000\"\n}"
-				}
-			]
-		},
 		{
 			"name": "Ejemplos Adicionales",
 			"item": [
@@ -793,7 +48,7 @@
 								"create"
 							]
 						},
-						"description": "Crea un producto SIN especificar el campo `inventory`.\n\n**Resultado:** Se crea el producto pero NO se crea registro en la tabla `stock`.\n\n**Uso:** Para productos que aún no tienen inventario disponible o se manejarán posteriormente."
+						"description": "Crea un producto SIN especificar el campo `inventory`.\n\n**Resultado:** El campo inventory será null en la respuesta."
 					},
 					"response": []
 				},
@@ -833,7 +88,8 @@
 								"products",
 								"create"
 							]
-						}
+						},
+						"description": "Crea un producto con inventario inicial de 50 unidades."
 					},
 					"response": []
 				},
@@ -873,49 +129,8 @@
 								"products",
 								"create"
 							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Actualizar Producto SIN Modificar Stock",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{jwt_token}}",
-								"type": "text"
-							},
-							{
-								"key": "Content-Type",
-								"value": "application/json",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"name\": \"Laptop HP Pavilion 15 - Oferta Especial\",\n    \"description\": \"Laptop HP Pavilion 15 pulgadas - PRECIO ESPECIAL\",\n    \"unitValue\": 2300000.00,\n    \"iva\": 19.00,\n    \"imageUrl\": \"https://example.com/images/laptop-hp-oferta.jpg\",\n    \"categoryId\": 1,\n    \"estadoProductoId\": 8\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
 						},
-						"url": {
-							"raw": "{{base_url}}/api/v1/products/update/1",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"products",
-								"update",
-								"1"
-							]
-						},
-						"description": "Actualiza un producto SIN incluir el campo `inventory`.\n\n**Resultado:** Se actualiza el producto pero el stock NO se modifica.\n\n**Uso:** Para cambiar información del producto sin afectar el inventario actual."
+						"description": "Crea un teclado mecánico con inventario inicial de 30 unidades."
 					},
 					"response": []
 				},
@@ -951,7 +166,7 @@
 								"search"
 							]
 						},
-						"description": "Busca productos con precio máximo de $500,000 que estén activos"
+						"description": "Busca productos con precio máximo de $500,000 que estén activos."
 					},
 					"response": []
 				},
@@ -961,7 +176,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/api/v1/products/search/paginated?categoryId=1&active=true&page=0&size=5&sortBy=precio&sortDir=desc",
+							"raw": "{{base_url}}/api/v1/products/search/paginated?categoryId=1&active=true&page=0&size=5&sortBy=valorUnitario&sortDir=desc",
 							"host": [
 								"{{base_url}}"
 							],
@@ -991,7 +206,7 @@
 								},
 								{
 									"key": "sortBy",
-									"value": "precio"
+									"value": "valorUnitario"
 								},
 								{
 									"key": "sortDir",
@@ -999,12 +214,625 @@
 								}
 							]
 						},
-						"description": "Busca productos de categoría Electrónica, activos, ordenados por precio descendente"
+						"description": "Busca productos de categoría Electrónica, activos, ordenados por precio descendente."
+					},
+					"response": []
+				},
+				{
+					"name": "Buscar con Término de Búsqueda",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/products/search/paginated?searchTerm=laptop&page=0&size=10&sortBy=nombre&sortDir=asc",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"products",
+								"search",
+								"paginated"
+							],
+							"query": [
+								{
+									"key": "searchTerm",
+									"value": "laptop"
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								},
+								{
+									"key": "sortBy",
+									"value": "nombre"
+								},
+								{
+									"key": "sortDir",
+									"value": "asc"
+								}
+							]
+						},
+						"description": "Busca productos que contengan 'laptop' en el nombre o descripción, ordenados alfabéticamente."
 					},
 					"response": []
 				}
 			],
-			"description": "Ejemplos adicionales de uso de los endpoints con diferentes casos de uso.\n\n**Incluye:**\n- Crear producto SIN inventario (no actualiza tabla `stock`)\n- Crear productos CON inventario (actualiza tabla `stock` automáticamente)\n- Actualizar producto SIN modificar stock (omitiendo campo `inventory`)\n- Búsquedas con filtros diversos\n\n**Nota:** Todos los ejemplos que incluyen `inventory` actualizan automáticamente la tabla `stock`."
+			"description": "Ejemplos adicionales de uso de los endpoints con diferentes casos de uso.\n\n**Incluye:**\n- Crear producto SIN inventario (inventory = null)\n- Crear productos CON inventario\n- Búsquedas con filtros diversos\n- Búsquedas paginadas con diferentes ordenamientos"
+		},
+		{
+			"name": "1. Crear Producto",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{jwt_token}}",
+						"description": "Token JWT de usuario con rol ADMIN",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"Laptop HP Pavilion 16\",\n    \"description\": \"Laptop HP Pavilion 15 pulgadas, Intel Core i5, 8GB RAM, 256GB SSD\",\n    \"unitValue\": 2500000.00,\n    \"iva\": 19.00,\n    \"imageUrl\": \"https://example.com/images/laptop-hp.jpg\",\n    \"inventory\": 15,\n    \"categoryName\": \"Electrónica\",\n    \"estadoProductoId\": 1\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/api/v1/products/create",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"products",
+						"create"
+					]
+				},
+				"description": "Crea un nuevo producto en el catálogo.\n\n**Requiere:** Rol ADMIN\n\n**Campos del Request (ProductRequest):**\n- `name` (obligatorio): Nombre del producto (3-200 caracteres)\n- `description` (opcional): Descripción (máx. 1000 caracteres)\n- `unitValue` (obligatorio): Valor unitario sin IVA (decimal, máx. 8 enteros y 2 decimales)\n- `iva` (opcional): Porcentaje de IVA (0-100%, default: 0)\n- `imageUrl` (opcional): URL de la imagen (máx. 500 caracteres)\n- `inventory` (opcional): Cantidad inicial de inventario (≥ 0)\n- `categoryName` (obligatorio): Nombre de la categoría (ej: \"Electrónica\", \"Ropa\", \"Hogar\")\n- `estadoProductoId` (opcional): ID del estado (default: 1=Activo)\n\n**Validaciones:**\n- Nombre único (no puede existir otro producto con el mismo nombre)\n- Categoría debe existir y estar activa\n- Todos los campos obligatorios presentes\n- Si se proporciona `inventory`, debe ser ≥ 0"
+			},
+			"response": [
+				{
+					"name": "201 - Producto Creado",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Laptop HP Pavilion 15\",\n    \"description\": \"Laptop HP Pavilion 15 pulgadas, Intel Core i5, 8GB RAM, 256GB SSD\",\n    \"unitValue\": 2500000.00,\n    \"iva\": 19.00,\n    \"imageUrl\": \"https://example.com/images/laptop-hp.jpg\",\n    \"inventory\": 15,\n    \"categoryName\": \"Electrónica\",\n    \"estadoProductoId\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/products/create",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"products",
+								"create"
+							]
+						}
+					},
+					"status": "Created",
+					"code": 201,
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"body": "{\n    \"failure\": false,\n    \"code\": 201,\n    \"message\": \"Producto creado exitosamente\",\n    \"body\": {\n        \"id\": 1,\n        \"name\": \"Laptop HP Pavilion 15\",\n        \"description\": \"Laptop HP Pavilion 15 pulgadas, Intel Core i5, 8GB RAM, 256GB SSD\",\n        \"unitValue\": 2500000.00,\n        \"iva\": 19.00,\n        \"totalPrice\": 2975000.00,\n        \"imageUrl\": \"https://example.com/images/laptop-hp.jpg\",\n        \"estadoProductoId\": 1,\n        \"estadoProducto\": \"Activo\",\n        \"inventory\": 15,\n        \"categoryId\": 1,\n        \"categoryName\": \"Electrónica\",\n        \"createdAt\": \"2025-01-13T10:30:00\"\n    },\n    \"timestamp\": \"1736771400000\"\n}"
+				},
+				{
+					"name": "400 - Nombre Duplicado",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Laptop HP Pavilion 15\",\n    \"description\": \"Otro producto\",\n    \"unitValue\": 2000000.00,\n    \"iva\": 19.00,\n    \"inventory\": 10,\n    \"categoryId\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/products/create",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"products",
+								"create"
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"body": "{\n    \"failure\": true,\n    \"code\": 400,\n    \"errorCode\": \"ED-PRO-04\",\n    \"message\": \"[ED-PRO-04] Ya existe un producto con ese nombre\",\n    \"timestamp\": \"1736771400000\"\n}"
+				},
+				{
+					"name": "400 - Categoría No Encontrada",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Producto Nuevo\",\n    \"description\": \"Descripción\",\n    \"unitValue\": 100000.00,\n    \"iva\": 19.00,\n    \"categoryName\": \"Categoría Inexistente\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/products/create",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"products",
+								"create"
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"body": "{\n    \"failure\": true,\n    \"code\": 400,\n    \"errorCode\": \"ED-CAT-01\",\n    \"message\": \"[ED-CAT-01] Categoría no encontrada\",\n    \"timestamp\": \"1736771400000\"\n}"
+				}
+			]
+		},
+		{
+			"name": "2. Actualizar Producto",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{jwt_token}}",
+						"description": "Token JWT de usuario con rol ADMIN",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"estadoProductoId\": 2\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/api/v1/products/update/1",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"products",
+						"update",
+						"1"
+					]
+				},
+				"description": "Actualiza un producto existente por cualquier criterio. Permite actualización parcial o completa de campos.\n\n**Requiere:** Rol ADMIN\n\n**Path Parameter:**\n- `id`: ID del producto a actualizar\n\n**Campos del Request (ProductRequest):**\n- `name` (opcional): Nombre del producto (3-200 caracteres)\n- `description` (opcional): Descripción (máx. 1000 caracteres)\n- `unitValue` (opcional): Valor unitario sin IVA\n- `iva` (opcional): Porcentaje de IVA (0-100%)\n- `imageUrl` (opcional): URL de la imagen\n- `inventory` (opcional): Nueva cantidad de inventario\n- `categoryName` (opcional): Nombre de la nueva categoría (ej: \"Electrónica\")\n- `estadoProductoId` (opcional): Nuevo estado\n\n**Validaciones:**\n- Producto debe existir\n- Si se actualiza el nombre, debe ser único (excluyendo el producto actual)\n- Si se actualiza la categoría, debe existir y estar activa\n- Actualización parcial: Solo campos proporcionados se actualizan"
+			},
+			"response": [
+				{
+					"name": "200 - Producto Actualizado",
+					"originalRequest": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Laptop HP Pavilion 15 - Actualizado\",\n    \"description\": \"Laptop HP Pavilion 15 pulgadas, Intel Core i7 (actualizado), 16GB RAM, 512GB SSD\",\n    \"unitValue\": 3200000.00,\n    \"iva\": 19.00,\n    \"imageUrl\": \"https://example.com/images/laptop-hp-updated.jpg\",\n    \"inventory\": 20,\n    \"categoryName\": \"Electrónica\",\n    \"estadoProductoId\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/products/update/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"products",
+								"update",
+								"1"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"body": "{\n    \"failure\": false,\n    \"code\": 200,\n    \"message\": \"Producto actualizado exitosamente\",\n    \"body\": {\n        \"id\": 1,\n        \"name\": \"Laptop HP Pavilion 15 - Actualizado\",\n        \"description\": \"Laptop HP Pavilion 15 pulgadas, Intel Core i7 (actualizado), 16GB RAM, 512GB SSD\",\n        \"unitValue\": 3200000.00,\n        \"iva\": 19.00,\n        \"totalPrice\": 3808000.00,\n        \"imageUrl\": \"https://example.com/images/laptop-hp-updated.jpg\",\n        \"estadoProductoId\": 1,\n        \"estadoProducto\": \"Activo\",\n        \"inventory\": 20,\n        \"categoryId\": 1,\n        \"categoryName\": \"Electrónica\",\n        \"createdAt\": \"2025-01-13T10:30:00\"\n    },\n    \"timestamp\": \"1736771400000\"\n}"
+				},
+				{
+					"name": "200 - Actualización Parcial (Solo Precio)",
+					"originalRequest": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"unitValue\": 2800000.00\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/products/update/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"products",
+								"update",
+								"1"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"body": "{\n    \"failure\": false,\n    \"code\": 200,\n    \"message\": \"Producto actualizado exitosamente\",\n    \"body\": {\n        \"id\": 1,\n        \"name\": \"Laptop HP Pavilion 15\",\n        \"description\": \"Laptop HP Pavilion 15 pulgadas, Intel Core i5, 8GB RAM, 256GB SSD\",\n        \"unitValue\": 2800000.00,\n        \"iva\": 19.00,\n        \"totalPrice\": 3332000.00,\n        \"imageUrl\": \"https://example.com/images/laptop-hp.jpg\",\n        \"estadoProductoId\": 1,\n        \"estadoProducto\": \"Activo\",\n        \"inventory\": 15,\n        \"categoryId\": 1,\n        \"categoryName\": \"Electrónica\",\n        \"createdAt\": \"2025-01-13T10:30:00\"\n    },\n    \"timestamp\": \"1736771400000\"\n}"
+				},
+				{
+					"name": "400 - Producto No Encontrado",
+					"originalRequest": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Producto Actualizado\",\n    \"unitValue\": 100000.00\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/products/update/999",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"products",
+								"update",
+								"999"
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"body": "{\n    \"failure\": true,\n    \"code\": 400,\n    \"errorCode\": \"ED-PRO-01\",\n    \"message\": \"[ED-PRO-01] Producto no encontrado\",\n    \"timestamp\": \"1736771400000\"\n}"
+				},
+				{
+					"name": "400 - Nombre Duplicado",
+					"originalRequest": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Mouse Logitech MX Master 3\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/products/update/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"products",
+								"update",
+								"1"
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"body": "{\n    \"failure\": true,\n    \"code\": 400,\n    \"errorCode\": \"ED-PRO-04\",\n    \"message\": \"[ED-PRO-04] Ya existe un producto con ese nombre\",\n    \"timestamp\": \"1736771400000\"\n}"
+				}
+			]
+		},
+		{
+			"name": "3. Obtener Producto por ID",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/v1/products/get-by-id/1",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"products",
+						"get-by-id",
+						"1"
+					]
+				},
+				"description": "Obtiene un producto por su ID.\n\n**Público:** No requiere autenticación\n\n**Response (ProductResponse):**\n- `id`: ID del producto\n- `name`: Nombre del producto\n- `description`: Descripción\n- `unitValue`: Valor unitario sin IVA\n- `iva`: Porcentaje de IVA\n- `totalPrice`: Precio total con IVA (calculado)\n- `imageUrl`: URL de la imagen\n- `estadoProductoId`: ID del estado\n- `estadoProducto`: Nombre del estado\n- `inventory`: Cantidad disponible\n- `categoryId`: ID de la categoría\n- `categoryName`: Nombre de la categoría\n- `createdAt`: Fecha de creación"
+			},
+			"response": [
+				{
+					"name": "200 - Producto Encontrado",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/products/get-by-id/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"products",
+								"get-by-id",
+								"1"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"body": "{\n    \"failure\": false,\n    \"code\": 200,\n    \"message\": \"Producto encontrado\",\n    \"body\": {\n        \"id\": 1,\n        \"name\": \"Laptop HP Pavilion 15\",\n        \"description\": \"Laptop HP Pavilion 15 pulgadas, Intel Core i5, 8GB RAM, 256GB SSD\",\n        \"unitValue\": 2500000.00,\n        \"iva\": 19.00,\n        \"totalPrice\": 2975000.00,\n        \"imageUrl\": \"https://example.com/images/laptop-hp.jpg\",\n        \"estadoProductoId\": 1,\n        \"estadoProducto\": \"Activo\",\n        \"inventory\": 15,\n        \"categoryId\": 1,\n        \"categoryName\": \"Electrónica\",\n        \"createdAt\": \"2025-01-13T10:30:00\"\n    },\n    \"timestamp\": \"1736771400000\"\n}"
+				},
+				{
+					"name": "400 - Producto No Encontrado",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/products/get-by-id/999",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"products",
+								"get-by-id",
+								"999"
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"body": "{\n    \"failure\": true,\n    \"code\": 400,\n    \"errorCode\": \"ED-PRO-01\",\n    \"message\": \"[ED-PRO-01] Producto no encontrado\",\n    \"timestamp\": \"1736771400000\"\n}"
+				}
+			]
+		},
+		{
+			"name": "4. Listar Todos los Productos",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/v1/products/list-all",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"products",
+						"list-all"
+					]
+				},
+				"description": "Lista todos los productos del catálogo (activos e inactivos).\n\n**Público:** No requiere autenticación\n\n**Response:** Array de ProductResponse con todos los productos"
+			},
+			"response": [
+				{
+					"name": "200 - Productos Listados",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/products/list-all",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"products",
+								"list-all"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"body": "{\n    \"failure\": false,\n    \"code\": 200,\n    \"message\": \"Productos listados exitosamente\",\n    \"body\": [\n        {\n            \"id\": 1,\n            \"name\": \"Laptop HP Pavilion 15\",\n            \"description\": \"Laptop HP Pavilion 15 pulgadas\",\n            \"unitValue\": 2500000.00,\n            \"iva\": 19.00,\n            \"totalPrice\": 2975000.00,\n            \"imageUrl\": \"https://example.com/images/laptop-hp.jpg\",\n            \"estadoProductoId\": 1,\n            \"estadoProducto\": \"Activo\",\n            \"inventory\": 15,\n            \"categoryId\": 1,\n            \"categoryName\": \"Electrónica\",\n            \"createdAt\": \"2025-01-13T10:30:00\"\n        },\n        {\n            \"id\": 2,\n            \"name\": \"Mouse Logitech MX Master 3\",\n            \"description\": \"Mouse inalámbrico ergonómico\",\n            \"unitValue\": 350000.00,\n            \"iva\": 19.00,\n            \"totalPrice\": 416500.00,\n            \"imageUrl\": \"https://example.com/images/mouse-logitech.jpg\",\n            \"estadoProductoId\": 1,\n            \"estadoProducto\": \"Activo\",\n            \"inventory\": 50,\n            \"categoryId\": 1,\n            \"categoryName\": \"Electrónica\",\n            \"createdAt\": \"2025-01-13T11:00:00\"\n        }\n    ],\n    \"timestamp\": \"1736771400000\"\n}"
+				}
+			]
+		},
+		{
+			"name": "5. Listar Productos Activos",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/v1/products/list-active",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"products",
+						"list-active"
+					]
+				},
+				"description": "Lista solo los productos activos del catálogo (estadoProductoId = 1).\n\n**Público:** No requiere autenticación\n\n**Response:** Array de ProductResponse con productos activos"
+			},
+			"response": [
+				{
+					"name": "200 - Productos Activos",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/products/list-active",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"products",
+								"list-active"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"body": "{\n    \"failure\": false,\n    \"code\": 200,\n    \"message\": \"Productos listados exitosamente\",\n    \"body\": [\n        {\n            \"id\": 1,\n            \"name\": \"Laptop HP Pavilion 15\",\n            \"description\": \"Laptop HP Pavilion 15 pulgadas\",\n            \"unitValue\": 2500000.00,\n            \"iva\": 19.00,\n            \"totalPrice\": 2975000.00,\n            \"imageUrl\": \"https://example.com/images/laptop-hp.jpg\",\n            \"estadoProductoId\": 1,\n            \"estadoProducto\": \"Activo\",\n            \"inventory\": 15,\n            \"categoryId\": 1,\n            \"categoryName\": \"Electrónica\",\n            \"createdAt\": \"2025-01-13T10:30:00\"\n        }\n    ],\n    \"timestamp\": \"1736771400000\"\n}"
+				}
+			]
+		},
+		{
+			"name": "6. Buscar Productos (con Filtros)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"active\": true,\n    \"searchTerm\": \"laptop\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/api/v1/products/search",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"products",
+						"search"
+					]
+				},
+				"description": "Busca productos aplicando múltiples filtros.\n\n**Público:** No requiere autenticación\n\n**Filtros disponibles (ProductFilterDto):**\n- `categoryId`: ID de categoría (opcional)\n- `minPrice`: Precio mínimo (opcional)\n- `maxPrice`: Precio máximo (opcional)\n- `active`: Estado activo/inactivo (opcional)\n- `searchTerm`: Búsqueda en nombre o descripción (búsqueda parcial, opcional)\n\n**Response:** Array de ProductResponse que cumplen los filtros"
+			},
+			"response": [
+				{
+					"name": "200 - Búsqueda Completada",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"categoryId\": 1,\n    \"minPrice\": 100000,\n    \"maxPrice\": 3000000,\n    \"active\": true,\n    \"searchTerm\": \"laptop\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/products/search",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"products",
+								"search"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"body": "{\n    \"failure\": false,\n    \"code\": 200,\n    \"message\": \"Búsqueda completada\",\n    \"body\": [\n        {\n            \"id\": 1,\n            \"name\": \"Laptop HP Pavilion 15\",\n            \"description\": \"Laptop HP Pavilion 15 pulgadas\",\n            \"unitValue\": 2500000.00,\n            \"iva\": 19.00,\n            \"totalPrice\": 2975000.00,\n            \"imageUrl\": \"https://example.com/images/laptop-hp.jpg\",\n            \"estadoProductoId\": 1,\n            \"estadoProducto\": \"Activo\",\n            \"inventory\": 15,\n            \"categoryId\": 1,\n            \"categoryName\": \"Electrónica\",\n            \"createdAt\": \"2025-01-13T10:30:00\"\n        }\n    ],\n    \"timestamp\": \"1736771400000\"\n}"
+				}
+			]
 		}
 	],
 	"event": [
@@ -1040,4 +868,3 @@
 		}
 	]
 }
-

@@ -1,5 +1,6 @@
 package com.ecommerce.davivienda.dto.product;
 
+import com.ecommerce.davivienda.models.product.ProductResponse;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -12,7 +13,7 @@ import org.springframework.data.domain.Page;
 import java.util.List;
 
 /**
- * DTO para respuestas paginadas de productos.
+ * DTO auxiliar para respuestas paginadas de productos.
  * Contiene la lista de productos y metadatos de paginación.
  *
  * @author Team Ecommerce Davivienda
@@ -30,7 +31,7 @@ public class PagedProductResponseDto {
      * Lista de productos de la página actual.
      */
     @JsonProperty("content")
-    private List<ProductResponseDto> content;
+    private List<ProductResponse> content;
 
     /**
      * Número de página actual (0-indexed).
@@ -86,7 +87,7 @@ public class PagedProductResponseDto {
      * @param page Página de productos
      * @return DTO paginado con metadatos
      */
-    public static PagedProductResponseDto fromPage(Page<ProductResponseDto> page) {
+    public static PagedProductResponseDto fromPage(Page<ProductResponse> page) {
         return PagedProductResponseDto.builder()
                 .content(page.getContent())
                 .pageNumber(page.getNumber())

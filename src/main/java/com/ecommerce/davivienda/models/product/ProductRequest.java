@@ -1,4 +1,4 @@
-package com.ecommerce.davivienda.dto.product;
+package com.ecommerce.davivienda.models.product;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 
 /**
- * DTO para la solicitud de creación y actualización de productos.
+ * Request para operaciones de creación y actualización de productos.
  * Contiene los datos del producto incluyendo precios, inventario y categoría.
  *
  * @author Team Ecommerce Davivienda
@@ -24,7 +24,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ProductRequestDto {
+public class ProductRequest {
 
     /**
      * Nombre del producto.
@@ -77,11 +77,12 @@ public class ProductRequestDto {
     private Integer inventory;
 
     /**
-     * ID de la categoría del producto.
+     * Nombre de la categoría del producto.
      */
-    @NotNull(message = "La categoría es obligatoria")
-    @JsonProperty("categoryId")
-    private Integer categoryId;
+    @NotBlank(message = "La categoría es obligatoria")
+    @Size(min = 2, max = 100, message = "El nombre de la categoría debe tener entre 2 y 100 caracteres")
+    @JsonProperty("categoryName")
+    private String categoryName;
 
     /**
      * ID del estado del producto.

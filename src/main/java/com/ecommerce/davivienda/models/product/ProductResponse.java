@@ -1,4 +1,4 @@
-package com.ecommerce.davivienda.dto.product;
+package com.ecommerce.davivienda.models.product;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -12,7 +12,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * DTO para la respuesta de operaciones sobre productos.
+ * Response para operaciones sobre productos.
  * Contiene los datos completos del producto incluyendo información de categoría.
  *
  * @author Team Ecommerce Davivienda
@@ -24,7 +24,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ProductResponseDto {
+public class ProductResponse {
 
     /**
      * ID del producto.

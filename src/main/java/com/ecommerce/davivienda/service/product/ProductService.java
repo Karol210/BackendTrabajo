@@ -1,8 +1,9 @@
 package com.ecommerce.davivienda.service.product;
 
 import com.ecommerce.davivienda.dto.product.ProductFilterDto;
-import com.ecommerce.davivienda.dto.product.ProductRequestDto;
-import com.ecommerce.davivienda.dto.product.ProductResponseDto;
+import com.ecommerce.davivienda.models.product.ProductRequest;
+import com.ecommerce.davivienda.models.product.ProductResponse;
+import com.ecommerce.davivienda.models.product.ProductUpdateRequest;
 import org.springframework.data.domain.Page;
 
 import java.math.BigDecimal;
@@ -24,7 +25,7 @@ public interface ProductService {
      * @return Producto creado
      * @throws com.ecommerce.davivienda.exception.product.ProductException si hay errores de validación
      */
-    ProductResponseDto createProduct(ProductRequestDto request);
+    ProductResponse createProduct(ProductRequest request);
 
     /**
      * Obtiene un producto por su ID.
@@ -33,21 +34,21 @@ public interface ProductService {
      * @return Producto encontrado
      * @throws com.ecommerce.davivienda.exception.product.ProductException si no existe
      */
-    ProductResponseDto getProductById(Integer id);
+    ProductResponse getProductById(Integer id);
 
     /**
      * Lista todos los productos del catálogo.
      *
      * @return Lista de todos los productos
      */
-    List<ProductResponseDto> getAllProducts();
+    List<ProductResponse> getAllProducts();
 
     /**
      * Lista solo los productos activos.
      *
      * @return Lista de productos activos
      */
-    List<ProductResponseDto> getActiveProducts();
+    List<ProductResponse> getActiveProducts();
 
     /**
      * Busca productos aplicando filtros.
@@ -55,7 +56,7 @@ public interface ProductService {
      * @param filter Filtros de búsqueda
      * @return Lista de productos filtrados
      */
-    List<ProductResponseDto> searchProducts(ProductFilterDto filter);
+    List<ProductResponse> searchProducts(ProductFilterDto filter);
 
     /**
      * Busca productos aplicando filtros con paginación.
@@ -71,7 +72,7 @@ public interface ProductService {
      * @param sortDir Dirección de orden
      * @return Página de productos filtrados
      */
-    Page<ProductResponseDto> searchProductsPaginated(
+    Page<ProductResponse> searchProductsPaginated(
             Integer categoryId,
             BigDecimal minPrice,
             BigDecimal maxPrice,
@@ -83,40 +84,15 @@ public interface ProductService {
             String sortDir);
 
     /**
-     * Actualiza un producto existente.
+     * Actualiza un producto existente por cualquier criterio.
+     * Permite actualización parcial o completa de campos.
+     * Solo los campos proporcionados en el request serán actualizados.
      *
      * @param id ID del producto a actualizar
-     * @param request Nuevos datos del producto
-     * @return Producto actualizado
-     * @throws com.ecommerce.davivienda.exception.product.ProductException si no existe o hay errores
+     * @param request Datos del producto a actualizar (todos los campos opcionales)
+     * @throws com.ecommerce.davivienda.exception.product.ProductException si el producto no existe
      */
-    ProductResponseDto updateProduct(Integer id, ProductRequestDto request);
+    void updateProduct(Integer id, ProductUpdateRequest request);
 
-    /**
-     * Elimina lógicamente un producto (lo marca como inactivo).
-     *
-     * @param id ID del producto a eliminar
-     * @throws com.ecommerce.davivienda.exception.product.ProductException si no existe
-     */
-    void deleteProduct(Integer id);
-
-    /**
-     * Activa un producto previamente desactivado.
-     *
-     * @param id ID del producto a activar
-     * @return Producto activado
-     * @throws com.ecommerce.davivienda.exception.product.ProductException si no existe
-     */
-    ProductResponseDto activateProduct(Integer id);
-
-    /**
-     * Agrega inventario a un producto existente.
-     *
-     * @param id ID del producto
-     * @param quantity Cantidad de inventario a agregar
-     * @return Producto con inventario actualizado
-     * @throws com.ecommerce.davivienda.exception.product.ProductException si no existe o cantidad inválida
-     */
-    ProductResponseDto addInventory(Integer id, Integer quantity);
 }
 
