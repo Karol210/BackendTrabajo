@@ -12,6 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 
+import static com.ecommerce.davivienda.constants.Constants.CART_STATUS_ACTIVE;
+
 
 
 /**
@@ -32,14 +34,17 @@ public class CartItemCartTransactionalServiceImpl implements CartItemCartTransac
     @Override
     @Transactional
     public Cart findOrCreateCart(Integer userRoleId) {
-        log.debug("Buscando carrito para usuario {}", userRoleId);
+        log.debug("Buscando carrito ACTIVO para usuario {}", userRoleId);
         
-        return cartRepository.findByUsuarioRolId(userRoleId)
+        return cartRepository.findByUsuarioRolIdAndEstadoCarritoId(userRoleId, CART_STATUS_ACTIVE)
                 .orElseGet(() -> {
                     Cart newCart = Cart.builder()
                             .usuarioRolId(userRoleId)
+                            .estadoCarritoId(CART_STATUS_ACTIVE)
                             .build();
                     Cart savedCart = cartRepository.save(newCart);
+                    log.debug("Carrito {} creado con estado {} (Activo) para usuario {}", 
+                            savedCart.getCarritoId(), CART_STATUS_ACTIVE, userRoleId);
                     return savedCart;
                 });
     }
@@ -48,7 +53,7 @@ public class CartItemCartTransactionalServiceImpl implements CartItemCartTransac
     @Override
     @Transactional(readOnly = true)
     public Optional<CartItem> findCartItemByCartAndProduct(Integer cartId, Integer productId) {
-        log.debug("Buscando CartItem en carrito {} para producto {}", cartId, productId);
+        log.debug("Buscando CartItem en carrito ACTIVO {} para producto {}", cartId, productId);
         return cartItemRepository.findByCartAndProduct(cartId, productId);
     }
 
@@ -56,7 +61,7 @@ public class CartItemCartTransactionalServiceImpl implements CartItemCartTransac
     @Override
     @Transactional(readOnly = true)
     public List<CartItem> findCartItemsByCartId(Integer cartId) {
-        log.debug("Obteniendo items del carrito {}", cartId);
+        log.debug("Obteniendo items del carrito ACTIVO {}", cartId);
         return cartItemRepository.findByCartCarritoId(cartId);
     }
 
@@ -78,7 +83,7 @@ public class CartItemCartTransactionalServiceImpl implements CartItemCartTransac
     @Override
     @Transactional(readOnly = true)
     public Optional<CartItem> findCartItemByIdAndUser(Integer itemId, Integer userRoleId) {
-        log.debug("Buscando CartItem con ID {} para usuario {} (con validación ownership)", itemId, userRoleId);
+        log.debug("Buscando CartItem con ID {} para usuario {} en carrito ACTIVO (con validación ownership)", itemId, userRoleId);
         return cartItemRepository.findByProductIdAndUserRole(itemId, userRoleId);
     }
 }

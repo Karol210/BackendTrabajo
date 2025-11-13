@@ -2,31 +2,82 @@
 
 ## 📋 Descripción
 
-Módulo de procesamiento de pagos con tarjetas débito y crédito. Implementa arquitectura en capas con separación de responsabilidades (validation/builder) y manejo seguro de datos sensibles mediante encriptación Base64.
+Módulo de procesamiento de pagos con tarjetas débito y crédito. Implementa arquitectura en capas con separación de responsabilidades (validation/transactional/reference) y mapeo con MapStruct. **Seguridad multi-capa**: encriptación Base64 en request + encriptación Base64 en base de datos para nombre titular y número de tarjeta.
 
-## 🏗️ Arquitectura - Organización por Capacidades
+## 🏗️ Arquitectura - Organización por Capacidades y Dominios
 
-La arquitectura sigue el principio de **Separación de Responsabilidades (SRP)** organizando el código en capacidades especializadas:
+La arquitectura sigue el principio de **Separación de Responsabilidades (SRP)** organizando el código en capacidades especializadas y subcapacidades por dominio:
 
 ```
 service/payment/
 ├── PaymentService.java                          (Interface principal)
-├── PaymentServiceImpl.java                      (Coordinador - 150 líneas)
-│   └── Coordina flujo completo de pago
+├── PaymentServiceImpl.java                      (Coordinador - 278 líneas)
+│   └── Coordina flujo completo delegando a subcapacidades específicas
 │
-├── validation/                                  📋 Capacidad: Validación
-│   ├── PaymentValidationService.java           (Interface)
-│   └── PaymentValidationServiceImpl.java       (170 líneas)
-│       ├── Valida carrito y datos de tarjeta
-│       ├── Valida tipos de pago y estados
-│       └── Valida formato de datos sensibles
+├── validation/                                  📋 Capacidad: Validación (organizada por dominio)
+│   ├── cart/
+│   │   ├── PaymentCartValidationService.java
+│   │   └── PaymentCartValidationServiceImpl.java
+│   │       ├── validateCart()
+│   │       └── validateCartByUserEmail()
+│   │
+│   ├── payment/
+│   │   ├── PaymentPaymentValidationService.java
+│   │   └── PaymentPaymentValidationServiceImpl.java
+│   │       ├── validatePaymentType()
+│   │       ├── findPendingStatus()
+│   │       └── validateInstallments()
+│   │
+│   └── common/
+│       ├── PaymentCommonValidationService.java
+│       └── PaymentCommonValidationServiceImpl.java
+│           ├── validateCardData()
+│           ├── validateCardNumber()
+│           └── validateExpirationDate()
 │
-└── builder/                                     🔨 Capacidad: Construcción
-    ├── PaymentBuilderService.java              (Interface)
-    └── PaymentBuilderServiceImpl.java          (180 líneas)
-        ├── Genera referencias UUID
-        ├── Construye entidades de pago
-        └── Construye respuestas DTO
+├── transactional/                               💾 Capacidad: Transactional (organizada por dominio)
+│   ├── payment/
+│   │   ├── PaymentPaymentTransactionalService.java
+│   │   └── PaymentPaymentTransactionalServiceImpl.java
+│   │       ├── savePayment()
+│   │       ├── savePaymentDebit()
+│   │       └── savePaymentCredit()
+│   │
+│   ├── cart/
+│   │   ├── PaymentCartTransactionalService.java
+│   │   └── PaymentCartTransactionalServiceImpl.java
+│   │       └── updateCartStatusToProcessing()   → ✅ Actualiza carrito a "Procesando"
+│   │
+│   ├── cartitem/
+│   │   ├── PaymentCartItemTransactionalService.java
+│   │   └── PaymentCartItemTransactionalServiceImpl.java
+│   │       └── findByCartId()                   → Obtiene items del carrito
+│   │
+│   └── reference/
+│       ├── PaymentReferenceTransactionalService.java
+│       └── PaymentReferenceTransactionalServiceImpl.java
+│           ├── existsByReferenceNumber()
+│           └── savePaymentReference()
+
+└── [Integración con Stock]                      📦 Integración: Gestión de Inventario
+    └── StockStockTransactionalService           (inyectado desde módulo stock)
+        └── decreaseStock()                      → ✅ Disminuye inventario por producto
+│
+└── reference/                                   🔑 Capacidad: Generación Referencias
+    ├── PaymentReferenceService.java            (Interface)
+    └── PaymentReferenceServiceImpl.java        (60 líneas)
+        └── generateUniqueReference()           → UUID único con verificación BD
+
+mapper/payment/
+└── PaymentMapper.java                          🗺️ Mapper MapStruct (155 líneas)
+    ├── toPayment()                             → Payment entity
+    ├── toPaymentDebit()                        → PaymentDebit entity (con encriptación)
+    ├── toPaymentCredit()                       → PaymentCredit entity (con encriptación)
+    ├── toPaymentProcessResponseDto()           → Response DTO
+    ├── encryptCardHolderName()                 → Encripta nombre titular (Base64)
+    ├── encryptCardNumber()                     → Encripta número tarjeta (Base64)
+    ├── parseExpirationDate()                   → Parseo fecha
+    └── getLastFourDigits()                     → Últimos 4 dígitos
 ```
 
 ## 🎯 Flujo de Procesamiento de Pago
@@ -36,25 +87,46 @@ service/payment/
    └─ PaymentController
 
 2. PaymentServiceImpl.processPayment()
+   ├─ Obtener usuario autenticado (AuthenticatedUserUtil)
    ├─ Desencripta datos de tarjeta (Base64DecryptionService)
    ├─ Parsea JSON (JsonUtils)
-   └─ Delega a capacidades especializadas:
+   └─ Delega a subcapacidades específicas:
       │
-      ├─ PaymentValidationService
-      │  ├─ validateCart()
+      ├─ PaymentCartValidationService (cart domain)
+      │  ├─ validateCart() o
+      │  └─ validateCartByUserEmail()
+      │
+      ├─ PaymentCommonValidationService (common validations)
       │  ├─ validateCardData()
+      │  ├─ validateCardNumber()
+      │  └─ validateExpirationDate()
+      │
+      ├─ PaymentPaymentValidationService (payment domain)
       │  ├─ validatePaymentType()
       │  ├─ validateInstallments()
       │  └─ findPendingStatus()
       │
-      └─ PaymentBuilderService
-         ├─ generatePaymentReference()  → UUID único
-         ├─ buildPayment()              → Payment entity
-         ├─ buildPaymentDebit() o       → PaymentDebit/Credit
-         │  buildPaymentCredit()
-         └─ buildPaymentResponse()      → PaymentProcessResponseDto
+      ├─ PaymentReferenceService (reference service)
+      │  └─ generateUniqueReference()     → UUID único con verificación BD
+      │
+       ├─ PaymentMapper (MapStruct)
+       │  ├─ toPayment()                   → Payment entity
+       │  ├─ toPaymentDebit() o            → PaymentDebit/Credit (con encriptación)
+       │  │  toPaymentCredit()
+       │  └─ toPaymentProcessResponseDto() → PaymentProcessResponseDto
+       │
+       ├─ PaymentPaymentTransactionalService (payment domain)
+       │  ├─ savePayment()                 → Guarda pago principal
+       │  ├─ savePaymentDebit()            → Guarda detalles débito
+       │  └─ savePaymentCredit()           → Guarda detalles crédito
+       │
+       ├─ StockStockTransactionalService (stock integration)
+       │  └─ decreaseStock()               → ✅ Disminuye inventario por producto
+       │
+       └─ PaymentCartTransactionalService (cart domain)
+          └─ updateCartStatusToProcessing() → ✅ Actualiza carrito a "Procesando"
 
-3. Respuesta exitosa
+3. Respuesta exitosa con número de referencia
 ```
 
 ## 📊 Entidades JPA
@@ -104,7 +176,7 @@ referencias (
 
 ## 🔐 Seguridad
 
-### Encriptación de Datos
+### Encriptación de Datos en Tránsito (Request)
 
 Los datos de tarjeta deben enviarse encriptados en Base64:
 
@@ -125,11 +197,25 @@ Los datos de tarjeta deben enviarse encriptados en Base64:
 eyJjYXJkTnVtYmVyIjoiMTIzNDU2NzgxMjM0NTY3OCIsImNhcmRIb2xkZXJOYW1lIjoiSnVhbiBQw6lyZXoiLCJleHBpcmF0aW9uRGF0ZSI6IjEyLzI1IiwiY3Z2IjoiMTIzIiwiaW5zdGFsbG1lbnRzIjozLCJwYXltZW50VHlwZSI6ImNyZWRpdG8ifQ==
 ```
 
-### Enmascaramiento de Tarjetas
+### Encriptación de Datos en Reposo (Base de Datos)
 
-- **Entrada**: `1234567812345678`
-- **Almacenado**: `************5678` (solo últimos 4 dígitos)
-- **Respuesta**: `5678` (últimos 4 dígitos)
+**Los siguientes campos se almacenan ENCRIPTADOS en Base64:**
+- ✅ `nombre_titular` - Nombre del titular de la tarjeta
+- ✅ `numero_tarjeta` - Número completo de la tarjeta (16 dígitos)
+
+**Proceso de encriptación:**
+1. **Entrada**: `"Juan Pérez"` y `"1234567812345678"`
+2. **Almacenado en BD**: `"SnVhbiBQw6lyZXo="` y `"MTIzNDU2NzgxMjM0NTY3OA=="`
+3. **Respuesta al cliente**: Solo últimos 4 dígitos sin encriptar (`"5678"`)
+
+### Protección Multi-Capa
+
+| Capa | Dato | Protección |
+|---|---|---|
+| **Request** | Datos completos tarjeta | Base64 encriptado |
+| **Base de Datos** | nombre_titular + numero_tarjeta | Base64 encriptado |
+| **Response** | Solo últimos 4 dígitos | Sin encriptar |
+| **Logs** | Sin datos sensibles | No se logea info de tarjeta |
 
 ## 📝 Ejemplos de Uso
 
@@ -258,39 +344,74 @@ Authorization: Bearer {token}
 ## 📦 Dependencias
 
 ```java
-// Service
-private final PaymentValidationService validationService;
-private final PaymentBuilderService builderService;
+// Validation subcapacidades por dominio
+private final PaymentCartValidationService cartValidationService;
+private final PaymentPaymentValidationService paymentValidationService;
+private final PaymentCommonValidationService commonValidationService;
+
+// Transactional subcapacidades
+private final PaymentPaymentTransactionalService paymentTransactionalService;
+private final PaymentCartTransactionalService cartTransactionalService;       // ✅ Nueva
+private final PaymentCartItemTransactionalService cartItemTransactionalService; // ✅ Nueva
+private final StockStockTransactionalService stockTransactionalService;       // ✅ Nueva (integración)
+
+// Reference service (lógica de negocio)
+private final PaymentReferenceService paymentReferenceService;
+
+// Mapper (mapeo DTO ↔ Entity con MapStruct)
+private final PaymentMapper paymentMapper;
+
+// Utilities
 private final Base64DecryptionService base64DecryptionService;
 private final JsonUtils jsonUtils;
-
-// Repositories
-private final PaymentRepository paymentRepository;
-private final PaymentDebitRepository paymentDebitRepository;
-private final PaymentCreditRepository paymentCreditRepository;
-private final CartRepository cartRepository;
-private final PaymentTypeRepository paymentTypeRepository;
-private final PaymentStatusRepository paymentStatusRepository;
-private final PaymentReferenceRepository paymentReferenceRepository;
+private final AuthenticatedUserUtil authenticatedUserUtil;
 ```
+
+**Beneficios de la nueva estructura:**
+- ✅ **Sin inyección directa de repositories** en PaymentServiceImpl (cumple regla 06 - Capa Transactional)
+- ✅ **Validation organizada por dominios** (cart/, payment/, common/) según regla 09
+- ✅ **Mapeo con MapStruct** en lugar de Builder (cumple regla 01 - TODO mapeo en Mapper)
+- ✅ **Separación lógica de negocio vs mapeo**: Reference service para UUID, Mapper para transformaciones
+- ✅ **Integración con módulo Stock**: Disminución automática de inventario al procesar pago
+- ✅ **Gestión de estado del carrito**: Cambio automático a "Procesando" al finalizar pago
+- ✅ **Alta cohesión**: Cada subcapacidad agrupa métodos relacionados
+- ✅ **Bajo acoplamiento**: Cambios en un dominio no afectan otros
+- ✅ **Testeable**: Tests específicos por dominio y mapeo compile-time safe
+- ✅ **Escalable**: Agregar dominios sin modificar existentes
 
 ## 🎯 Beneficios de la Arquitectura
 
 | Beneficio | Descripción |
 |-----------|-------------|
-| **Alta Cohesión** | Cada capacidad agrupa código relacionado |
-| **Bajo Acoplamiento** | Cambios en validación no afectan construcción |
-| **Testeable** | Tests unitarios específicos por capacidad |
-| **Escalable** | Agregar capacidades sin modificar existentes |
-| **Mantenible** | Lógica organizada y fácil de encontrar |
-| **Seguro** | Encriptación Base64 + enmascaramiento de tarjetas |
+| **Cumplimiento de Reglas** | Sigue reglas 06 (Transactional) y 09 (Organización por dominios) |
+| **Alta Cohesión** | Cada subcapacidad agrupa métodos relacionados por dominio |
+| **Bajo Acoplamiento** | Cambios en un dominio no afectan otros (cart, payment, common) |
+| **Sin Acceso Directo a BD** | PaymentServiceImpl NO inyecta repositories (usa transactional) |
+| **Testeable** | Tests específicos por dominio y capacidad |
+| **Escalable** | Agregar dominios/capacidades sin modificar existentes |
+| **Mantenible** | Lógica organizada por responsabilidad y dominio |
+| **Seguro** | Encriptación Base64 en tránsito + encriptación en BD + protección multi-capa |
+
+## 📏 Métricas de Mejora
+
+| Aspecto | Antes | Después | Mejora |
+|---|---|---|---|
+| **Inyecciones ServiceImpl** | 7 (3 repositories + 4 servicios) | 10 (0 repositories + 10 subcapacidades) | ✅ Sin acceso directo a BD |
+| **Validation monolítico** | 218 líneas | 3 servicios (cart, payment, common) | ✅ Organizado por dominio |
+| **Builder con repository** | 1 repository inyectado | 0 repositories (usa transactional) | ✅ Delegado a transactional |
+| **Builder → Mapper** | Builder Service (198 líneas) | Mapper MapStruct (145 líneas) + Reference Service (60 líneas) | ✅ Separación lógica negocio/mapeo |
+| **Mapeo type-safe** | Manual con `.builder()` | MapStruct compile-time | ✅ Seguro y rápido |
+| **Gestión inventario** | ❌ No implementado | ✅ Disminuye stock automáticamente | ✅ Integrado con módulo Stock |
+| **Estado de carrito** | ❌ No cambia | ✅ Actualiza a "Procesando" automáticamente | ✅ Workflow completo |
+| **Responsabilidades** | Mixtas | Separadas por dominio | ✅ SRP aplicado |
 
 ## 📖 Referencias
 
 - [servicios-01-creacion-servicios.mdc](../../../../.cursor/rules/servicios-01-creacion-servicios.mdc) - Arquitectura en capas
 - [servicios-04-excepciones.mdc](../../../../.cursor/rules/servicios-04-excepciones.mdc) - Manejo de excepciones
 - [servicios-05-dtos.mdc](../../../../.cursor/rules/servicios-05-dtos.mdc) - Estructura de DTOs
-- [servicios-09-organizacion-capacidades.mdc](../../../../.cursor/rules/servicios-09-organizacion-capacidades.mdc) - Organización por capacidades
+- [servicios-06-transactional.mdc](../../../../.cursor/rules/servicios-06-transactional.mdc) - Capa Transactional (regla aplicada)
+- [servicios-09-organizacion-capacidades.mdc](../../../../.cursor/rules/servicios-09-organizacion-capacidades.mdc) - Organización por capacidades y dominios (regla aplicada)
 
 ---
 

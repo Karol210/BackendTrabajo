@@ -584,6 +584,50 @@ public class Constants {
      * Formato: ED-CAR-12 (Ecommerce Davivienda - Cart - 12)
      */
     public static final String CODE_CART_UNAUTHORIZED = "ED-CAR-12";
+    
+    /**
+     * Código de error: Estado de carrito no encontrado.
+     * Formato: ED-CAR-13 (Ecommerce Davivienda - Cart - 13)
+     */
+    public static final String CODE_CART_STATUS_NOT_FOUND = "ED-CAR-13";
+
+    // ==================== CART STATUS - IDS ====================
+    
+    /**
+     * ID del estado "Activo" del carrito.
+     * Estado inicial cuando se crea un carrito nuevo.
+     */
+    public static final Integer CART_STATUS_ACTIVE = 1;
+    
+    /**
+     * ID del estado "Procesando" del carrito.
+     * Estado cuando el carrito está siendo procesado para pago.
+     */
+    public static final Integer CART_STATUS_PROCESSING = 2;
+    
+    /**
+     * ID del estado "Completado" del carrito.
+     * Estado cuando el pago ha sido completado exitosamente.
+     */
+    public static final Integer CART_STATUS_COMPLETED = 3;
+    
+    /**
+     * ID del estado "Abandonado" del carrito.
+     * Estado cuando el usuario abandona el carrito sin completar.
+     */
+    public static final Integer CART_STATUS_ABANDONED = 4;
+    
+    /**
+     * ID del estado "Expirado" del carrito.
+     * Estado cuando el carrito ha expirado por tiempo de inactividad.
+     */
+    public static final Integer CART_STATUS_EXPIRED = 5;
+    
+    /**
+     * ID del estado "Cancelado" del carrito.
+     * Estado cuando el usuario cancela el carrito explícitamente.
+     */
+    public static final Integer CART_STATUS_CANCELLED = 6;
 
     // ==================== STOCK - SUCCESS MESSAGES ====================
     

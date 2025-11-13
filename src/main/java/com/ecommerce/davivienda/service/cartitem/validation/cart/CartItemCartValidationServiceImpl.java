@@ -25,7 +25,7 @@ public class CartItemCartValidationServiceImpl implements CartItemCartValidation
 
     @Override
     public CartItem validateItemBelongsToUser(Integer itemId, Integer userRoleId) {
-        log.debug("Validando que el item {} pertenece al carrito del usuario {}", itemId, userRoleId);
+        log.debug("Validando que el item {} pertenece al carrito ACTIVO del usuario {}", itemId, userRoleId);
         
         if (itemId == null) {
             throw new CartException(ERROR_CART_ITEM_NOT_FOUND, CODE_CART_ITEM_NOT_FOUND);
@@ -35,10 +35,10 @@ public class CartItemCartValidationServiceImpl implements CartItemCartValidation
             throw new CartException(ERROR_USER_ROLE_NOT_FOUND, CODE_USER_ROLE_NOT_FOUND);
         }
         
-        // Buscar item validando ownership en una sola query
+        // Buscar item validando ownership y estado activo del carrito en una sola query
        return transactionalService.findCartItemByIdAndUser(itemId, userRoleId)
                 .orElseThrow(() -> {
-                    log.warn("El item {} no existe o no pertenece al carrito del usuario {}", itemId, userRoleId);
+                    log.warn("El item {} no existe, no pertenece al usuario {} o el carrito no está activo", itemId, userRoleId);
                     return new CartException(ERROR_CART_ITEM_UNAUTHORIZED, CODE_CART_ITEM_UNAUTHORIZED);
                 });
         

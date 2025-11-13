@@ -27,6 +27,16 @@ public interface CartRepository extends JpaRepository<Cart, Integer> {
     Optional<Cart> findByUsuarioRolId(Integer usuarioRolId);
 
     /**
+     * Busca un carrito activo por ID de usuario_rol.
+     * Solo retorna carritos con estado activo (id_estado_carrito = 1).
+     *
+     * @param usuarioRolId ID del usuario_rol
+     * @param estadoCarritoId ID del estado del carrito (1 = Activo)
+     * @return Optional con el carrito activo si existe
+     */
+    Optional<Cart> findByUsuarioRolIdAndEstadoCarritoId(Integer usuarioRolId, Integer estadoCarritoId);
+
+    /**
      * Verifica si existe un carrito para un usuario_rol específico.
      *
      * @param usuarioRolId ID del usuario_rol

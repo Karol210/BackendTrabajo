@@ -40,6 +40,14 @@ public class Cart {
     private Integer usuarioRolId;
 
     /**
+     * ID del estado del carrito.
+     * Estados: 1=Activo, 2=Procesando, 3=Completado, 4=Abandonado, 5=Expirado, 6=Cancelado
+     */
+    @Column(name = "estado_carrito_id", nullable = false)
+    @Builder.Default
+    private Integer estadoCarritoId = 1;
+
+    /**
      * Relación opcional con UserRole (si se necesita carga eager).
      */
     @ManyToOne(fetch = FetchType.LAZY)

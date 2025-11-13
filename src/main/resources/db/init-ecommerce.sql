@@ -311,3 +311,76 @@ COMMENT ON TABLE stock IS 'Inventario de productos';
 
 -- Para verificar las tablas creadas:
 -- SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name;
+
+ALTER TABLE pago_debito 
+    ALTER COLUMN numero_tarjeta TYPE VARCHAR(500);
+
+ALTER TABLE pago_credito 
+    ALTER COLUMN numero_tarjeta TYPE VARCHAR(500);
+
+CREATE TABLE estado_carrito (
+    estado_carrito_id SERIAL PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL UNIQUE
+);
+
+-- ============================================
+-- PASO 2: Insertar estados iniciales
+-- ============================================
+
+INSERT INTO estado_carrito (nombre) VALUES
+    ('Activo'),         -- ID = 1
+    ('Procesando'),     -- ID = 2
+    ('Completado'),     -- ID = 3
+    ('Abandonado'),     -- ID = 4
+    ('Expirado'),       -- ID = 5
+    ('Cancelado');      -- ID = 6
+
+-- ============================================
+-- PASO 3: AHORA SÍ agregar la columna a carrito
+-- ============================================
+
+-- Agregar la columna
+ALTER TABLE carrito 
+    ADD COLUMN estado_carrito_id INTEGER;
+
+-- Actualizar carritos existentes al estado "Activo" (ID = 1)
+UPDATE carrito 
+SET estado_carrito_id = 1 
+WHERE estado_carrito_id IS NULL;
+
+-- Establecer valor por defecto
+ALTER TABLE carrito 
+    ALTER COLUMN estado_carrito_id SET DEFAULT 1;
+
+-- Hacer la columna NOT NULL
+ALTER TABLE carrito 
+    ALTER COLUMN estado_carrito_id SET NOT NULL;
+
+-- ============================================
+-- PASO 4: Agregar foreign key constraint
+-- ============================================
+
+ALTER TABLE carrito 
+    ADD CONSTRAINT fk_estado_carrito 
+    FOREIGN KEY (estado_carrito_id) 
+    REFERENCES estado_carrito(estado_carrito_id) 
+    ON DELETE RESTRICT;
+
+-- ============================================
+-- PASO 5: Crear índice
+-- ============================================
+
+CREATE INDEX idx_carrito_estado 
+    ON carrito(estado_carrito_id);
+
+    
+-- Agregar columna numero_referencia para almacenar UUID de la referencia de pago
+ALTER TABLE productos_carrito 
+    ADD COLUMN numero_referencia VARCHAR(100);
+
+-- Crear índice para búsquedas por número de referencia
+CREATE INDEX idx_productos_carrito_referencia 
+    ON productos_carrito(numero_referencia);
+
+-- Comentario en la columna
+COMMENT ON COLUMN productos_carrito.numero_referencia IS 'UUID de la referencia de pago asociada al item del carrito';

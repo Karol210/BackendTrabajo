@@ -45,5 +45,14 @@ public interface StockStockTransactionalService {
      * @return true si hay suficiente stock
      */
     boolean hasEnoughStock(Integer productoId, Integer requestedQuantity);
+
+    /**
+     * Disminuye el stock de un producto en la cantidad especificada.
+     *
+     * @param productoId ID del producto
+     * @param quantity Cantidad a disminuir
+     * @throws IllegalStateException si no hay suficiente stock
+     */
+    void decreaseStock(Integer productoId, Integer quantity);
 }
 

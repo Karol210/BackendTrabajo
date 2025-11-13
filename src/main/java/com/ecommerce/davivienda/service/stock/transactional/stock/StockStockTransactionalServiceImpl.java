@@ -73,5 +73,30 @@ public class StockStockTransactionalServiceImpl implements StockStockTransaction
                 .map(stock -> stock.hasEnoughStock(requestedQuantity))
                 .orElse(false);
     }
+
+    @Override
+    @Transactional
+    public void decreaseStock(Integer productoId, Integer quantity) {
+        log.debug("Disminuyendo stock del producto ID: {} en {} unidades", productoId, quantity);
+
+        Stock stock = stockRepository.findByProductoId(productoId)
+                .orElseThrow(() -> new IllegalStateException(
+                        "No existe stock para el producto ID: " + productoId
+                ));
+
+        if (!stock.hasEnoughStock(quantity)) {
+            throw new IllegalStateException(
+                    String.format("Stock insuficiente para producto ID: %d. Disponible: %d, Solicitado: %d",
+                            productoId, stock.getCantidad(), quantity)
+            );
+        }
+
+        Integer newQuantity = stock.getCantidad() - quantity;
+        stock.setCantidad(newQuantity);
+        stockRepository.save(stock);
+
+        log.info("Stock actualizado para producto ID: {}. Cantidad anterior: {}, Nueva cantidad: {}",
+                productoId, stock.getCantidad() + quantity, newQuantity);
+    }
 }
 

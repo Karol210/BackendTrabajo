@@ -30,5 +30,12 @@ public interface CartUserValidationService {
      */
     UserRole getUserPrimaryRole(Integer usuarioId);
 
+    /**
+     * Valida que el UserRole exista por su ID.
+     *
+     * @param userRoleId ID del UserRole a validar
+     * @throws com.ecommerce.davivienda.exception.cart.CartException si el UserRole no existe
+     */
+    void validateUserRoleExists(Integer userRoleId);
 }
 

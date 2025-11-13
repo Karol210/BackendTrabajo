@@ -49,17 +49,5 @@ public class PaymentProcessResponseDto {
      */
     @JsonProperty("paymentType")
     private String paymentType;
-
-    /**
-     * Últimos 4 dígitos de la tarjeta por seguridad.
-     */
-    @JsonProperty("cardLast4Digits")
-    private String cardLast4Digits;
-
-    /**
-     * Número de cuotas (solo para crédito).
-     */
-    @JsonProperty("installments")
-    private Integer installments;
 }
 
