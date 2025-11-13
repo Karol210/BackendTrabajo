@@ -1,5 +1,6 @@
 package com.ecommerce.davivienda.security.filter;
 
+import com.ecommerce.davivienda.security.SecurityEndpoints;
 import com.ecommerce.davivienda.security.response.AuthenticationResponseBuilder;
 import com.ecommerce.davivienda.security.token.JwtTokenExtractor;
 import com.ecommerce.davivienda.security.token.JwtTokenValidator;
@@ -31,19 +32,16 @@ import static com.ecommerce.davivienda.constants.Constants.ERROR_JWT_TOKEN_INVAL
  * - {@link JwtTokenValidator}: Validación y parsing del token JWT
  * - {@link AuthenticationResponseBuilder}: Construcción de respuestas de error
  *
+ * <p><b>⚠️ Endpoints públicos centralizados:</b></p>
+ * <p>Los endpoints públicos están definidos en {@link SecurityEndpoints}.
+ * Este filtro omite completamente la validación JWT para endpoints públicos,
+ * permitiendo que funcionen incluso si el cliente envía un token inválido o expirado.</p>
+ *
  * @author Team Tienda Digital
  * @since 1.0.0
  */
 @Slf4j
 public class JwtValidationFilter extends BasicAuthenticationFilter {
-
-    // ==================== CONSTANTES LOCALES ====================
-    
-    /**
-     * Endpoint de login que tiene su propio filtro de autenticación.
-     * Este endpoint NUNCA debe ser validado por el filtro JWT.
-     */
-    private static final String LOGIN_ENDPOINT = "/api/v1/auth/login";
     
     // ==================== CAMPOS ====================
     
@@ -71,7 +69,16 @@ public class JwtValidationFilter extends BasicAuthenticationFilter {
     }
 
     /**
-     * Filtra cada request para validar el token JWT.
+     * Filtra cada request para validar el token JWT cuando está presente.
+     * 
+     * <p><b>Flujo de validación:</b></p>
+     * <ol>
+     *   <li>Verifica si es un endpoint público → omite validación completamente</li>
+     *   <li>Extrae el token JWT del header Authorization (si existe)</li>
+     *   <li>Si NO hay token → continúa sin autenticación (SecurityConfig decide si es válido)</li>
+     *   <li>Si hay token → valida y establece autenticación en el contexto</li>
+     *   <li>Si token inválido → retorna error 401</li>
+     * </ol>
      *
      * @param request Request HTTP
      * @param response Response HTTP
@@ -85,6 +92,7 @@ public class JwtValidationFilter extends BasicAuthenticationFilter {
             HttpServletResponse response,
             FilterChain chain) throws IOException, ServletException {
 
+        // Omitir validación JWT para endpoints públicos
         if (shouldSkipValidation(request)) {
             chain.doFilter(request, response);
             return;
@@ -92,11 +100,15 @@ public class JwtValidationFilter extends BasicAuthenticationFilter {
 
         String token = tokenExtractor.extractToken(request);
 
+        // Si no hay token, continuar sin autenticación
+        // SecurityConfig decidirá si el endpoint requiere autenticación
         if (token == null) {
+            log.debug("🔓 Request sin token JWT a: {}", request.getRequestURI());
             chain.doFilter(request, response);
             return;
         }
 
+        // Si hay token, validarlo
         try {
             Claims claims = tokenValidator.validateAndParseToken(token);
             String userName = claims.getSubject();
@@ -113,18 +125,20 @@ public class JwtValidationFilter extends BasicAuthenticationFilter {
             chain.doFilter(request, response);
 
         } catch (JwtException e) {
+            log.warn("❌ Token JWT inválido para request a: {}", request.getRequestURI());
             responseBuilder.writeValidationErrorResponse(response, e, ERROR_JWT_TOKEN_INVALID, CODE_JWT_TOKEN_INVALID);
         } catch (IOException e) {
+            log.error("❌ Error al parsear authorities del token JWT", e);
             responseBuilder.writeValidationErrorResponse(response, e, ERROR_JWT_AUTHORITIES_PARSE, CODE_JWT_AUTHORITIES_PARSE_ERROR);
         }
     }
 
     /**
      * Verifica si el request debe omitir la validación JWT completamente.
-     * Solo el endpoint de login debe ser omitido, ya que tiene su propio filtro.
      * 
-     * Para los demás endpoints, la autorización la maneja SecurityConfig.
-     * Este filtro solo valida tokens JWT cuando están presentes.
+     * <p><b>⚠️ Endpoints públicos centralizados en {@link SecurityEndpoints}</b></p>
+     * <p>Omite validación para todos los endpoints públicos, permitiendo que funcionen
+     * incluso si el cliente envía un token JWT expirado o inválido.</p>
      *
      * @param request Request HTTP
      * @return true si debe omitir validación, false en caso contrario
@@ -132,8 +146,34 @@ public class JwtValidationFilter extends BasicAuthenticationFilter {
     private boolean shouldSkipValidation(HttpServletRequest request) {
         String requestUri = request.getRequestURI();
         
-        // Solo saltar el endpoint de login (tiene su propio filtro de autenticación)
-        return LOGIN_ENDPOINT.equals(requestUri);
+        for (String publicEndpoint : SecurityEndpoints.PUBLIC_ENDPOINTS) {
+            // Comparar con el endpoint público, soportando wildcards (**)
+            if (matchesPublicEndpoint(requestUri, publicEndpoint)) {
+                log.debug("🌐 Endpoint público detectado: {} - Omitiendo validación JWT", requestUri);
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * Verifica si una URI coincide con un patrón de endpoint público.
+     * Soporta wildcards (**) al final de los patrones.
+     *
+     * @param requestUri URI del request
+     * @param publicEndpoint Patrón de endpoint público
+     * @return true si coincide, false en caso contrario
+     */
+    private boolean matchesPublicEndpoint(String requestUri, String publicEndpoint) {
+        // Si el patrón termina con /**, verificar si empieza con el prefijo
+        if (publicEndpoint.endsWith("/**")) {
+            String prefix = publicEndpoint.substring(0, publicEndpoint.length() - 3);
+            return requestUri.equals(prefix) || requestUri.startsWith(prefix + "/");
+        }
+        
+        // Comparación exacta
+        return requestUri.equals(publicEndpoint);
     }
 
     /**

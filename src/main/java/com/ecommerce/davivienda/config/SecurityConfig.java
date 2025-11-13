@@ -1,5 +1,6 @@
 package com.ecommerce.davivienda.config;
 
+import com.ecommerce.davivienda.security.SecurityEndpoints;
 import com.ecommerce.davivienda.security.credentials.CredentialsExtractor;
 import com.ecommerce.davivienda.security.filter.JwtAuthenticationFilter;
 import com.ecommerce.davivienda.security.filter.JwtValidationFilter;
@@ -34,10 +35,15 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.ecommerce.davivienda.security.SecurityEndpoints.*;
+
 /**
  * Configuración de seguridad de Spring Security con autenticación JWT.
  * Define las políticas de acceso, filtros de autenticación y configuración CORS.
- * Inyecta las capacidades especializadas para el filtro de autenticación.
+ * 
+ * <p><b>⚠️ Endpoints públicos centralizados:</b></p>
+ * <p>Todos los endpoints públicos están definidos en {@link SecurityEndpoints}.
+ * Esta configuración los importa mediante static import.</p>
  *
  * @author Team Tienda Digital
  * @since 1.0.0
@@ -48,29 +54,6 @@ import java.util.List;
 @EnableMethodSecurity(prePostEnabled = true)
 @RequiredArgsConstructor
 public class SecurityConfig {
-
-    // ==================== SECURITY ENDPOINTS ====================
-    
-    private static final String ENDPOINT_AUTH = "/api/v1/auth/**";
-    private static final String ENDPOINT_ACTUATOR = "/actuator/**";
-    private static final String ENDPOINT_DEBUG = "/api/v1/debug/**";
-    
-    // Endpoints específicos públicos de productos
-    private static final String ENDPOINT_PRODUCT_LIST_ACTIVE = "/api/v1/products/list-active";
-    private static final String ENDPOINT_PRODUCT_SEARCH_PAGINATED = "/api/v1/products/search/paginated";
-    private static final String ENDPOINT_PRODUCT_SEARCH = "/api/v1/products/search";
-    private static final String ENDPOINT_PRODUCT_GET_BY_ID = "/api/v1/products/get-by-id/**";
-    
-    
-    // Endpoints específicos públicos de usuarios
-    private static final String ENDPOINT_USERS = "/api/v1/users/**";
-    
-
-    //Endpoints específicos públicos de documentos
-    private static final String ENDPOINT_DOCUMENT_TYPES = "/api/v1/document-types/**";
-
-    //Endpoints específicos públicos de categorías
-    private static final String ENDPOINT_CATEGORIES = "/api/v1/categories/**";
 
     // ==================== CORS CONFIGURATION ====================
     
@@ -209,6 +192,7 @@ public class SecurityConfig {
                 
                 // Endpoints específicos de productos públicos
                 .requestMatchers(ENDPOINT_PRODUCT_LIST_ACTIVE).permitAll()            // GET /api/v1/products/list-active
+                .requestMatchers(ENDPOINT_PRODUCT_LIST_ALL).permitAll()               // GET /api/v1/products/list-all
                 .requestMatchers(ENDPOINT_PRODUCT_SEARCH_PAGINATED).permitAll()       // GET /api/v1/products/search/paginated
                 .requestMatchers(ENDPOINT_PRODUCT_SEARCH).permitAll()                 // POST /api/v1/products/search
                 .requestMatchers(ENDPOINT_PRODUCT_GET_BY_ID).permitAll()              // GET /api/v1/products/get-by-id/{id}

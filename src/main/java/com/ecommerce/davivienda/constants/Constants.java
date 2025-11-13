@@ -203,6 +203,11 @@ public class Constants {
      * Mensaje de error al leer credenciales del request.
      */
     public static final String ERROR_CREDENTIALS_READ = "Error al leer credenciales del request";
+    
+    /**
+     * Mensaje de error al decodificar valor en Base64.
+     */
+    public static final String ERROR_BASE64_DECODE = "Error al decodificar contraseña desde Base64";
 
     // ==================== AUTHENTICATION - ERROR MESSAGES ====================
     
@@ -218,6 +223,12 @@ public class Constants {
      * Formato: ED-AUT-01 (Ecommerce Davivienda - Autenticación - 01)
      */
     public static final String CODE_AUTHENTICATION_FAILED = "ED-AUT-01";
+    
+    /**
+     * Código de error: Error al decodificar Base64.
+     * Formato: ED-AUT-02 (Ecommerce Davivienda - Autenticación - 02)
+     */
+    public static final String CODE_BASE64_DECODE_ERROR = "ED-AUT-02";
 
     // ==================== JWT VALIDATION - ERROR MESSAGES ====================
     
