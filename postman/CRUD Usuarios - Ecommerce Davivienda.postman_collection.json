@@ -1,0 +1,160 @@
+{
+	"info": {
+		"_postman_id": "bc6b0bd0-d6c4-4bf9-a073-64040ef37a0f",
+		"name": "CRUD Usuarios - Ecommerce Davivienda",
+		"description": "Colección de endpoints para operaciones sobre usuarios del sistema.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "18867414",
+		"_collection_link": "https://ecommers-2960.postman.co/workspace/ecommer~52306ab3-2e24-474b-bbb0-b016a3973e77/collection/18867414-bc6b0bd0-d6c4-4bf9-a073-64040ef37a0f?action=share&source=collection_link&creator=18867414"
+	},
+	"item": [
+		{
+			"name": "1. Crear Usuario",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"nombre\": \"Juan Carlos\",\n    \"apellido\": \"Pérez González\",\n    \"documentTypeId\": 1,\n    \"documentNumber\": \"120324567890\",\n    \"email\": \"juan.peregsz@example.com\",\n    \"password\": \"Password123!\",\n    \"roleIds\": [2,3]\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/users/create",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"users",
+						"create"
+					]
+				},
+				"description": "Crea un nuevo usuario en el sistema con estado 'Activo' por defecto.\n\n**Validaciones:**\n- Email único\n- Combinación tipo+número documento única\n- Contraseña obligatoria\n- Tipo documento y rol deben existir"
+			},
+			"response": []
+		},
+		{
+			"name": "2.1 Actualizar Usuario Completo",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"nombre\": \"Juan Carlos Actualizado\",\n    \"apellido\": \"Pérez González\",\n    \"status\": \"Inactivo\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/users/update",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"users",
+						"update"
+					]
+				},
+				"description": "Actualiza todos los campos de un usuario existente.\n\n**Nota:** Todos los campos son opcionales excepto el ID."
+			},
+			"response": []
+		},
+		{
+			"name": "3. Recuperar Contraseña (PÚBLICO)",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"juan.perez@example.com\",\n    \"newPassword\": \"NewPassword456!\",\n    \"envioCorreo\": true\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/users/change-password",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"users",
+						"change-password"
+					]
+				},
+				"description": "Recuperación de contraseña (PÚBLICO - sin autenticación).\nCambia la contraseña y envía correo de notificación si envioCorreo=true.\n\n**Validaciones:**\n- Email debe ser válido\n- Usuario debe existir\n- Nueva contraseña no puede estar vacía\n\n**Nota:**\n- NO requiere token JWT\n- La contraseña se encripta automáticamente con BCrypt\n- envioCorreo=true: Envía correo (default)\n- envioCorreo=false: Solo cambia contraseña sin notificación"
+			},
+			"response": []
+		},
+		{
+			"name": "4. Cambiar Contraseña Autenticado (PRIVADO)",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"description": "Token JWT obtenido del login"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"juan.perez@example.com\",\n    \"newPassword\": \"NewPassword999!\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/users/change-password-authenticated",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"users",
+						"change-password-authenticated"
+					]
+				},
+				"description": "Cambio de contraseña (PRIVADO - requiere autenticación).\nValida que el usuario autenticado sea el dueño del email.\n\n**Validaciones:**\n- REQUIERE token JWT válido\n- Email debe ser válido\n- Email debe coincidir con el del token\n- Usuario debe existir\n- Nueva contraseña no puede estar vacía\n\n**Nota:**\n- La contraseña se encripta automáticamente con BCrypt\n- Solo el usuario autenticado puede cambiar su propia contraseña"
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "userId",
+			"value": "5",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string",
+			"description": "Token JWT obtenido del login"
+		}
+	]
+}

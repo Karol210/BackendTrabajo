@@ -1,11 +1,12 @@
-package com.ecommerce.davivienda.dto.user;
+package com.ecommerce.davivienda.models.user;
+
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,7 +14,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * DTO para la solicitud de creación y actualización de usuarios.
+ * Request para la solicitud de creación de usuarios.
  * Contiene los datos personales, credenciales, rol y estado del usuario.
  *
  * @author Team Ecommerce Davivienda
@@ -25,7 +26,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class UserRequestDto {
+public class UserRequest {
 
     /**
      * ID del usuario (solo para actualización).
@@ -50,9 +51,17 @@ public class UserRequestDto {
     private String apellido;
 
     /**
-     * ID del tipo de documento.
+     * Nombre o código del tipo de documento.
+     * Ejemplos: "Cédula de Ciudadanía", "CC", "Pasaporte", "PA"
+     * Si se envía documentTypeId, este campo es opcional.
      */
-    @NotNull(message = "El tipo de documento es obligatorio")
+    @JsonProperty("documentType")
+    private String documentType;
+
+    /**
+     * ID del tipo de documento (formato antiguo - DEPRECADO).
+     * Se mantiene por compatibilidad. Usar documentType cuando sea posible.
+     */
     @JsonProperty("documentTypeId")
     private Integer documentTypeId;
 
@@ -79,16 +88,32 @@ public class UserRequestDto {
     private String password;
 
     /**
-     * Lista de IDs de roles del usuario.
-     * Un usuario puede tener múltiples roles (ej: Administrador + Cliente).
+     * Lista de nombres de roles del usuario.
+     * Ejemplos: ["Administrador"], ["Cliente"], ["Cliente", "Vendedor"]
+     * Si se envía roleIds, este campo es opcional.
      */
-    @NotNull(message = "Los roles son obligatorios")
-    @JsonProperty("roleIds")
-    private java.util.List<Integer> roleIds;
+    @JsonProperty("roles")
+    private List<String> roles;
 
     /**
-     * ID del estado del usuario (Activo, Inactivo, etc.).
+     * Lista de IDs de roles del usuario (formato antiguo - DEPRECADO).
+     * Se mantiene por compatibilidad. Usar roles cuando sea posible.
+     */
+    @JsonProperty("roleIds")
+    private List<Integer> roleIds;
+
+    /**
+     * Nombre del estado del usuario.
+     * Ejemplos: "Activo", "Inactivo", "Suspendido", "Bloqueado"
      * Opcional en creación (se asigna "Activo" por defecto).
+     * Si se envía statusId, este campo es opcional.
+     */
+    @JsonProperty("status")
+    private String status;
+
+    /**
+     * ID del estado del usuario (formato antiguo - DEPRECADO).
+     * Se mantiene por compatibilidad. Usar status cuando sea posible.
      */
     @JsonProperty("statusId")
     private Integer statusId;

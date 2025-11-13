@@ -9,7 +9,8 @@ alwaysApply: true
 ## 📋 TL;DR
 
 - ✅ **OBLIGATORIO**: ServiceImpl con ≥3 métodos privados → Separar en `validation/` + `builder/`
-- ✅ **OBLIGATORIO**: Validation/Transactional con múltiples dominios → Organizar por dominio (product/, user/, cart/) SIN coordinador intermedio
+- ✅ **OBLIGATORIO**: Validation/Transactional con ≥2 dominios → Organizar en subcarpetas por dominio (product/, user/, cart/, document/, role/, status/, common/) SIN coordinador intermedio
+- ✅ **OBLIGATORIO**: ServiceImpl inyecta subcapacidades directamente por dominio (NO coordinadores que solo delegan)
 - ✅ **Request/Response principales** en `models/` SIN sufijo "Dto" • **DTOs auxiliares** en `dto/` CON "Dto"
 - ✅ Estructura paralela: `service/{capacidad}/` → `dto/{capacidad}/` → `mapper/{capacidad}/`
 - ✅ ServiceImpl inyecta subcapacidades directamente • Sin capas de delegación innecesarias
@@ -19,7 +20,7 @@ alwaysApply: true
 ## 🚨 Reglas Principales
 
 1. **Separación Obligatoria en Servicios CRUD**: Si `ServiceImpl` tiene ≥3 métodos auxiliares privados, separar en capacidades (`validation/`, `builder/`) con interfaces propias
-2. **Organización por Dominio**: Si `validation/` o `transactional/` tienen métodos de múltiples dominios (product, user, cart), organizar en subcarpetas por dominio SIN coordinador intermedio. ServiceImpl inyecta subcapacidades directamente
+2. **Organización por Dominio (OBLIGATORIO)**: Si `validation/` o `transactional/` tienen métodos de ≥2 dominios diferentes (product, user, cart, document, role, status, common), **OBLIGATORIO** organizar en subcarpetas por dominio SIN coordinador intermedio. ServiceImpl inyecta subcapacidades específicas directamente
 3. **Separación Models vs DTOs**: Request/Response principales en `models/` SIN sufijo "Dto". DTOs auxiliares (anidados, cálculos, resúmenes) en `dto/` CON sufijo "Dto"
 4. **Sin Coordinadores Intermedios**: NO crear servicios que solo delegan. ServiceImpl debe inyectar subcapacidades específicas directamente
 5. **Cohesión Alta**: Todos los archivos relacionados con una capacidad/dominio juntos (Client, Service, ServiceImpl, DTOs, Mapper)
@@ -453,6 +454,220 @@ public class CartItemUserValidationServiceImpl
 - `cart/` - Validación y acceso a carritos/items
 - `common/` - Validaciones genéricas (solo en validation)
 
+### Ejemplo 4.1: Caso Real - Refactorización de User por Dominios
+
+**Escenario:** Módulo User con servicios monolíticos de validation y transactional → Organización por dominios
+
+**❌ ANTES - Servicios Monolíticos (4 archivos, 257 líneas):**
+
+```
+service/user/
+├── validation/
+│   ├── UserValidationService.java              (Interface - 110 líneas)
+│   └── UserValidationServiceImpl.java          (Implementación - 153 líneas)
+│       • validateEmailNotExists()              [user domain]
+│       • validateDocumentType()                [document domain]
+│       • validatePasswordNotEmpty()            [common domain]
+│       • findRoleById()                        [role domain]
+│       • findUserByIdOrThrow()                 [user domain]
+│       • findUserByEmailOrThrow()              [user domain]
+│       • findUserStatusByName()                [status domain]
+│       • validateDocumentCombination()         [user domain]
+│       • validateAndFindRolesByIds()           [role domain]
+│       • validateRolesCombination()            [role domain]
+│
+├── transactional/
+│   ├── UserTransactionalService.java           (Interface - 99 líneas)
+│   └── UserTransactionalServiceImpl.java       (Implementación - 103 líneas)
+│       • existsByEmail()                       [user domain]
+│       • findDocumentTypeById()                [document domain]
+│       • findRoleById()                        [role domain]
+│       • findUserById()                        [user domain]
+│       • findUserByEmail()                     [user domain]
+│       • findUserStatusByName()                [status domain]
+│       • findByDocumentTypeAndNumber()         [user domain]
+│       • saveUser()                            [user domain]
+│       • saveAllUserRoles()                    [role domain]
+│       • deleteAllUserRoles()                  [role domain]
+│
+├── UserService.java
+└── UserServiceImpl.java                         (Inyecta 2 servicios monolíticos)
+```
+
+**UserServiceImpl (antes):**
+```java
+@Service
+@RequiredArgsConstructor
+public class UserServiceImpl implements UserService {
+    private final UserTransactionalService transactionalService;  // ❌ Monolítico
+    private final UserValidationService validationService;        // ❌ Monolítico
+    private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
+
+    @Override
+    @Transactional
+    public UserResponse createUser(UserRequest request) {
+        validationService.validateEmailNotExists(request.getEmail());
+        validationService.validatePasswordNotEmpty(request.getPassword());
+        validationService.validateDocumentCombination(...);
+        
+        DocumentType documentType = validationService.validateDocumentType(...);
+        java.util.List<Role> roles = validationService.validateAndFindRolesByIds(...);
+        validationService.validateRolesCombination(roles);
+        UserStatus userStatus = validationService.findUserStatusByName("Activo");
+        
+        User user = userMapper.toEntity(...);
+        User savedUser = transactionalService.saveUser(user);
+        
+        java.util.List<UserRole> userRoles = userMapper.buildUserRoles(...);
+        java.util.List<UserRole> savedUserRoles = transactionalService.saveAllUserRoles(userRoles);
+        // ...
+    }
+}
+```
+
+**✅ DESPUÉS - Organizado por Dominios (18 archivos + coordinador):**
+
+```
+service/user/
+├── validation/                                   ✅ Validaciones por dominio
+│   ├── user/
+│   │   ├── UserUserValidationService.java
+│   │   └── UserUserValidationServiceImpl.java
+│   │       • validateEmailNotExists()
+│   │       • findUserByIdOrThrow()
+│   │       • findUserByEmailOrThrow()
+│   │       • validateDocumentCombination()
+│   │
+│   ├── document/
+│   │   ├── UserDocumentValidationService.java
+│   │   └── UserDocumentValidationServiceImpl.java
+│   │       • validateDocumentType()
+│   │
+│   ├── role/
+│   │   ├── UserRoleValidationService.java
+│   │   └── UserRoleValidationServiceImpl.java
+│   │       • findRoleById()
+│   │       • validateAndFindRolesByIds()
+│   │       • validateRolesCombination()
+│   │
+│   ├── status/
+│   │   ├── UserStatusValidationService.java
+│   │   └── UserStatusValidationServiceImpl.java
+│   │       • findUserStatusByName()
+│   │
+│   └── common/
+│       ├── UserCommonValidationService.java
+│       └── UserCommonValidationServiceImpl.java
+│           • validatePasswordNotEmpty()
+│
+├── transactional/                                ✅ Acceso a datos por dominio
+│   ├── user/
+│   │   ├── UserUserTransactionalService.java
+│   │   └── UserUserTransactionalServiceImpl.java
+│   │       • existsByEmail()
+│   │       • findUserById()
+│   │       • findUserByEmail()
+│   │       • findByDocumentTypeAndNumber()
+│   │       • saveUser()
+│   │
+│   ├── document/
+│   │   ├── UserDocumentTransactionalService.java
+│   │   └── UserDocumentTransactionalServiceImpl.java
+│   │       • findDocumentTypeById()
+│   │
+│   ├── role/
+│   │   ├── UserRoleTransactionalService.java
+│   │   └── UserRoleTransactionalServiceImpl.java
+│   │       • findRoleById()
+│   │       • saveAllUserRoles()
+│   │       • deleteAllUserRoles()
+│   │
+│   └── status/
+│       ├── UserStatusTransactionalService.java
+│       └── UserStatusTransactionalServiceImpl.java
+│           • findUserStatusByName()
+│
+├── UserService.java
+└── UserServiceImpl.java  ← Inyecta subcapacidades directamente
+```
+
+**UserServiceImpl (después):**
+```java
+@Service
+@RequiredArgsConstructor
+public class UserServiceImpl implements UserService {
+    // ✅ Validation subcapacidades (5 dominios)
+    private final UserUserValidationService userValidationService;
+    private final UserDocumentValidationService documentValidationService;
+    private final UserRoleValidationService roleValidationService;
+    private final UserStatusValidationService statusValidationService;
+    private final UserCommonValidationService commonValidationService;
+
+    // ✅ Transactional subcapacidades (2 dominios usados)
+    private final UserUserTransactionalService userTransactionalService;
+    private final UserRoleTransactionalService roleTransactionalService;
+
+    private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
+
+    @Override
+    @Transactional
+    public UserResponse createUser(UserRequest request) {
+        // ✅ Llama directamente a subcapacidades específicas por dominio
+        userValidationService.validateEmailNotExists(request.getEmail());
+        commonValidationService.validatePasswordNotEmpty(request.getPassword());
+        userValidationService.validateDocumentCombination(...);
+        
+        DocumentType documentType = documentValidationService.validateDocumentType(...);
+        List<Role> roles = roleValidationService.validateAndFindRolesByIds(...);
+        roleValidationService.validateRolesCombination(roles);
+        UserStatus userStatus = statusValidationService.findUserStatusByName("Activo");
+        
+        User user = userMapper.toEntity(...);
+        User savedUser = userTransactionalService.saveUser(user);
+        
+        List<UserRole> userRoles = userMapper.buildUserRoles(...);
+        List<UserRole> savedUserRoles = roleTransactionalService.saveAllUserRoles(userRoles);
+        // ...
+    }
+}
+```
+
+**📊 Métricas de Mejora:**
+
+| Aspecto | Antes | Después | Beneficio |
+|---|---|---|---|
+| **Archivos** | 4 (2 validation + 2 transactional) | 18 (9 validation + 9 transactional) | ✅ Organización por dominio |
+| **Líneas validation** | 263 líneas (monolítico) | 5 archivos separados | ✅ Alta cohesión |
+| **Líneas transactional** | 202 líneas (monolítico) | 4 dominios independientes | ✅ Responsabilidades claras |
+| **Inyecciones ServiceImpl** | 2 servicios genéricos | 7 subcapacidades específicas | ✅ Explícito |
+| **Dominios identificables** | ❌ Mezclados | ✅ 5 dominios claros | ✅ SRP |
+| **Reutilización** | ❌ Acoplado | ✅ Subcapacidades independientes | ✅ Testeable |
+
+**🎯 Beneficios Logrados:**
+
+1. ✅ **Alta cohesión**: Cada dominio agrupa métodos relacionados (user, document, role, status, common)
+2. ✅ **SRP aplicado**: Una responsabilidad por archivo (validación de usuarios, acceso a roles, etc.)
+3. ✅ **Sin coordinadores intermedios**: ServiceImpl usa subcapacidades directamente
+4. ✅ **Testeable**: Mock por dominio específico
+5. ✅ **Escalable**: Agregar nuevos dominios sin tocar existentes
+6. ✅ **Consistente**: Misma estructura que otros módulos (CartItem)
+
+**⚠️ Lecciones Aprendidas:**
+
+- 🚨 Servicios validation/transactional monolíticos con múltiples dominios **violan** SRP
+- 🚨 Mezclar dominios en un solo servicio dificulta mantenimiento y testing
+- ✅ Organizar por dominio (user/, document/, role/, status/, common/) **es obligatorio** cuando hay ≥2 dominios
+- ✅ ServiceImpl debe inyectar subcapacidades directamente (no coordinadores)
+- ✅ Cada dominio puede evolucionar independientemente
+
+**📌 Criterios para organización obligatoria por dominios:**
+- ✅ Validation/Transactional con métodos de ≥2 dominios diferentes
+- ✅ Cada dominio tiene ≥2 métodos relacionados
+- ✅ Dominios son independientes entre sí
+- ✅ ServiceImpl usa directamente subcapacidades (sin coordinador intermedio)
+
 ### ⚠️ Caso Especial CRUD: Separación Obligatoria
 
 **Problema:** `ServiceImpl` con ≥3 métodos auxiliares privados (476 líneas, 12 métodos privados)
@@ -506,6 +721,7 @@ public class UserServiceImpl implements UserService {
 
 1. **NO** mantener ≥3 métodos auxiliares privados en `ServiceImpl` ni métodos de validación/construcción (separar en capacidades OBLIGATORIO)
 2. **NO** crear coordinadores intermedios que solo delegan (ej: `ValidationService` que delega a `ProductValidationService`, `UserValidationService`) - ServiceImpl debe inyectar subcapacidades directamente
+3. **NO** mantener servicios validation/transactional monolíticos con métodos de ≥2 dominios diferentes - OBLIGATORIO organizar por dominio en subcarpetas
 3. **NO** poner Request/Response principales en `dto/` (deben ir en `models/` SIN sufijo "Dto")
 4. **NO** usar sufijo "Dto" en Request/Response principales en `models/`
 5. **NO** mezclar Request/Response con DTOs auxiliares en la misma carpeta
@@ -536,10 +752,12 @@ Cursor debe detectar:
 - ❌ Múltiples capas de indirección innecesarias (Service → Coordinador → Subcapacidad)
 - ❌ Archivos con nombres genéricos que solo delegan (`*CoordinatorService`, `*FacadeService`)
 
-**Organización por Dominio:**
-- ❌ Métodos de múltiples dominios mezclados en un solo servicio validation/transactional
-- ❌ Falta de subcarpetas por dominio cuando hay ≥2 dominios (product, user, cart)
-- ❌ Servicios validation sin separar por dominio cuando hay métodos de product + user + cart
+**Organización por Dominio (CRÍTICO):**
+- ❌ Métodos de ≥2 dominios mezclados en un solo servicio validation/transactional monolítico
+- ❌ Falta de subcarpetas por dominio cuando hay ≥2 dominios (product, user, cart, document, role, status, common)
+- ❌ Servicios validation sin separar por dominio cuando hay métodos de product + user + cart + document + role
+- ❌ Servicios transactional sin separar por dominio cuando hay métodos de múltiples entidades
+- ❌ Nombres de métodos que indican múltiples dominios sin organizar (validateProduct, validateUser, validateCart en un mismo servicio)
 
 **Models vs DTOs:**
 - ❌ Request/Response principales con sufijo "Dto" (debe ser sin sufijo en `models/`)
@@ -560,7 +778,7 @@ Cursor debe detectar:
 
 **Objetivo**: Organizar servicios externos, DTOs y Mappers por capacidades de negocio para maximizar cohesión, minimizar acoplamiento y facilitar escalabilidad. **OBLIGATORIO**: Separar capacidades en servicios CRUD con ≥3 métodos auxiliares.
 
-**REGLA DE ORO**: "Una capacidad = Una carpeta. **Request/Response en `models/` SIN "Dto", DTOs auxiliares en `dto/` CON "Dto"**. **ServiceImpl con ≥3 métodos privados → SEPARAR en `validation/` + `builder/`**. **Si validation/transactional tienen múltiples dominios → Organizar por dominio (product/, user/, cart/) SIN coordinador intermedio**. ServiceImpl inyecta subcapacidades directamente. Si ≥2 capacidades external, usar subcarpetas (`auth/`, `questions/`). Si una capacidad tiene múltiples responsabilidades (>50 líneas), crear subcapacidades (`validation/rules/`, `validation/storage/`). Cada cambio afecta solo una carpeta."
+**REGLA DE ORO**: "Una capacidad = Una carpeta. **Request/Response en `models/` SIN "Dto", DTOs auxiliares en `dto/` CON "Dto"**. **ServiceImpl con ≥3 métodos privados → OBLIGATORIO SEPARAR en `validation/` + `builder/`**. **Validation/Transactional con ≥2 dominios → OBLIGATORIO organizar por dominio (user/, document/, role/, status/, product/, cart/, common/) SIN coordinador intermedio**. ServiceImpl inyecta subcapacidades específicas directamente (NO coordinadores). Si ≥2 capacidades external, usar subcarpetas (`auth/`, `questions/`). Si una capacidad tiene múltiples responsabilidades (>50 líneas), crear subcapacidades (`validation/rules/`, `validation/storage/`). Cada cambio afecta solo una carpeta."
 
 ---
 

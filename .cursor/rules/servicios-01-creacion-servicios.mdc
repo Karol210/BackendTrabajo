@@ -559,6 +559,234 @@ cartItem.setCantidad(request.getQuantity());
 - 🎯 **Mantenible**: Agregar campos solo requiere actualizar DTO y entidad
 - 🎯 **Estándar**: Sigue convenciones de MapStruct ampliamente adoptadas
 
+### Ejemplo 5.1: Caso Real - Refactorización Exitosa de UserBuilderService
+
+**Escenario:** Módulo User con Builder Service separado para mapeo de DTOs → Consolidación en Mapper
+
+**❌ ANTES - Arquitectura con Builder Service (4 archivos):**
+
+```
+service/user/
+├── builder/
+│   ├── UserBuilderService.java              (Interface - 54 líneas)
+│   └── UserBuilderServiceImpl.java          (Implementación - 75 líneas)
+├── UserService.java
+└── UserServiceImpl.java                      (Inyecta 5 dependencias)
+
+mapper/user/
+└── UserMapper.java                           (Solo toResponseDto - 50 líneas)
+```
+
+**UserBuilderService (eliminado):**
+```java
+@Service
+@RequiredArgsConstructor
+public class UserBuilderServiceImpl implements UserBuilderService {
+    
+    // ❌ Mapeo manual - debe estar en Mapper
+    @Override
+    public User buildUserFromRequest(
+            UserRequestDto request,
+            DocumentType documentType,
+            java.util.List<Role> roles,
+            UserStatus userStatus,
+            String hashedPassword
+    ) {
+        Credentials credentials = buildCredentials(request.getEmail(), hashedPassword);
+        
+        return User.builder()
+                .nombre(request.getNombre())
+                .apellido(request.getApellido())
+                .documentType(documentType)
+                .numeroDeDoc(request.getDocumentNumber())
+                .credenciales(credentials)
+                .userStatus(userStatus)
+                .build();
+    }
+    
+    // ❌ Este método también debe estar en Mapper
+    @Override
+    public java.util.List<UserRole> buildUserRoles(Integer userId, java.util.List<Role> roles) {
+        java.util.List<UserRole> userRoles = new java.util.ArrayList<>();
+        for (Role role : roles) {
+            userRoles.add(UserRole.builder()
+                    .usuarioId(userId)
+                    .role(role)
+                    .build());
+        }
+        return userRoles;
+    }
+}
+```
+
+**UserServiceImpl (antes):**
+```java
+@Service
+@RequiredArgsConstructor
+public class UserServiceImpl implements UserService {
+    private final UserTransactionalService transactionalService;
+    private final UserValidationService validationService;
+    private final UserBuilderService builderService;        // ❌ Builder separado
+    private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
+    
+    @Override
+    @Transactional
+    public UserResponseDto createUser(UserRequestDto request) {
+        // ... validaciones ...
+        String hashedPassword = passwordEncoder.encode(request.getPassword());
+        
+        // ❌ Llama al Builder
+        User user = builderService.buildUserFromRequest(
+                request, documentType, roles, userStatus, hashedPassword
+        );
+        User savedUser = transactionalService.saveUser(user);
+        
+        // ❌ Llama al Builder nuevamente
+        java.util.List<UserRole> userRoles = builderService.buildUserRoles(
+                savedUser.getUsuarioId(), roles
+        );
+        // ...
+    }
+}
+```
+
+**✅ DESPUÉS - Arquitectura consolidada en Mapper (2 archivos):**
+
+```
+service/user/
+├── UserService.java
+└── UserServiceImpl.java                      (Inyecta 4 dependencias - eliminado builder)
+
+mapper/user/
+└── UserMapper.java                           (Completo con construcción - 123 líneas)
+```
+
+**UserMapper (consolidado):**
+```java
+@Mapper(componentModel = "spring")
+public interface UserMapper {
+
+    // ==================== CONSTRUCCIÓN ====================
+
+    /**
+     * Construye entidad User desde DTO con entidades relacionadas.
+     * Reemplaza: UserBuilderService.buildUserFromRequest()
+     */
+    @Mapping(target = "usuarioId", ignore = true)
+    @Mapping(target = "nombre", source = "request.nombre")
+    @Mapping(target = "apellido", source = "request.apellido")
+    @Mapping(target = "documentType", source = "documentType")
+    @Mapping(target = "numeroDeDoc", source = "request.documentNumber")
+    @Mapping(target = "credenciales", expression = "java(buildCredentials(request.getEmail(), hashedPassword))")
+    @Mapping(target = "userStatus", source = "userStatus")
+    @Mapping(target = "roles", ignore = true)
+    User toEntity(
+            UserRequestDto request,
+            DocumentType documentType,
+            UserStatus userStatus,
+            String hashedPassword
+    );
+
+    /**
+     * Construye Credentials desde email y contraseña.
+     * Reemplaza: UserBuilderService.buildCredentials()
+     */
+    default Credentials buildCredentials(String email, String hashedPassword) {
+        return Credentials.builder()
+                .correo(email)
+                .contrasena(hashedPassword)
+                .build();
+    }
+
+    /**
+     * Construye lista de UserRole.
+     * Reemplaza: UserBuilderService.buildUserRoles()
+     */
+    default java.util.List<UserRole> buildUserRoles(Integer userId, java.util.List<Role> roles) {
+        if (roles == null || roles.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        
+        java.util.List<UserRole> userRoles = new java.util.ArrayList<>();
+        for (Role role : roles) {
+            userRoles.add(UserRole.builder()
+                    .usuarioId(userId)
+                    .role(role)
+                    .build());
+        }
+        return userRoles;
+    }
+
+    // ==================== CONVERSIÓN ====================
+
+    /**
+     * Convierte entidad User a UserResponseDto.
+     */
+    @Mapping(target = "id", source = "usuarioId")
+    @Mapping(target = "documentType", source = "documentType.codigo")
+    @Mapping(target = "email", source = "credenciales.correo")
+    // ... más mappings ...
+    UserResponseDto toResponseDto(User user);
+}
+```
+
+**UserServiceImpl (después):**
+```java
+@Service
+@RequiredArgsConstructor
+public class UserServiceImpl implements UserService {
+    private final UserTransactionalService transactionalService;
+    private final UserValidationService validationService;
+    private final UserMapper userMapper;                   // ✅ Solo Mapper
+    private final PasswordEncoder passwordEncoder;
+    
+    @Override
+    @Transactional
+    public UserResponseDto createUser(UserRequestDto request) {
+        // ... validaciones ...
+        String hashedPassword = passwordEncoder.encode(request.getPassword());
+        
+        // ✅ Llama al Mapper directamente
+        User user = userMapper.toEntity(request, documentType, userStatus, hashedPassword);
+        User savedUser = transactionalService.saveUser(user);
+        
+        // ✅ Llama al Mapper directamente
+        java.util.List<UserRole> userRoles = userMapper.buildUserRoles(
+                savedUser.getUsuarioId(), roles
+        );
+        // ...
+    }
+}
+```
+
+**📊 Métricas de Mejora:**
+
+| Aspecto | Antes | Después | Mejora |
+|---|---|---|---|
+| **Archivos totales** | 4 (2 Builder + 2 Mapper) | 2 (Solo Mapper) | -50% archivos |
+| **Líneas Builder** | 129 líneas | 0 líneas (consolidado) | -100% |
+| **Líneas Mapper** | 50 líneas | 123 líneas | +73 líneas netas |
+| **Inyecciones ServiceImpl** | 5 dependencias | 4 dependencias | -20% acoplamiento |
+| **Capas indirección** | Service → Builder → Entities | Service → Mapper | -1 capa |
+| **Type-safety** | ❌ Manual (sin validación) | ✅ MapStruct (compile-time) | ✅ |
+
+**🎯 Beneficios Logrados:**
+
+1. ✅ **Arquitectura correcta**: Todo el mapeo centralizado en Mapper
+2. ✅ **Menos archivos**: 4 → 2 archivos (-50%)
+3. ✅ **Type-safe**: MapStruct valida tipos en compile-time
+4. ✅ **Menos acoplamiento**: ServiceImpl con 1 dependencia menos
+5. ✅ **Mantenible**: Cambios en mapeo solo en 1 lugar
+6. ✅ **Estándar**: Sigue convenciones de MapStruct del proyecto
+
+**⚠️ Lecciones Aprendidas:**
+
+- 🚨 Builder Services para mapeo DTO → Entidad **violan** la arquitectura del proyecto
+- 🚨 Tener Builder + Mapper crea **redundancia** y confusión sobre dónde está el mapeo
+- ✅ MapStruct maneja **construcción, actualización y conversión** en un solo lugar
+- ✅ Métodos `default` en Mapper permiten lógica compleja sin perder type-safety
+
 ### Ejemplo 6: Autenticación por Token con AuthUserService (OBLIGATORIO)
 
 **✅ CORRECTO - Con AuthUserService (RECOMENDADO):**

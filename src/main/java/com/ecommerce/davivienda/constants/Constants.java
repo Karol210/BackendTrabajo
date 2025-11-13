@@ -64,6 +64,11 @@ public class Constants {
      * Mensaje de éxito al cambiar la contraseña.
      */
     public static final String SUCCESS_PASSWORD_CHANGED = "Contraseña actualizada exitosamente";
+    
+    /**
+     * Mensaje de éxito al enviar correo de recuperación de contraseña.
+     */
+    public static final String SUCCESS_PASSWORD_RECOVERY_EMAIL_SENT = "Se ha enviado un correo con instrucciones para cambiar la contraseña";
 
     // ==================== USER - ERROR MESSAGES ====================
     
@@ -108,14 +113,19 @@ public class Constants {
     public static final String ERROR_ROLES_EMPTY = "Debe proporcionar al menos un rol";
     
     /**
-     * Mensaje de error cuando un cliente intenta tener rol de administrador.
-     */
-    public static final String ERROR_CLIENT_CANNOT_BE_ADMIN = "Un usuario con rol Cliente no puede tener rol Administrador";
-    
-    /**
      * Mensaje de error cuando hay roles duplicados en la solicitud.
      */
     public static final String ERROR_ROLES_DUPLICATED = "Los roles no pueden estar duplicados";
+    
+    /**
+     * Mensaje de error cuando el usuario intenta actualizar otro usuario.
+     */
+    public static final String ERROR_USER_UNAUTHORIZED_UPDATE = "No tiene permiso para modificar este usuario";
+    
+    /**
+     * Mensaje de error cuando el usuario intenta cambiar la contraseña de otro usuario.
+     */
+    public static final String ERROR_USER_UNAUTHORIZED_PASSWORD_CHANGE = "No tiene permiso para cambiar la contraseña de este usuario";
 
     // ==================== USER - ERROR CODES ====================
     
@@ -186,16 +196,22 @@ public class Constants {
     public static final String CODE_ROLES_EMPTY = "ED-USR-11";
     
     /**
-     * Código de error: Cliente no puede ser administrador.
-     * Formato: ED-USR-12 (Ecommerce Davivienda - User - 12)
-     */
-    public static final String CODE_CLIENT_CANNOT_BE_ADMIN = "ED-USR-12";
-    
-    /**
      * Código de error: Roles duplicados en solicitud.
      * Formato: ED-USR-13 (Ecommerce Davivienda - User - 13)
      */
     public static final String CODE_ROLES_DUPLICATED = "ED-USR-13";
+    
+    /**
+     * Código de error: Usuario no autorizado para actualizar otro usuario.
+     * Formato: ED-USR-14 (Ecommerce Davivienda - User - 14)
+     */
+    public static final String CODE_USER_UNAUTHORIZED_UPDATE = "ED-USR-14";
+    
+    /**
+     * Código de error: Usuario no autorizado para cambiar contraseña de otro usuario.
+     * Formato: ED-USR-15 (Ecommerce Davivienda - User - 15)
+     */
+    public static final String CODE_USER_UNAUTHORIZED_PASSWORD_CHANGE = "ED-USR-15";
 
     // ==================== CREDENTIALS - ERROR MESSAGES ====================
     

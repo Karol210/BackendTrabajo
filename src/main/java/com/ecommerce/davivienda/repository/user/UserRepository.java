@@ -40,5 +40,13 @@ public interface UserRepository extends JpaRepository<User, Integer> {
      * @return Optional con el usuario encontrado, o vacío si no existe
      */
     Optional<User> findByDocumentType_DocumentoIdAndNumeroDeDoc(Integer documentoId, String numeroDeDoc);
+
+    /**
+     * Busca un usuario por su userRoleId (ID del rol de usuario primario).
+     *
+     * @param usuarioRolId ID del rol de usuario
+     * @return Optional con el usuario encontrado, o vacío si no existe
+     */
+    Optional<User> findByUsuarioRolId(Integer usuarioRolId);
 }
 

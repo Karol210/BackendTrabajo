@@ -2,10 +2,8 @@ package com.ecommerce.davivienda.service.cartitem.transactional.user;
 
 import com.ecommerce.davivienda.entity.user.DocumentType;
 import com.ecommerce.davivienda.entity.user.User;
-import com.ecommerce.davivienda.entity.user.UserRole;
 import com.ecommerce.davivienda.repository.user.DocumentTypeRepository;
 import com.ecommerce.davivienda.repository.user.UserRepository;
-import com.ecommerce.davivienda.repository.user.UserRoleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,7 +23,6 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class CartItemUserTransactionalServiceImpl implements CartItemUserTransactionalService {
 
-    private final UserRoleRepository userRoleRepository;
     private final DocumentTypeRepository documentTypeRepository;
     private final UserRepository userRepository;
 

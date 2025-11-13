@@ -1,8 +1,8 @@
 package com.ecommerce.davivienda.service.user;
 
-import com.ecommerce.davivienda.dto.user.UserRequestDto;
-import com.ecommerce.davivienda.dto.user.UserResponseDto;
-import com.ecommerce.davivienda.dto.user.UserUpdateRequestDto;
+import com.ecommerce.davivienda.models.Response;
+import com.ecommerce.davivienda.models.user.UserRequest;
+import com.ecommerce.davivienda.models.user.UserUpdateRequest;
 
 /**
  * Servicio principal para operaciones CRUD sobre usuarios.
@@ -18,19 +18,12 @@ public interface UserService {
      * Valida datos, encripta contraseña y asigna rol y estado.
      *
      * @param request Datos del usuario a crear
-     * @return UserResponseDto con datos del usuario creado
+     * @return Response con mensaje de éxito
      * @throws com.ecommerce.davivienda.exception.user.UserException si la validación falla
      */
-    UserResponseDto createUser(UserRequestDto request);
+    Response<String> createUser(UserRequest request);
 
-    /**
-     * Obtiene un usuario por su ID.
-     *
-     * @param id ID del usuario
-     * @return UserResponseDto con datos del usuario
-     * @throws com.ecommerce.davivienda.exception.user.UserException si el usuario no existe
-     */
-    UserResponseDto getUserById(Integer id);
+
 
     /**
      * Actualiza un usuario existente de forma parcial.
@@ -38,37 +31,33 @@ public interface UserService {
      *
      * @param id ID del usuario a actualizar
      * @param request Datos a actualizar del usuario (solo campos no-null)
-     * @return UserResponseDto con datos del usuario actualizado
+     * @return Response con mensaje de éxito
      * @throws com.ecommerce.davivienda.exception.user.UserException si la validación falla
      */
-    UserResponseDto updateUser(Integer id, UserUpdateRequestDto request);
+    Response<String> updateUser(Integer id, UserUpdateRequest request);
+
 
     /**
-     * Elimina un usuario (soft delete - marca como inactivo).
-     *
-     * @param id ID del usuario a eliminar
-     * @return UserResponseDto con datos del usuario eliminado
-     * @throws com.ecommerce.davivienda.exception.user.UserException si el usuario no existe
-     */
-    UserResponseDto deleteUser(Integer id);
-
-    /**
-     * Activa un usuario previamente desactivado.
-     *
-     * @param id ID del usuario a activar
-     * @return UserResponseDto con datos del usuario activado
-     * @throws com.ecommerce.davivienda.exception.user.UserException si el usuario no existe
-     */
-    UserResponseDto activateUser(Integer id);
-
-    /**
-     * Cambia la contraseña de un usuario identificado por su email.
+     * Recuperación de contraseña (PÚBLICO - sin autenticación).
+     * Cambia la contraseña y envía correo de notificación si envioCorreo=true.
      *
      * @param email Email del usuario
      * @param newPassword Nueva contraseña (será encriptada)
-     * @return UserResponseDto con datos del usuario
+     * @param envioCorreo Indica si se debe enviar correo de notificación
+     * @return Response con mensaje de éxito
      * @throws com.ecommerce.davivienda.exception.user.UserException si el usuario no existe
      */
-    UserResponseDto changePassword(String email, String newPassword);
+    Response<String> recoverPassword(String email, String newPassword, Boolean envioCorreo);
+
+    /**
+     * Cambio de contraseña (PRIVADO - requiere autenticación).
+     * Valida que el usuario autenticado sea el dueño del email.
+     *
+     * @param email Email del usuario (debe coincidir con el del token)
+     * @param newPassword Nueva contraseña (será encriptada)
+     * @return Response con mensaje de éxito
+     * @throws com.ecommerce.davivienda.exception.user.UserException si el usuario no existe o no coincide
+     */
+    Response<String> changePasswordAuthenticated(String email, String newPassword);
 }
 

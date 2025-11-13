@@ -215,7 +215,7 @@ service/transaction/detail/
 | Categoría | Archivo | Descripción | Líneas | Estado |
 |-----------|---------|-------------|--------|--------|
 | 🏗️ Arquitectura | `arquitectura-00-rules-structure` | Estructura estándar y anti-redundancia | ~381 | ✅ Actualizada |
-| 🔧 Servicios | `servicios-01-creacion-servicios` | Arquitectura en capas + organización modular | ~310 | ✅ Actualizada |
+| 🔧 Servicios | `servicios-01-creacion-servicios` | Arquitectura en capas + MapStruct + caso real refactorización | ~1029 | ⚠️ Refactorizar (excede 500 líneas) |
 | 🔧 Servicios | `servicios-02-feign-client` | Integración con APIs externas vía Feign | 186 | ✅ |
 | 🔧 Servicios | `servicios-03-feign-config` | Configuración transversal de Feign | 189 | ✅ |
 | 🔧 Servicios | `servicios-04-excepciones` | Excepciones + paquetes específicos | ~370 | ✅ Actualizada |
@@ -223,7 +223,7 @@ service/transaction/detail/
 | 💾 Servicios | `servicios-06-transactional` | Capa transactional - Acceso a datos y consultas BD | ~415 | ✅ Actualizada |
 | 🔍 Calidad | `servicios-07-sonar` | SonarQube - Complejidad cognitiva y code smells | 255 | ✅ Estandarizada |
 | 📝 Documentación | `servicios-08-documentacion` | Informes de cambios en DokuWiki + Ejemplos Uso | 223 | ✅ Estandarizada |
-| 🔧 Servicios | `servicios-09-organizacion-capacidades` | Organización por capacidades - Servicios y DTOs | 315 | ✅ Estandarizada |
+| 🔧 Servicios | `servicios-09-organizacion-capacidades` | Organización por capacidades + dominios OBLIGATORIO | ~790 | ⚠️ Refactorizar (excede 500 líneas) |
 | 🧹 Calidad | `servicios-10-buenas-practicas` | Clean Code - SRP, constantes, métodos pequeños | 306 | ✅ Estandarizada |
 | 🎮 Servicios | `servicios-11-controllers` | Controllers REST - Paths descriptivos y mejores prácticas | 462 | ⚠️ Refactorizar |
 
@@ -231,11 +231,13 @@ service/transaction/detail/
 
 **Estado de límites:**
 - ✅ 6 archivos dentro del rango ideal (< 300 líneas)
-- ✅ 5 archivos en rango medio (300-400 líneas)
-- ⚠️ 1 archivo requiere refactorización (> 400 líneas)
-- ✅ Promedio: ~310 líneas por archivo
+- ✅ 3 archivos en rango medio (300-400 líneas)
+- ⚠️ 3 archivos requieren refactorización (> 400 líneas)
+- ⚠️ Promedio: ~410 líneas por archivo
 
 **Últimas actualizaciones:**
+- ✨ **Agregado** Ejemplo 4.1 en `servicios-09-organizacion-capacidades` - Caso real User organizado por dominios + REGLA OBLIGATORIA
+- ✨ **Agregado** Ejemplo 5.1 en `servicios-01-creacion-servicios` - Caso real de refactorización UserBuilderService → UserMapper con métricas
 - ✨ **Reemplazada** regla de **Transaction** por **Capa Transactional** (`servicios-06-transactional`) - Capacidad dedicada para operaciones de BD
 - ✨ **Agregada** regla de **Controllers REST** (`servicios-11-controllers`)
 - ✨ **Estandarizada** regla de **Buenas Prácticas** (`servicios-10-buenas-practicas`)

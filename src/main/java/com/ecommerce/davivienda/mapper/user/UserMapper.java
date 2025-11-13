@@ -1,13 +1,15 @@
 package com.ecommerce.davivienda.mapper.user;
 
-import com.ecommerce.davivienda.dto.user.UserResponseDto;
-import com.ecommerce.davivienda.entity.user.User;
+import com.ecommerce.davivienda.entity.user.*;
+import com.ecommerce.davivienda.models.user.UserRequest;
+import com.ecommerce.davivienda.models.user.UserUpdateRequest;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 /**
- * Mapper para conversiones entre User y DTOs.
- * MapStruct genera la implementación automáticamente en tiempo de compilación.
+ * Mapper MapStruct para User.
+ * Maneja construcción, actualización y conversión de entidades.
+ * Este mapper reemplaza el UserBuilderService eliminado.
  * 
  * @author Team Ecommerce Davivienda
  * @since 1.0.0
@@ -15,36 +17,175 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface UserMapper {
 
-    /**
-     * Convierte entidad User a UserResponseDto.
-     * Mapea campos anidados de entidades relacionadas.
-     *
-     * @param user Entidad User
-     * @return UserResponseDto con datos del usuario
-     */
-    @Mapping(target = "id", source = "usuarioId")
-    @Mapping(target = "documentType", source = "documentType.codigo")
-    @Mapping(target = "documentNumber", source = "numeroDeDoc")
-    @Mapping(target = "email", source = "credenciales.correo")
-    @Mapping(target = "usuarioRolId", source = "usuarioRolId")
-    @Mapping(target = "roles", expression = "java(mapRolesToStrings(user.getRoles()))")
-    @Mapping(target = "status", source = "userStatus.nombre")
-    @Mapping(target = "createdAt", source = "creationDate")
-    UserResponseDto toResponseDto(User user);
+    // ==================== CONSTRUCCIÓN ====================
 
     /**
-     * Convierte una lista de UserRole a una lista de nombres de roles.
+     * Construye entidad User desde Request con entidades relacionadas.
+     * Reemplaza: UserBuilderService.buildUserFromRequest()
      *
-     * @param userRoles Lista de UserRole
-     * @return Lista de nombres de roles
+     * @param request Request con datos del usuario
+     * @param documentType Tipo de documento validado
+     * @param userStatus Estado del usuario
+     * @param hashedPassword Contraseña ya encriptada
+     * @return User construido
      */
-    default java.util.List<String> mapRolesToStrings(java.util.List<com.ecommerce.davivienda.entity.user.UserRole> userRoles) {
-        if (userRoles == null || userRoles.isEmpty()) {
+    @Mapping(target = "usuarioId", ignore = true)
+    @Mapping(target = "nombre", source = "request.nombre")
+    @Mapping(target = "apellido", source = "request.apellido")
+    @Mapping(target = "documentType", source = "documentType")
+    @Mapping(target = "numeroDeDoc", source = "request.documentNumber")
+    @Mapping(target = "credenciales", expression = "java(buildCredentials(request.getEmail(), hashedPassword))")
+    @Mapping(target = "userStatus", source = "userStatus")
+    @Mapping(target = "roles", ignore = true)
+    @Mapping(target = "usuarioRolId", ignore = true)
+    @Mapping(target = "creationDate", ignore = true)
+    User toEntity(
+            UserRequest request,
+            DocumentType documentType,
+            UserStatus userStatus,
+            String hashedPassword
+    );
+
+    /**
+     * Construye Credentials desde email y contraseña encriptada.
+     * Reemplaza: UserBuilderService.buildCredentials()
+     *
+     * @param email Correo electrónico
+     * @param hashedPassword Contraseña encriptada
+     * @return Credentials construidas
+     */
+    default Credentials buildCredentials(String email, String hashedPassword) {
+        return Credentials.builder()
+                .correo(email)
+                .contrasena(hashedPassword)
+                .build();
+    }
+
+    /**
+     * Construye lista de relaciones UserRole para un usuario.
+     * Reemplaza: UserBuilderService.buildUserRoles()
+     *
+     * @param userId ID del usuario
+     * @param roles Lista de roles a asignar
+     * @return Lista de UserRole construidos
+     */
+    default java.util.List<UserRole> buildUserRoles(Integer userId, java.util.List<Role> roles) {
+        if (roles == null || roles.isEmpty()) {
             return java.util.Collections.emptyList();
         }
-        return userRoles.stream()
-                .map(userRole -> userRole.getRole().getNombreRol())
-                .collect(java.util.stream.Collectors.toList());
+        
+        java.util.List<UserRole> userRoles = new java.util.ArrayList<>();
+        for (Role role : roles) {
+            UserRole userRole = UserRole.builder()
+                    .usuarioId(userId)
+                    .role(role)
+                    .build();
+            userRoles.add(userRole);
+        }
+        return userRoles;
+    }
+
+    // ==================== HELPERS ====================
+
+    /**
+     * Asigna el usuarioRolId primario al usuario desde la lista de roles guardados.
+     * Toma el primer UserRole de la lista como rol primario.
+     *
+     * @param user Usuario al que se le asignará el rol primario
+     * @param savedUserRoles Lista de roles guardados
+     * @return true si se asignó el rol primario, false si la lista está vacía
+     */
+    default boolean assignPrimaryRole(User user, java.util.List<UserRole> savedUserRoles) {
+        if (savedUserRoles != null && !savedUserRoles.isEmpty()) {
+            user.setUsuarioRolId(savedUserRoles.get(0).getUsuarioRolId());
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Actualiza los campos básicos del usuario desde UserUpdateRequest.
+     * Solo actualiza los campos que no sean null en el request.
+     *
+     * @param user Usuario a actualizar
+     * @param request Request con los campos a actualizar
+     * @param documentType DocumentType validado (si se actualiza)
+     * @param userStatus UserStatus validado (si se actualiza)
+     */
+    default void updateUserFields(
+            User user,
+            UserUpdateRequest request,
+            DocumentType documentType,
+            UserStatus userStatus) {
+        
+        updateBasicInfo(user, request);
+        updateDocumentInfo(user, request, documentType);
+        updateEmail(user, request);
+        updateStatus(user, userStatus, request);
+    }
+
+    /**
+     * Actualiza información básica (nombre y apellido).
+     *
+     * @param user Usuario a actualizar
+     * @param request Request con los campos
+     */
+    default void updateBasicInfo(User user, UserUpdateRequest request) {
+        if (request.getNombre() != null) {
+            user.setNombre(request.getNombre());
+        }
+        if (request.getApellido() != null) {
+            user.setApellido(request.getApellido());
+        }
+    }
+
+    /**
+     * Actualiza información de documento.
+     * Soporta ambos formatos: documentType (nombre) o documentTypeId (ID).
+     *
+     * @param user Usuario a actualizar
+     * @param request Request con los campos
+     * @param documentType Tipo de documento validado
+     */
+    default void updateDocumentInfo(User user, UserUpdateRequest request, DocumentType documentType) {
+        boolean hasDocumentType = request.getDocumentType() != null && !request.getDocumentType().trim().isEmpty();
+        boolean hasDocumentTypeId = request.getDocumentTypeId() != null;
+        
+        if (hasDocumentType || hasDocumentTypeId) {
+            user.setDocumentType(documentType);
+        }
+        if (request.getDocumentNumber() != null) {
+            user.setNumeroDeDoc(request.getDocumentNumber());
+        }
+    }
+
+    /**
+     * Actualiza email del usuario.
+     *
+     * @param user Usuario a actualizar
+     * @param request Request con el email
+     */
+    default void updateEmail(User user, UserUpdateRequest request) {
+        if (request.getEmail() != null && user.getCredenciales() != null) {
+            user.getCredenciales().setCorreo(request.getEmail());
+        }
+    }
+
+    /**
+     * Actualiza estado del usuario.
+     * Soporta ambos formatos: status (nombre) o statusId (ID).
+     *
+     * @param user Usuario a actualizar
+     * @param userStatus Estado validado
+     * @param request Request para validar si se debe actualizar
+     */
+    default void updateStatus(User user, UserStatus userStatus, UserUpdateRequest request) {
+        boolean hasStatus = request.getStatus() != null && !request.getStatus().trim().isEmpty();
+        boolean hasStatusId = request.getStatusId() != null;
+        
+        if (hasStatus || hasStatusId) {
+            user.setUserStatus(userStatus);
+        }
     }
 }
 

@@ -49,29 +49,6 @@ public class CategoryController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Obtiene una categoría por su ID.
-     *
-     * @param id ID de la categoría
-     * @return Response con la categoría
-     */
-    @GetMapping("/get-by-id/{id}")
-    public ResponseEntity<Response<CategoryResponseDto>> getCategoryById(@PathVariable Integer id) {
-        log.info("GET /api/v1/categories/get-by-id/{} - Obtener categoría por ID", id);
-
-        CategoryResponseDto category = categoryService.getCategoryById(id);
-
-        Response<CategoryResponseDto> response = Response.<CategoryResponseDto>builder()
-                .failure(false)
-                .code(HttpStatus.OK.value())
-                .message("Categoría encontrada")
-                .body(category)
-                .timestamp(String.valueOf(System.currentTimeMillis()))
-                .build();
-
-        log.info("Categoría encontrada: {}", category.getName());
-        return ResponseEntity.ok(response);
-    }
 
     /**
      * Busca una categoría por su nombre.

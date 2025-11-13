@@ -189,7 +189,8 @@ public class SecurityConfig {
                 .requestMatchers(ENDPOINT_DOCUMENT_TYPES).permitAll()
 
                 // Endpoints específicos de usuarios públicos
-                .requestMatchers(ENDPOINT_USERS).permitAll()
+                .requestMatchers(ENDPOINT_USERS_CREATE).permitAll()
+                .requestMatchers(ENDPOINT_USERS_CHANGE_PASSWORD).permitAll()
 
                 
                 .anyRequest().authenticated();

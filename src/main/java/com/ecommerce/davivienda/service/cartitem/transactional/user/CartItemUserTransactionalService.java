@@ -2,7 +2,6 @@ package com.ecommerce.davivienda.service.cartitem.transactional.user;
 
 import com.ecommerce.davivienda.entity.user.DocumentType;
 import com.ecommerce.davivienda.entity.user.User;
-import com.ecommerce.davivienda.entity.user.UserRole;
 
 import java.util.Optional;
 

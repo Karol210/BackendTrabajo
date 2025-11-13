@@ -75,9 +75,14 @@ public final class SecurityEndpoints {
     // ==================== USER ENDPOINTS ====================
     
     /**
-     * Endpoints de usuarios (públicos para registro, etc.)
+     * Endpoint público de creación de usuarios (registro)
      */
-    public static final String ENDPOINT_USERS = "/api/v1/users/**";
+    public static final String ENDPOINT_USERS_CREATE = "/api/v1/users/create";
+    
+    /**
+     * Endpoint público de recuperación de contraseña
+     */
+    public static final String ENDPOINT_USERS_CHANGE_PASSWORD = "/api/v1/users/change-password";
     
     // ==================== DOCUMENT TYPE ENDPOINTS ====================
     
@@ -112,7 +117,8 @@ public final class SecurityEndpoints {
         ENDPOINT_PRODUCT_SEARCH_PAGINATED,
         ENDPOINT_PRODUCT_SEARCH,
         ENDPOINT_PRODUCT_GET_BY_ID,
-        ENDPOINT_USERS,
+        ENDPOINT_USERS_CREATE,
+        ENDPOINT_USERS_CHANGE_PASSWORD,
         ENDPOINT_DOCUMENT_TYPES,
         ENDPOINT_CATEGORIES
     };

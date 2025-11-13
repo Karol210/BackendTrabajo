@@ -21,14 +21,6 @@ public interface RoleService {
      */
     List<RoleResponseDto> findAll();
 
-    /**
-     * Busca un rol por su ID.
-     *
-     * @param id Identificador del rol
-     * @return Rol encontrado
-     * @throws com.ecommerce.davivienda.exception.role.RoleException si no existe
-     */
-    RoleResponseDto findById(Integer id);
 
     /**
      * Busca un rol por su nombre.
@@ -39,31 +31,6 @@ public interface RoleService {
      */
     RoleResponseDto findByName(String nombre);
 
-    /**
-     * Crea un nuevo rol.
-     *
-     * @param requestDto DTO con los datos del rol a crear
-     * @return Rol creado
-     * @throws com.ecommerce.davivienda.exception.role.RoleException si el nombre ya existe
-     */
-    RoleResponseDto create(RoleRequestDto requestDto);
 
-    /**
-     * Actualiza un rol existente.
-     *
-     * @param id Identificador del rol a actualizar
-     * @param requestDto DTO con los datos actualizados
-     * @return Rol actualizado
-     * @throws com.ecommerce.davivienda.exception.role.RoleException si no existe o hay duplicados
-     */
-    RoleResponseDto update(Integer id, RoleRequestDto requestDto);
-
-    /**
-     * Elimina un rol por su ID.
-     *
-     * @param id Identificador del rol a eliminar
-     * @throws com.ecommerce.davivienda.exception.role.RoleException si no existe
-     */
-    void delete(Integer id);
 }
 

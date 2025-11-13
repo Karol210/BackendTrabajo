@@ -1,4 +1,4 @@
-package com.ecommerce.davivienda.dto.user;
+package com.ecommerce.davivienda.models.user;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -11,8 +11,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * DTO para la solicitud de cambio de contraseña de un usuario.
- * Identifica al usuario por su correo electrónico.
+ * Request para cambio de contraseña de usuario autenticado (privado).
+ * Requiere token JWT válido.
  *
  * @author Team Ecommerce Davivienda
  * @since 1.0.0
@@ -23,10 +23,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class PasswordChangeRequestDto {
+public class PasswordChangeAuthenticatedRequest {
 
     /**
-     * Correo electrónico del usuario.
+     * Correo electrónico del usuario (debe coincidir con el del token).
      */
     @NotBlank(message = "El correo electrónico es obligatorio")
     @Email(message = "El correo electrónico debe ser válido")

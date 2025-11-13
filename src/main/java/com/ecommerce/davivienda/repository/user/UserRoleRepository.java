@@ -5,7 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Repositorio para operaciones CRUD sobre la entidad UserRole.
@@ -24,6 +23,13 @@ public interface UserRoleRepository extends JpaRepository<UserRole, Integer> {
      * @return Lista de relaciones usuario-rol
      */
     List<UserRole> findByUsuarioId(Integer usuarioId);
+
+    /**
+     * Elimina todas las relaciones usuario-rol para un usuario específico.
+     *
+     * @param usuarioId ID del usuario
+     */
+    void deleteByUsuarioId(Integer usuarioId);
 
 }
 

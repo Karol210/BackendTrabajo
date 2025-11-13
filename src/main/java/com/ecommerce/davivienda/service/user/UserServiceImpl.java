@@ -1,23 +1,32 @@
 package com.ecommerce.davivienda.service.user;
 
-import com.ecommerce.davivienda.dto.user.UserRequestDto;
-import com.ecommerce.davivienda.dto.user.UserResponseDto;
-import com.ecommerce.davivienda.dto.user.UserUpdateRequestDto;
 import com.ecommerce.davivienda.entity.user.*;
 import com.ecommerce.davivienda.mapper.user.UserMapper;
-import com.ecommerce.davivienda.repository.user.UserRepository;
-import com.ecommerce.davivienda.repository.user.UserRoleRepository;
-import com.ecommerce.davivienda.service.user.builder.UserBuilderService;
-import com.ecommerce.davivienda.service.user.validation.UserValidationService;
+import com.ecommerce.davivienda.models.Response;
+import com.ecommerce.davivienda.models.user.UserRequest;
+import com.ecommerce.davivienda.models.user.UserUpdateRequest;
+import com.ecommerce.davivienda.service.auth.AuthUserService;
+import com.ecommerce.davivienda.service.user.transactional.role.UserRoleTransactionalService;
+import com.ecommerce.davivienda.service.user.transactional.user.UserUserTransactionalService;
+import com.ecommerce.davivienda.service.user.validation.common.UserCommonValidationService;
+import com.ecommerce.davivienda.service.user.validation.document.UserDocumentValidationService;
+import com.ecommerce.davivienda.service.user.validation.role.UserRoleValidationService;
+import com.ecommerce.davivienda.service.user.validation.status.UserStatusValidationService;
+import com.ecommerce.davivienda.service.user.validation.user.UserUserValidationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import static com.ecommerce.davivienda.constants.Constants.*;
+
 /**
  * Implementación del servicio principal para operaciones CRUD sobre usuarios.
- * Coordina las capacidades de validación y construcción sin lógica auxiliar.
+ * Coordina las capacidades de validación y transaccional organizadas por dominios.
  * 
  * @author Team Ecommerce Davivienda
  * @since 1.0.0
@@ -27,196 +36,320 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
-    private final UserRepository userRepository;
-    private final UserRoleRepository userRoleRepository;
-    private final UserValidationService validationService;
-    private final UserBuilderService builderService;
+    // Validation subcapacidades
+    private final UserUserValidationService userValidationService;
+    private final UserDocumentValidationService documentValidationService;
+    private final UserRoleValidationService roleValidationService;
+    private final UserStatusValidationService statusValidationService;
+    private final UserCommonValidationService commonValidationService;
+
+    // Transactional subcapacidades
+    private final UserUserTransactionalService userTransactionalService;
+    private final UserRoleTransactionalService roleTransactionalService;
+
+    private final AuthUserService authUserService;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
-    public UserResponseDto createUser(UserRequestDto request) {
+    public Response<String> createUser(UserRequest request) {
         log.info("Creando usuario: {}", request.getEmail());
 
-        validationService.validateEmailNotExists(request.getEmail());
-        validationService.validatePasswordNotEmpty(request.getPassword());
-        validationService.validateDocumentCombination(
-                request.getDocumentTypeId(), 
-                request.getDocumentNumber(), 
-                null
-        );
+        validateUserCreateRequest(request);
 
-        DocumentType documentType = validationService.validateDocumentType(request.getDocumentTypeId());
-        java.util.List<Role> roles = validationService.validateAndFindRolesByIds(request.getRoleIds());
-        validationService.validateRolesCombination(roles);
-        UserStatus userStatus = validationService.findUserStatusByName("Activo");
-
+        DocumentType documentType = resolveDocumentType(request.getDocumentType(), request.getDocumentTypeId());
+        List<Role> roles = resolveRoles(request.getRoles(), request.getRoleIds());
+        UserStatus userStatus = resolveUserStatus(request.getStatus(), request.getStatusId(), "Activo");
         String hashedPassword = passwordEncoder.encode(request.getPassword());
 
-        User user = builderService.buildUserFromRequest(
-                request, documentType, roles, userStatus, hashedPassword
-        );
-        User savedUser = userRepository.save(user);
+        User user = userMapper.toEntity(request, documentType, userStatus, hashedPassword);
+        User savedUser = userTransactionalService.saveUser(user);
 
-        java.util.List<UserRole> userRoles = builderService.buildUserRoles(savedUser.getUsuarioId(), roles);
-        java.util.List<UserRole> savedUserRoles = userRoleRepository.saveAll(userRoles);
+        savedUser = createAndAssignUserRoles(savedUser, roles);
+
+        log.info("Usuario creado exitosamente: ID={} con {} roles", savedUser.getUsuarioId(), savedUser.getRoles().size());
+        return Response.success(SUCCESS_USER_CREATED);
+    }
+
+    private void validateUserCreateRequest(UserRequest request) {
+        userValidationService.validateEmailNotExists(request.getEmail());
+        commonValidationService.validatePasswordNotEmpty(request.getPassword());
+        
+        DocumentType documentType = resolveDocumentType(request.getDocumentType(), request.getDocumentTypeId());
+        userValidationService.validateDocumentCombination(
+                documentType.getDocumentoId(),
+                request.getDocumentNumber(),
+                null
+        );
+    }
+
+    /**
+     * Resuelve el tipo de documento desde nombre (preferido) o ID (compatibilidad).
+     * Usa patrón Early Return para reducir complejidad cognitiva.
+     * 
+     * @param documentType Nombre o código del tipo de documento
+     * @param documentTypeId ID del tipo de documento (formato antiguo)
+     * @return DocumentType resuelto
+     * @throws com.ecommerce.davivienda.exception.user.UserException si ambos parámetros están vacíos
+     */
+    private DocumentType resolveDocumentType(String documentType, Integer documentTypeId) {
+        if (documentType != null && !documentType.trim().isEmpty()) {
+            log.debug("Usando documentType (nombre): {}", documentType);
+            return documentValidationService.validateDocumentTypeByName(documentType);
+        }
+        
+        if (documentTypeId != null) {
+            log.debug("Usando documentTypeId (ID): {}", documentTypeId);
+            return documentValidationService.validateDocumentType(documentTypeId);
+        }
+        
+        throw new com.ecommerce.davivienda.exception.user.UserException(
+            ERROR_DOCUMENT_TYPE_NOT_FOUND,
+            CODE_DOCUMENT_TYPE_NOT_FOUND
+        );
+    }
+
+    /**
+     * Resuelve los roles desde nombres (preferido) o IDs (compatibilidad).
+     * Usa patrón Early Return para reducir complejidad cognitiva.
+     * 
+     * @param roleNames Lista de nombres de roles
+     * @param roleIds Lista de IDs de roles (formato antiguo)
+     * @return Lista de Role resueltos
+     * @throws com.ecommerce.davivienda.exception.user.UserException si ambas listas están vacías
+     */
+    private List<Role> resolveRoles(List<String> roleNames, List<Integer> roleIds) {
+        if (roleNames != null && !roleNames.isEmpty()) {
+            log.debug("Usando roles (nombres): {}", roleNames);
+            return roleValidationService.validateAndFindRolesByNames(roleNames);
+        }
+        
+        if (roleIds != null && !roleIds.isEmpty()) {
+            log.debug("Usando roleIds (IDs): {}", roleIds);
+            return roleValidationService.validateAndFindRolesByIds(roleIds);
+        }
+        
+        throw new com.ecommerce.davivienda.exception.user.UserException(
+            ERROR_ROLES_EMPTY,
+            CODE_ROLES_EMPTY
+        );
+    }
+
+    /**
+     * Resuelve el estado del usuario desde nombre (preferido) o ID (compatibilidad).
+     * Usa patrón Early Return para reducir complejidad cognitiva.
+     * 
+     * @param statusName Nombre del estado
+     * @param statusId ID del estado (formato antiguo)
+     * @param defaultStatus Estado por defecto si ninguno está presente
+     * @return UserStatus resuelto
+     * @throws com.ecommerce.davivienda.exception.user.UserException si ninguna opción está presente
+     */
+    private UserStatus resolveUserStatus(String statusName, Integer statusId, String defaultStatus) {
+        if (statusName != null && !statusName.trim().isEmpty()) {
+            log.debug("Usando status (nombre): {}", statusName);
+            return statusValidationService.findUserStatusByName(statusName);
+        }
+        
+        if (statusId != null) {
+            log.debug("Usando statusId (ID): {}", statusId);
+            return statusValidationService.findUserStatusById(statusId);
+        }
+        
+        if (defaultStatus != null) {
+            log.debug("Usando estado por defecto: {}", defaultStatus);
+            return statusValidationService.findUserStatusByName(defaultStatus);
+        }
+        
+        throw new com.ecommerce.davivienda.exception.user.UserException(
+            ERROR_STATUS_NOT_FOUND,
+            CODE_STATUS_NOT_FOUND
+        );
+    }
+
+    private User createAndAssignUserRoles(User savedUser, List<Role> roles) {
+        List<UserRole> userRoles = userMapper.buildUserRoles(savedUser.getUsuarioId(), roles);
+        List<UserRole> savedUserRoles = roleTransactionalService.saveAllUserRoles(userRoles);
         savedUser.setRoles(savedUserRoles);
 
-        // Actualizar usuario_rol_id con el primer rol asignado
-        if (!savedUserRoles.isEmpty()) {
-            savedUser.setUsuarioRolId(savedUserRoles.get(0).getUsuarioRolId());
-            savedUser = userRepository.save(savedUser);
+        if (userMapper.assignPrimaryRole(savedUser, savedUserRoles)) {
+            savedUser = userTransactionalService.saveUser(savedUser);
         }
 
-        log.info("Usuario creado exitosamente: ID={} con {} roles", savedUser.getUsuarioId(), savedUserRoles.size());
-        return userMapper.toResponseDto(savedUser);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public UserResponseDto getUserById(Integer id) {
-        log.info("Consultando usuario por ID: {}", id);
-
-        User user = validationService.findUserByIdOrThrow(id);
-
-        log.info("Usuario encontrado: {}", user.getCorreo());
-        return userMapper.toResponseDto(user);
+        return savedUser;
     }
 
     @Override
     @Transactional
-    public UserResponseDto updateUser(Integer id, UserUpdateRequestDto request) {
-        log.info("Actualizando usuario ID: {} con campos parciales", id);
-
-        User user = validationService.findUserByIdOrThrow(id);
-
-        // Validar email solo si viene en el request y es diferente
-        if (request.getEmail() != null && !user.getCorreo().equals(request.getEmail())) {
-            validationService.validateEmailNotExists(request.getEmail());
+    public Response<String> updateUser(Integer id, UserUpdateRequest request) {
+        Integer authenticatedUserRoleId = authUserService.getAuthenticatedUserRoleId();
+        
+        Integer userId;
+        if (id == null) {
+            log.info("Actualizando usuario autenticado (userRoleId: {})", authenticatedUserRoleId);
+            User authenticatedUser = userValidationService.findUserByUserRoleId(authenticatedUserRoleId);
+            userId = authenticatedUser.getUsuarioId();
+        } else {
+            log.info("Actualizando usuario ID: {}", id);
+            userValidationService.validateUserOwnership(id, authenticatedUserRoleId);
+            userId = id;
         }
 
-        // Validar combinación documento solo si alguno de los dos campos viene
-        if (request.getDocumentTypeId() != null || request.getDocumentNumber() != null) {
-            Integer documentTypeId = request.getDocumentTypeId() != null 
-                    ? request.getDocumentTypeId() 
-                    : user.getDocumentType().getDocumentoId();
-            String documentNumber = request.getDocumentNumber() != null 
-                    ? request.getDocumentNumber() 
-                    : user.getNumeroDeDoc();
-            
-            validationService.validateDocumentCombination(documentTypeId, documentNumber, id);
-        }
+        User user = userValidationService.findUserByIdOrThrow(userId);
 
-        // Validar y obtener documentType solo si viene en el request
-        DocumentType documentType = request.getDocumentTypeId() != null
-                ? validationService.validateDocumentType(request.getDocumentTypeId())
-                : user.getDocumentType();
+        validateUserUpdateRequest(request, user, userId);
 
-        // Actualizar roles solo si vienen en el request
-        if (request.getRoleIds() != null && !request.getRoleIds().isEmpty()) {
-            java.util.List<Role> newRoles = validationService.validateAndFindRolesByIds(request.getRoleIds());
-            validationService.validateRolesCombination(newRoles);
+        DocumentType documentType = resolveUpdatedDocumentType(
+                request.getDocumentType(),
+                request.getDocumentTypeId(), 
+                user.getDocumentType()
+        );
 
-            userRoleRepository.deleteAll(user.getRoles());
-            user.getRoles().clear();
+        processUserRolesUpdate(user, request.getRoles(), request.getRoleIds());
 
-            java.util.List<UserRole> userRoles = builderService.buildUserRoles(user.getUsuarioId(), newRoles);
-            java.util.List<UserRole> savedUserRoles = userRoleRepository.saveAll(userRoles);
-            user.setRoles(savedUserRoles);
+        UserStatus userStatus = resolveUpdatedUserStatus(
+                request.getStatus(),
+                request.getStatusId(), 
+                user.getUserStatus()
+        );
 
-            // Actualizar usuario_rol_id con el primer rol asignado
-            if (!savedUserRoles.isEmpty()) {
-                user.setUsuarioRolId(savedUserRoles.get(0).getUsuarioRolId());
-            }
-            
-            log.info("Roles actualizados: {} roles asignados", savedUserRoles.size());
-        }
+        userMapper.updateUserFields(user, request, documentType, userStatus);
 
-        // Actualizar userStatus solo si viene en el request
-        UserStatus userStatus = request.getStatusId() != null
-                ? userRepository.findById(request.getStatusId())
-                        .map(User::getUserStatus)
-                        .orElse(user.getUserStatus())
-                : user.getUserStatus();
-
-        // Actualizar solo los campos que vienen en el request
-        if (request.getNombre() != null) {
-            user.setNombre(request.getNombre());
-            log.debug("Nombre actualizado a: {}", request.getNombre());
-        }
-        if (request.getApellido() != null) {
-            user.setApellido(request.getApellido());
-            log.debug("Apellido actualizado a: {}", request.getApellido());
-        }
-        if (request.getDocumentTypeId() != null) {
-            user.setDocumentType(documentType);
-            log.debug("DocumentType actualizado");
-        }
-        if (request.getDocumentNumber() != null) {
-            user.setNumeroDeDoc(request.getDocumentNumber());
-            log.debug("Número de documento actualizado");
-        }
-        if (request.getEmail() != null && user.getCredenciales() != null) {
-            user.getCredenciales().setCorreo(request.getEmail());
-            log.debug("Email actualizado a: {}", request.getEmail());
-        }
-        if (request.getStatusId() != null) {
-            user.setUserStatus(userStatus);
-            log.debug("Status actualizado");
-        }
-
-        User updatedUser = userRepository.save(user);
+        User updatedUser = userTransactionalService.saveUser(user);
 
         log.info("Usuario actualizado exitosamente: ID={}", updatedUser.getUsuarioId());
-        return userMapper.toResponseDto(updatedUser);
+        return Response.success(SUCCESS_USER_UPDATED);
     }
+
+    private void validateUserUpdateRequest(UserUpdateRequest request, User user, Integer userId) {
+        userValidationService.validateEmailUpdate(request.getEmail(), user.getCorreo());
+        
+        if (request.getDocumentType() != null || request.getDocumentTypeId() != null || request.getDocumentNumber() != null) {
+            DocumentType requestDocumentType = resolveUpdatedDocumentType(
+                    request.getDocumentType(),
+                    request.getDocumentTypeId(),
+                    user.getDocumentType()
+            );
+            
+        userValidationService.validateDocumentUpdateCombination(
+                    requestDocumentType.getDocumentoId(),
+                request.getDocumentNumber(),
+                user.getDocumentType().getDocumentoId(),
+                user.getNumeroDeDoc(),
+                userId
+        );
+    }
+    }
+
+    /**
+     * Resuelve el tipo de documento actualizado desde nombre (preferido) o ID (compatibilidad).
+     * Si ninguno está presente, retorna el tipo de documento actual.
+     * 
+     * @param documentType Nombre o código del tipo de documento
+     * @param documentTypeId ID del tipo de documento (formato antiguo)
+     * @param currentDocumentType Tipo de documento actual del usuario
+     * @return DocumentType resuelto
+     */
+    private DocumentType resolveUpdatedDocumentType(
+            String documentType,
+            Integer documentTypeId,
+            DocumentType currentDocumentType) {
+        
+        if (documentType != null && !documentType.trim().isEmpty()) {
+            log.debug("Actualizando documentType (nombre): {}", documentType);
+            return documentValidationService.getUpdatedDocumentTypeByName(documentType, currentDocumentType);
+        } else if (documentTypeId != null) {
+            log.debug("Actualizando documentTypeId (ID): {}", documentTypeId);
+            return documentValidationService.getUpdatedDocumentType(documentTypeId, currentDocumentType);
+        } else {
+            return currentDocumentType;
+        }
+    }
+
+    /**
+     * Procesa la actualización de roles usando nombres (preferido) o IDs (compatibilidad).
+     * 
+     * @param user Usuario a actualizar
+     * @param roleNames Lista de nombres de roles
+     * @param roleIds Lista de IDs de roles (formato antiguo)
+     */
+    private void processUserRolesUpdate(User user, List<String> roleNames, List<Integer> roleIds) {
+        if (roleNames != null && !roleNames.isEmpty()) {
+            log.debug("Actualizando roles (nombres): {}", roleNames);
+            roleValidationService.processUserRolesUpdateByNames(user, roleNames, userMapper);
+        } else if (roleIds != null && !roleIds.isEmpty()) {
+            log.debug("Actualizando roleIds (IDs): {}", roleIds);
+            roleValidationService.processUserRolesUpdate(user, roleIds, userMapper);
+        }
+    }
+
+    /**
+     * Resuelve el estado del usuario actualizado desde nombre (preferido) o ID (compatibilidad).
+     * Si ninguno está presente, retorna el estado actual.
+     * 
+     * @param statusName Nombre del estado
+     * @param statusId ID del estado (formato antiguo)
+     * @param currentUserStatus Estado actual del usuario
+     * @return UserStatus resuelto
+     */
+    private UserStatus resolveUpdatedUserStatus(
+            String statusName,
+            Integer statusId,
+            UserStatus currentUserStatus) {
+        
+        if (statusName != null && !statusName.trim().isEmpty()) {
+            log.debug("Actualizando status (nombre): {}", statusName);
+            return statusValidationService.getUpdatedUserStatusByName(statusName, currentUserStatus);
+        } else if (statusId != null) {
+            log.debug("Actualizando statusId (ID): {}", statusId);
+            return statusValidationService.getUpdatedUserStatus(statusId, currentUserStatus);
+        } else {
+            return currentUserStatus;
+        }
+    }
+
 
     @Override
     @Transactional
-    public UserResponseDto deleteUser(Integer id) {
-        log.info("Eliminando usuario ID: {}", id);
+    public Response<String> recoverPassword(String email, String newPassword, Boolean envioCorreo) {
+        log.info("Recuperación de contraseña para usuario: {}", email);
 
-        User user = validationService.findUserByIdOrThrow(id);
-        UserStatus inactiveStatus = validationService.findUserStatusByName("Inactivo");
-        user.setUserStatus(inactiveStatus);
-
-        User deletedUser = userRepository.save(user);
-
-        log.info("Usuario eliminado (soft delete): ID={}", deletedUser.getUsuarioId());
-        return userMapper.toResponseDto(deletedUser);
-    }
-
-    @Override
-    @Transactional
-    public UserResponseDto activateUser(Integer id) {
-        log.info("Activando usuario ID: {}", id);
-
-        User user = validationService.findUserByIdOrThrow(id);
-        UserStatus activeStatus = validationService.findUserStatusByName("Activo");
-        user.setUserStatus(activeStatus);
-
-        User activatedUser = userRepository.save(user);
-
-        log.info("Usuario activado: ID={}", activatedUser.getUsuarioId());
-        return userMapper.toResponseDto(activatedUser);
-    }
-
-    @Override
-    @Transactional
-    public UserResponseDto changePassword(String email, String newPassword) {
-        log.info("Cambiando contraseña para usuario: {}", email);
-
-        validationService.validatePasswordNotEmpty(newPassword);
-        User user = validationService.findUserByEmailOrThrow(email);
+        commonValidationService.validatePasswordNotEmpty(newPassword);
+        User user = userValidationService.findUserByEmailOrThrow(email);
 
         String hashedPassword = passwordEncoder.encode(newPassword);
         user.getCredenciales().setContrasena(hashedPassword);
 
-        User updatedUser = userRepository.save(user);
+        userTransactionalService.saveUser(user);
+
+        if (Boolean.TRUE.equals(envioCorreo)) {
+            // TODO: Implementar servicio de envío de correo
+            log.info("📧 Enviando correo de notificación de cambio de contraseña a: {}", email);
+        }
+
+        log.info("Contraseña recuperada exitosamente para: {}", email);
+        return Response.success(envioCorreo ? SUCCESS_PASSWORD_RECOVERY_EMAIL_SENT : SUCCESS_PASSWORD_CHANGED);
+    }
+
+    @Override
+    @Transactional
+    public Response<String> changePasswordAuthenticated(String email, String newPassword) {
+        log.info("Cambio de contraseña autenticado para usuario: {}", email);
+
+        Integer authenticatedUserRoleId = authUserService.getAuthenticatedUserRoleId();
+        userValidationService.validateEmailOwnership(email, authenticatedUserRoleId);
+
+        commonValidationService.validatePasswordNotEmpty(newPassword);
+        User user = userValidationService.findUserByEmailOrThrow(email);
+
+        String hashedPassword = passwordEncoder.encode(newPassword);
+        user.getCredenciales().setContrasena(hashedPassword);
+
+        userTransactionalService.saveUser(user);
 
         log.info("Contraseña actualizada exitosamente para: {}", email);
-        return userMapper.toResponseDto(updatedUser);
+        return Response.success(SUCCESS_PASSWORD_CHANGED);
     }
 }
 
