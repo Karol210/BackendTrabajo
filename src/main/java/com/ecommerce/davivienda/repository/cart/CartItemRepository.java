@@ -64,5 +64,17 @@ public interface CartItemRepository extends JpaRepository<CartItem, Integer> {
      * @return Número de items
      */
     long countByCartCarritoId(Integer carritoId);
+
+    /**
+     * Busca un item por ID del producto validando que pertenece al usuario.
+     * Realiza JOIN con carrito para validar ownership en una sola query.
+     *
+     * @param productId ID del producto
+     * @param userRoleId ID del usuario_rol propietario del carrito
+     * @return Optional con el CartItem si existe y pertenece al usuario
+     */
+    @Query("SELECT ci FROM CartItem ci JOIN FETCH ci.product WHERE ci.product.productoId = :productId AND ci.cart.usuarioRolId = :userRoleId")
+    Optional<CartItem> findByProductIdAndUserRole(@Param("productId") Integer productId, 
+                                                  @Param("userRoleId") Integer userRoleId);
 }
 

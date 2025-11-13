@@ -26,6 +26,7 @@ public interface UserMapper {
     @Mapping(target = "documentType", source = "documentType.codigo")
     @Mapping(target = "documentNumber", source = "numeroDeDoc")
     @Mapping(target = "email", source = "credenciales.correo")
+    @Mapping(target = "usuarioRolId", source = "usuarioRolId")
     @Mapping(target = "roles", expression = "java(mapRolesToStrings(user.getRoles()))")
     @Mapping(target = "status", source = "userStatus.nombre")
     @Mapping(target = "createdAt", source = "creationDate")

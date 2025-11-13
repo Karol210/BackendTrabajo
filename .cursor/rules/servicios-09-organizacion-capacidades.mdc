@@ -9,18 +9,22 @@ alwaysApply: true
 ## 📋 TL;DR
 
 - ✅ **OBLIGATORIO**: ServiceImpl con ≥3 métodos privados → Separar en `validation/` + `builder/`
+- ✅ **OBLIGATORIO**: Validation/Transactional con múltiples dominios → Organizar por dominio (product/, user/, cart/) SIN coordinador intermedio
+- ✅ **Request/Response principales** en `models/` SIN sufijo "Dto" • **DTOs auxiliares** en `dto/` CON "Dto"
 - ✅ Estructura paralela: `service/{capacidad}/` → `dto/{capacidad}/` → `mapper/{capacidad}/`
-- ✅ Alta cohesión por capacidad • Subcapacidades (>50 líneas) si son independientes
-- ❌ NO mezclar capacidades • NO mantener métodos auxiliares privados en ServiceImpl
-- ❌ NO estructura inconsistente entre service/dto/mapper
+- ✅ ServiceImpl inyecta subcapacidades directamente • Sin capas de delegación innecesarias
+- ❌ NO coordinadores intermedios que solo delegan • NO mezclar dominios en un servicio
+- ❌ NO estructura inconsistente entre service/dto/mapper • NO mezclar models/ con dto/
 
 ## 🚨 Reglas Principales
 
 1. **Separación Obligatoria en Servicios CRUD**: Si `ServiceImpl` tiene ≥3 métodos auxiliares privados, separar en capacidades (`validation/`, `builder/`) con interfaces propias
-2. **Separación por Capacidad + Escalabilidad**: Cada capacidad tiene su propia carpeta en `external/`, `dto/` y `mapper/` con nombres descriptivos. Agregar nuevas capacidades sin afectar existentes
-3. **Cohesión Alta**: Todos los archivos relacionados con una capacidad juntos (Client, Service, ServiceImpl, DTOs, Mapper)
-4. **Estructura Paralela**: `service/{dominio}/{capacidad}/` se refleja en `dto/{dominio}/{capacidad}/` y `mapper/{dominio}/{capacidad}/`
-5. **Subcapacidades**: Para responsabilidades independientes (>50 líneas), usar subcarpetas (`validation/rules/`, `validation/storage/`)
+2. **Organización por Dominio**: Si `validation/` o `transactional/` tienen métodos de múltiples dominios (product, user, cart), organizar en subcarpetas por dominio SIN coordinador intermedio. ServiceImpl inyecta subcapacidades directamente
+3. **Separación Models vs DTOs**: Request/Response principales en `models/` SIN sufijo "Dto". DTOs auxiliares (anidados, cálculos, resúmenes) en `dto/` CON sufijo "Dto"
+4. **Sin Coordinadores Intermedios**: NO crear servicios que solo delegan. ServiceImpl debe inyectar subcapacidades específicas directamente
+5. **Cohesión Alta**: Todos los archivos relacionados con una capacidad/dominio juntos (Client, Service, ServiceImpl, DTOs, Mapper)
+6. **Estructura Paralela**: `service/{dominio}/{capacidad}/` se refleja en `dto/{dominio}/{capacidad}/` y `mapper/{dominio}/{capacidad}/`
+7. **Subcapacidades**: Para responsabilidades independientes (>50 líneas), usar subcarpetas (`validation/rules/`, `validation/storage/`)
 
 ## 📊 Referencia Rápida
 
@@ -39,6 +43,7 @@ alwaysApply: true
 |-----------|-----------------|---------------------|-------------------|:----------:|
 | **`validation`** ⭐ | **Validaciones de negocio (CRUD)** | **`*ValidationService`, `*ValidationServiceImpl`** | **Ninguno (usa DTOs existentes)** | **❌ Interna** |
 | **`builder`** ⭐ | **Construcción/transformación (CRUD)** | **`*BuilderService`, `*BuilderServiceImpl`** | **Ninguno (usa DTOs existentes)** | **❌ Interna** |
+| **`transactional`** ⭐ | **Acceso a datos (consultas y persistencia)** | **`*TransactionalService`, `*TransactionalServiceImpl`** | **Ninguno (usa entidades)** | **❌ Interna** |
 | `auth` | Autenticación y autorización | `*AuthClient`, `*AuthService`, `*AuthServiceImpl` | `*TokenDto`, `*CredentialsDto` | ❌ Interna |
 | `questions` | Consulta de datos | `*QuestionsClient`, `*QuestionsService`, `*QuestionsServiceImpl` | `*RequestDto`, `*ResponseDto` | ❌ Interna |
 | `validation` | Validación de reglas (External) | `*ValidationClient`, `*ValidationService`, `*ValidationServiceImpl` | `*ValidationRequestDto`, `*ResultDto` | ❌ Interna |
@@ -47,7 +52,20 @@ alwaysApply: true
 | `rules` | Reglas de negocio | `*RulesService`, `*RulesServiceImpl` | Ninguno (usa DTOs existentes) | ❌ Interna |
 | `organization` | Ordenar/agrupar datos | `*OrganizationService`, `*OrganizationServiceImpl` | Ninguno (usa DTOs existentes) | ❌ Interna (ver regla 01) |
 
-**⭐ CAPACIDADES OBLIGATORIAS**: `validation/` y `builder/` deben crearse cuando un servicio CRUD tiene ≥3 métodos auxiliares privados.
+**⭐ CAPACIDADES OBLIGATORIAS**: `validation/`, `builder/` y `transactional/` deben crearse cuando un servicio CRUD tiene ≥3 métodos auxiliares privados.
+
+**🎯 Organización por Dominio en Validation/Transactional:**
+
+Cuando `validation/` o `transactional/` tienen métodos de múltiples dominios, organizar en subcarpetas:
+
+| Dominio | Responsabilidad | Ejemplo Validation | Ejemplo Transactional |
+|---------|----------------|-------------------|----------------------|
+| **`product/`** | Validación/acceso a productos | `validateProductExists()`, `validateProductActive()` | `findProductById()` |
+| **`user/`** | Validación/acceso a usuarios | `validateUserRoleExists()`, `getUserRoleIdFromEmail()` | `findUserById()`, `existsUserRoleById()` |
+| **`cart/`** | Validación/acceso a carritos | `validateCartExists()`, `validateItemBelongsToUser()` | `findCartById()`, `saveCartItem()` |
+| **`common/`** | Validaciones genéricas | `validateQuantity()`, `validateDateRange()` | ❌ No aplica en transactional |
+
+**📌 ServiceImpl inyecta subcapacidades directamente SIN coordinador intermedio**
 
 ### Subcapacidades - Organización Anidada
 
@@ -78,6 +96,74 @@ alwaysApply: true
 - ✅ Métodos públicos para transformaciones principales, privados para auxiliares
 - ❌ NO crear mappers en raíz de `mapper/` si el servicio tiene subcarpetas
 - ❌ NO duplicar lógica de mapeo entre servicios (crear mapper compartido si es necesario)
+
+### Organización de Models vs DTOs
+
+**Separación Crítica: Request/Response en `models/` - DTOs Auxiliares en `dto/`**
+
+| Tipo | Ubicación | Nomenclatura | Propósito |
+|---|---|---|---|
+| **Request principales** | `models/` o `models/{capacidad}/` | SIN sufijo "Dto" | Entrada de endpoints REST |
+| **Response principales** | `models/` o `models/{capacidad}/` | SIN sufijo "Dto" | Salida de endpoints REST |
+| **DTOs auxiliares** | `dto/{dominio}/{capacidad}/` | CON sufijo "Dto" | Objetos anidados, cálculos, resúmenes |
+| **Modelos genéricos** | `models/` raíz | Sin sufijo | Response wrapper, utils |
+
+**Estructura Ejemplo:**
+
+```
+models/
+├── cart/                              📦 Capacidad relacionada
+│   ├── CartItemBatchRequest.java     ✅ Request (batch) - SIN "Dto"
+│   └── CartItemResponse.java         ✅ Response - SIN "Dto"
+│
+├── CartCreateResponse.java           ✅ Response simple - SIN "Dto"
+├── CartItemRequest.java              ✅ Request simple - SIN "Dto"
+└── Response.java                     ✅ Modelo genérico
+
+dto/{dominio}/
+├── batch/                             📦 DTOs auxiliares batch
+│   └── CartItemBatchItemDto.java     ✅ Item dentro de batch - CON "Dto"
+│
+├── item/                              📦 DTOs auxiliares cálculos
+│   └── CartItemCalculationDto.java   ✅ Cálculos de item - CON "Dto"
+│
+└── summary/                           📦 DTOs auxiliares resumen
+    └── CartSummaryDto.java            ✅ Resumen carrito - CON "Dto"
+```
+
+**Criterios de Clasificación:**
+
+| ¿Es Request/Response principal? | Ubicación | Nomenclatura |
+|:---:|---|---|
+| ✅ Sí | `models/` o `models/{capacidad}/` | `CartItemRequest`, `CartItemResponse` |
+| ❌ No (DTO auxiliar/anidado) | `dto/{dominio}/{capacidad}/` | `CartItemBatchItemDto`, `CartSummaryDto` |
+
+**Reglas:**
+- ✅ Request/Response principales en `models/` SIN "Dto"
+- ✅ DTOs auxiliares (anidados, cálculos, resúmenes) en `dto/` CON "Dto"
+- ✅ Usar subcarpeta `models/{capacidad}/` cuando hay múltiples Request/Response relacionados (ej: `models/cart/`)
+- ✅ DTOs auxiliares mantienen estructura paralela en `dto/{dominio}/{capacidad}/`
+- ❌ NO mezclar Request/Response con DTOs auxiliares en la misma carpeta
+- ❌ NO usar sufijo "Dto" en Request/Response principales
+
+**Ejemplo de Uso:**
+
+```java
+// ✅ Request principal en models/ - SIN "Dto"
+@RestController
+public class CartItemController {
+    @PostMapping("/add")
+    public Response<String> addItem(@Valid @RequestBody CartItemRequest request) {
+        // CartItemRequest está en models/
+    }
+}
+
+// ✅ DTO auxiliar en dto/ - CON "Dto"
+public class CartSummaryDto {
+    private List<CartItemResponse> items;        // Response principal
+    private CartItemCalculationDto totals;       // DTO auxiliar
+}
+```
 
 ### Beneficios de Organización por Capacidades
 
@@ -208,6 +294,165 @@ public class InsurabilityValidationServiceImpl implements InsurabilityValidation
 
 **Beneficios:** 68 vs 126 líneas (46% reducción), alta cohesión, testeable, reutilizable, escalable
 
+### Ejemplo 4: Organización por Dominio en Validation y Transactional
+
+**Problema:** Capacidades `validation/` y `transactional/` con múltiples responsabilidades mezcladas (validaciones de productos, usuarios, carritos en un solo servicio)
+
+**Solución:** Organizar por dominio en subcarpetas sin coordinadores intermedios
+
+**Estructura organizada por dominio:**
+
+```
+service/cartitem/
+├── validation/                                      ✅ Validaciones por dominio
+│   ├── product/
+│   │   ├── CartItemProductValidationService.java
+│   │   └── CartItemProductValidationServiceImpl.java
+│   │       • validateProductExists()
+│   │       • validateProductActive()
+│   │
+│   ├── user/
+│   │   ├── CartItemUserValidationService.java
+│   │   └── CartItemUserValidationServiceImpl.java
+│   │       • validateUserRoleExists()
+│   │       • getUserRoleIdFromDocument()
+│   │       • getUserRoleIdFromEmail()
+│   │       • validateUserHasClientRole()
+│   │
+│   ├── cart/
+│   │   ├── CartItemCartValidationService.java
+│   │   └── CartItemCartValidationServiceImpl.java
+│   │       • validateCartExists()
+│   │       • validateOrCreateCart()
+│   │       • validateProductNotInCart()
+│   │       • validateItemBelongsToUser()
+│   │
+│   └── common/
+│       ├── CartItemCommonValidationService.java
+│       └── CartItemCommonValidationServiceImpl.java
+│           • validateQuantity()
+│
+├── transactional/                                   ✅ Acceso a datos por dominio
+│   ├── cart/
+│   │   ├── CartItemCartTransactionalService.java
+│   │   └── CartItemCartTransactionalServiceImpl.java
+│   │       • findOrCreateCart()
+│   │       • findCartById()
+│   │       • findCartItemById()
+│   │       • saveCartItem()
+│   │       • deleteCartItem()
+│   │
+│   ├── product/
+│   │   ├── CartItemProductTransactionalService.java
+│   │   └── CartItemProductTransactionalServiceImpl.java
+│   │       • findProductById()
+│   │
+│   └── user/
+│       ├── CartItemUserTransactionalService.java
+│       └── CartItemUserTransactionalServiceImpl.java
+│           • existsUserRoleById()
+│           • findUserRoleById()
+│           • findDocumentTypeByCodigo()
+│           • findUserByEmail()
+│
+├── CartItemService.java
+└── CartItemServiceImpl.java  ← Usa directamente subcapacidades
+```
+
+**ServiceImpl usa subcapacidades directamente (SIN coordinador intermedio):**
+
+```java
+@Service
+@RequiredArgsConstructor
+public class CartItemServiceImpl implements CartItemService {
+
+    // ✅ Inyección directa de subcapacidades - Sin coordinadores
+    private final CartItemCartTransactionalService transactionalService;
+    private final CartItemCartValidationService cartValidationService;
+    private final CartItemProductValidationService productValidationService;
+    private final CartItemCommonValidationService commonValidationService;
+    private final CartItemMapper cartItemMapper;
+    private final AuthUserService authUserService;
+
+    @Override
+    @Transactional
+    public Response<String> addItemToCart(CartItemRequest request) {
+        Integer userRoleId = authUserService.getAuthenticatedUserRoleId();
+        Cart cart = transactionalService.findOrCreateCart(userRoleId);
+        
+        // ✅ Uso directo de subcapacidades por dominio
+        Product product = productValidationService.validateProductExists(request.getProductId());
+        productValidationService.validateProductActive(product);
+        commonValidationService.validateQuantity(request.getQuantity());
+        
+        CartItem cartItem = createOrUpdateCartItem(request, cart, product);
+        transactionalService.saveCartItem(cartItem);
+        
+        return Response.success(SUCCESS_CART_ITEM_ADDED);
+    }
+}
+```
+
+**Validation subcapacidades inyectan Transactional subcapacidades:**
+
+```java
+@Service
+@RequiredArgsConstructor
+public class CartItemProductValidationServiceImpl 
+        implements CartItemProductValidationService {
+    
+    // ✅ Inyección directa de transactional específico
+    private final CartItemProductTransactionalService transactionalService;
+
+    @Override
+    public Product validateProductExists(Integer productId) {
+        return transactionalService.findProductById(productId)
+                .orElseThrow(() -> new ProductException(ERROR_PRODUCT_NOT_FOUND));
+    }
+}
+
+@Service
+@RequiredArgsConstructor
+public class CartItemUserValidationServiceImpl 
+        implements CartItemUserValidationService {
+    
+    // ✅ Inyección directa de transactional específico
+    private final CartItemUserTransactionalService transactionalService;
+
+    @Override
+    public void validateUserRoleExists(Integer userRoleId) {
+        if (!transactionalService.existsUserRoleById(userRoleId)) {
+            throw new CartException(ERROR_USER_ROLE_NOT_FOUND);
+        }
+    }
+}
+```
+
+**Criterios para organización por dominio:**
+- ✅ Capacidad con métodos de múltiples dominios (productos, usuarios, carritos)
+- ✅ Cada dominio tiene ≥2 métodos relacionados
+- ✅ Dominios independientes entre sí
+- ✅ ServiceImpl usa directamente subcapacidades (sin coordinador)
+- ❌ NO crear coordinador intermedio que solo delega
+
+**Beneficios:**
+
+| Aspecto | Antes (Monolítico) | Después (Por Dominio) | Mejora |
+|---|---|---|---|
+| **Organización** | 214 líneas validation + 165 transactional | 4 validation + 3 transactional | ✅ Alta cohesión |
+| **Archivos eliminados** | 2 coordinadores intermedios | 0 coordinadores | ✅ -4 archivos |
+| **Responsabilidades** | Todas mezcladas | Separadas por dominio | ✅ SRP aplicado |
+| **Capas indirección** | 2 (Service → Coord → Subcap) | 1 (Service → Subcap) | ✅ Sin overhead |
+| **Inyecciones** | 1 coordinador | 3-4 subcapacidades | ✅ Explícito |
+| **Testeable** | Mock coordinador | Mock por dominio | ✅ Tests específicos |
+| **Reutilizable** | Acoplado | Independiente | ✅ Reusable |
+
+**Dominios comunes en validation/transactional:**
+- `product/` - Validación y acceso a productos
+- `user/` - Validación y acceso a usuarios/roles
+- `cart/` - Validación y acceso a carritos/items
+- `common/` - Validaciones genéricas (solo en validation)
+
 ### ⚠️ Caso Especial CRUD: Separación Obligatoria
 
 **Problema:** `ServiceImpl` con ≥3 métodos auxiliares privados (476 líneas, 12 métodos privados)
@@ -260,15 +505,20 @@ public class UserServiceImpl implements UserService {
 ## 🚫 Restricciones
 
 1. **NO** mantener ≥3 métodos auxiliares privados en `ServiceImpl` ni métodos de validación/construcción (separar en capacidades OBLIGATORIO)
-2. **NO** mezclar capacidades en la misma carpeta ni usar nombres genéricos (`common`, `utils`) - agrupar por capacidad de negocio
-3. **NO** duplicar código entre capacidades ni crear dependencias circulares
-4. **NO** crear estructura profunda (máximo 2 niveles, 3 con subcapacidades)
-5. **NO** tener estructura inconsistente entre `service/`, `dto/` y `mapper/`
-6. **NO** crear mappers en raíz cuando servicio tiene subcarpetas ni incluir lógica de negocio en mappers
-7. **NO** usar prefijos redundantes en carpetas (`auth/AuthTokenDto` → `auth/TokenDto`)
-8. **NO** crear subcapacidades para métodos pequeños (< 50 líneas) o lógica fuertemente acoplada
-9. **NO** omitir `@Component` en mappers
-10. **NO** dejar carpetas vacías o código duplicado
+2. **NO** crear coordinadores intermedios que solo delegan (ej: `ValidationService` que delega a `ProductValidationService`, `UserValidationService`) - ServiceImpl debe inyectar subcapacidades directamente
+3. **NO** poner Request/Response principales en `dto/` (deben ir en `models/` SIN sufijo "Dto")
+4. **NO** usar sufijo "Dto" en Request/Response principales en `models/`
+5. **NO** mezclar Request/Response con DTOs auxiliares en la misma carpeta
+6. **NO** mezclar capacidades en la misma carpeta ni usar nombres genéricos (`common`, `utils`) - agrupar por capacidad de negocio (excepto `common/` para validaciones genéricas)
+7. **NO** duplicar código entre capacidades ni crear dependencias circulares
+8. **NO** crear estructura profunda (máximo 2 niveles, 3 con subcapacidades por dominio)
+9. **NO** tener estructura inconsistente entre `service/`, `dto/` y `mapper/`
+10. **NO** crear mappers en raíz cuando servicio tiene subcarpetas ni incluir lógica de negocio en mappers
+11. **NO** usar prefijos redundantes en carpetas (`auth/AuthTokenDto` → `auth/TokenDto`)
+12. **NO** crear subcapacidades para métodos pequeños (< 50 líneas) o lógica fuertemente acoplada
+13. **NO** omitir `@Component` en mappers
+14. **NO** dejar carpetas vacías o código duplicado
+15. **NO** mezclar métodos de múltiples dominios en un solo servicio (product, user, cart deben estar separados)
 
 ## ✅ Validación Automática
 
@@ -280,10 +530,27 @@ Cursor debe detectar:
 - ❌ Métodos de construcción (`build*`, `update*Fields`) en `ServiceImpl`
 - ❌ `ServiceImpl` > 300 líneas sin refactorizar
 
+**Coordinadores Intermedios (CRÍTICO):**
+- ❌ Servicios que solo delegan sin lógica adicional (ej: `ValidationServiceImpl` con 100% delegación)
+- ❌ ServiceImpl inyectando coordinadores en lugar de subcapacidades específicas
+- ❌ Múltiples capas de indirección innecesarias (Service → Coordinador → Subcapacidad)
+- ❌ Archivos con nombres genéricos que solo delegan (`*CoordinatorService`, `*FacadeService`)
+
+**Organización por Dominio:**
+- ❌ Métodos de múltiples dominios mezclados en un solo servicio validation/transactional
+- ❌ Falta de subcarpetas por dominio cuando hay ≥2 dominios (product, user, cart)
+- ❌ Servicios validation sin separar por dominio cuando hay métodos de product + user + cart
+
+**Models vs DTOs:**
+- ❌ Request/Response principales con sufijo "Dto" (debe ser sin sufijo en `models/`)
+- ❌ Request/Response en `dto/` en lugar de `models/`
+- ❌ DTOs auxiliares sin sufijo "Dto"
+- ❌ Mezcla de Request/Response con DTOs auxiliares en misma carpeta
+
 **Capacidades External:**
 - ❌ Múltiples capacidades (≥2) en `external/` sin subcarpetas o estructura inconsistente
 - ❌ DTOs/Mappers sin reflejar estructura de servicio o mezclados entre capacidades
-- ❌ Nombres genéricos (`folder1`, `common`, `utils`) o imports incorrectos
+- ❌ Nombres genéricos (`folder1`, `utils`) o imports incorrectos (excepto `common/` para validaciones genéricas)
 - ❌ Dependencias circulares entre capacidades o subcapacidades
 - ❌ Mappers sin `@Component`, con lógica de negocio o en raíz incorrecta
 - ❌ Subcapacidades < 50 líneas o servicio coordinador con lógica de negocio
@@ -293,7 +560,7 @@ Cursor debe detectar:
 
 **Objetivo**: Organizar servicios externos, DTOs y Mappers por capacidades de negocio para maximizar cohesión, minimizar acoplamiento y facilitar escalabilidad. **OBLIGATORIO**: Separar capacidades en servicios CRUD con ≥3 métodos auxiliares.
 
-**REGLA DE ORO**: "Una capacidad = Una carpeta. **ServiceImpl con ≥3 métodos privados → SEPARAR en `validation/` + `builder/`**. Si ≥2 capacidades external, usar subcarpetas (`auth/`, `questions/`). Si una capacidad tiene múltiples responsabilidades (>50 líneas), crear subcapacidades (`validation/rules/`, `validation/storage/`). Coordinador solo delega. Cada cambio afecta solo una carpeta."
+**REGLA DE ORO**: "Una capacidad = Una carpeta. **Request/Response en `models/` SIN "Dto", DTOs auxiliares en `dto/` CON "Dto"**. **ServiceImpl con ≥3 métodos privados → SEPARAR en `validation/` + `builder/`**. **Si validation/transactional tienen múltiples dominios → Organizar por dominio (product/, user/, cart/) SIN coordinador intermedio**. ServiceImpl inyecta subcapacidades directamente. Si ≥2 capacidades external, usar subcarpetas (`auth/`, `questions/`). Si una capacidad tiene múltiples responsabilidades (>50 líneas), crear subcapacidades (`validation/rules/`, `validation/storage/`). Cada cambio afecta solo una carpeta."
 
 ---
 

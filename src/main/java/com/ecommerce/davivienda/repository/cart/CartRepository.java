@@ -27,6 +27,16 @@ public interface CartRepository extends JpaRepository<Cart, Integer> {
     Optional<Cart> findByUsuarioRolId(Integer usuarioRolId);
 
     /**
+     * Busca un carrito por ID validando que pertenece al usuario.
+     * Valida ownership del carrito.
+     *
+     * @param carritoId ID del carrito
+     * @param usuarioRolId ID del usuario_rol propietario
+     * @return Optional con el carrito si existe y pertenece al usuario
+     */
+    Optional<Cart> findByCarritoIdAndUsuarioRolId(Integer carritoId, Integer usuarioRolId);
+
+    /**
      * Busca un carrito con sus items cargados (fetch join).
      *
      * @param carritoId ID del carrito
@@ -42,5 +52,24 @@ public interface CartRepository extends JpaRepository<Cart, Integer> {
      * @return true si existe un carrito
      */
     boolean existsByUsuarioRolId(Integer usuarioRolId);
+
+    /**
+     * Busca un carrito activo por el correo del usuario.
+     * Navega desde credenciales → usuarios → usuario_rol → carrito.
+     *
+     * @param correo Correo electrónico del usuario
+     * @return Optional con el carrito del usuario si existe
+     */
+    @Query("""
+            SELECT c FROM Cart c
+            WHERE c.usuarioRolId IN (
+                SELECT ur.usuarioRolId FROM UserRole ur
+                WHERE ur.usuarioId IN (
+                    SELECT u.usuarioId FROM User u
+                    WHERE u.credenciales.correo = :correo
+                )
+            )
+            """)
+    Optional<Cart> findByUserEmail(@Param("correo") String correo);
 }
 

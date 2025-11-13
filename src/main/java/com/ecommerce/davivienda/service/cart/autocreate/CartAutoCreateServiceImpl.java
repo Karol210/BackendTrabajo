@@ -1,7 +1,7 @@
 package com.ecommerce.davivienda.service.cart.autocreate;
 
 import com.ecommerce.davivienda.entity.cart.Cart;
-import com.ecommerce.davivienda.exception.CartException;
+import com.ecommerce.davivienda.exception.cart.CartException;
 import com.ecommerce.davivienda.repository.cart.CartRepository;
 import com.ecommerce.davivienda.repository.user.UserRoleRepository;
 import lombok.RequiredArgsConstructor;

@@ -62,6 +62,12 @@ public class UserResponseDto {
     private String email;
 
     /**
+     * ID de la relación usuario-rol principal.
+     */
+    @JsonProperty("usuarioRolId")
+    private Integer usuarioRolId;
+
+    /**
      * Lista de roles del usuario.
      */
     @JsonProperty("roles")

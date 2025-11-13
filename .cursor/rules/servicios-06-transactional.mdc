@@ -1,0 +1,505 @@
+---
+description: Capa transactional para operaciones de consulta y persistencia a BD
+globs: ["**/service/**/transactional/**/*.java"]
+alwaysApply: true
+---
+
+# 💾 Capa Transactional - Acceso a Datos
+
+## 📋 TL;DR
+
+- ✅ Capacidad dedicada para consultas y persistencia a base de datos
+- ✅ Centraliza TODAS las operaciones con repositories
+- ✅ Ubicación: `service/{dominio}/transactional/`
+- ✅ Interface + Implementación con `@Transactional`
+- ❌ NO acceder a repositories desde ServiceImpl
+
+## 🚨 Reglas Principales
+
+1. **Separación Obligatoria**: TODAS las operaciones de BD (findBy, save, delete, exists) deben estar en capacidad `transactional/`
+2. **Ubicación**: `service/{dominio}/transactional/{Dominio}TransactionalService[Impl].java`
+3. **Anotaciones**: `@Transactional` en métodos de escritura, `@Transactional(readOnly = true)` en consultas
+4. **Interface siempre**: Crear interface `*TransactionalService` e implementación `*TransactionalServiceImpl`
+5. **ServiceImpl NO accede a repositories**: Coordinador delega TODO a capacidad transactional
+6. **Logs debug**: Usar `log.debug()` para operaciones, evitar `log.info()` innecesario
+
+## 📊 Referencia Rápida
+
+### Tipos de Operaciones Transactionales
+
+| Tipo Operación | Método Ejemplo | Anotación | Retorno |
+|---|---|---|---|
+| **Consulta simple** | `findById(Integer id)` | `@Transactional(readOnly = true)` | `Optional<Entity>` |
+| **Consulta con throw** | `findByIdOrThrow(Integer id)` | `@Transactional(readOnly = true)` | `Entity` (lanza excepción) |
+| **Consulta lista** | `findAllByCartId(Integer cartId)` | `@Transactional(readOnly = true)` | `List<Entity>` |
+| **Verificación** | `existsByCartAndProduct(...)` | `@Transactional(readOnly = true)` | `boolean` |
+| **Crear/Actualizar** | `save(Entity entity)` | `@Transactional` | `Entity` |
+| **Eliminar uno** | `delete(Entity entity)` | `@Transactional` | `void` |
+| **Eliminar múltiples** | `deleteAllByCartId(Integer id)` | `@Transactional` | `void` |
+| **Buscar o crear** | `findOrCreate(Integer id)` | `@Transactional` | `Entity` |
+
+### Nomenclatura de Métodos
+
+| Patrón | Propósito | Ejemplo |
+|---|---|---|
+| `find*` | Consulta que retorna Optional | `findById`, `findByCartAndProduct` |
+| `find*OrThrow` | Consulta que lanza excepción si no existe | `findCartItemById`, `findUserById` |
+| `findAll*` | Consulta que retorna lista | `findAllByCartId`, `findAllActive` |
+| `exists*` | Verificación booleana | `existsByCartAndProduct`, `existsByEmail` |
+| `save*` | Crear o actualizar | `saveCartItem`, `saveUser` |
+| `delete*` | Eliminar uno | `deleteCartItem`, `deleteUser` |
+| `deleteAll*` | Eliminar múltiples | `deleteAllByCartId`, `deleteAllInactive` |
+| `findOrCreate*` | Buscar o crear si no existe | `findOrCreateCart`, `findOrCreateSession` |
+
+### Estructura de Archivos
+
+```
+service/{dominio}/
+├── transactional/
+│   ├── {Dominio}TransactionalService.java          (Interface)
+│   └── {Dominio}TransactionalServiceImpl.java      (Implementación)
+├── validation/
+│   └── ...
+├── builder/
+│   └── ...
+├── {Dominio}Service.java                           (Interface principal)
+└── {Dominio}ServiceImpl.java                       (Coordinador)
+```
+
+**Ejemplo:**
+```
+service/cartitem/
+├── transactional/
+│   ├── CartItemTransactionalService.java
+│   └── CartItemTransactionalServiceImpl.java
+├── validation/
+│   └── CartItemValidationServiceImpl.java
+├── builder/
+│   └── CartItemBuilderServiceImpl.java
+├── CartItemService.java
+└── CartItemServiceImpl.java
+```
+
+## ✅ Ejemplos
+
+### Ejemplo 1: Interface Transactional Completa
+
+```java
+package com.ecommerce.davivienda.service.cartitem.transactional;
+
+import com.ecommerce.davivienda.entity.cart.Cart;
+import com.ecommerce.davivienda.entity.cart.CartItem;
+
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * Servicio transaccional para operaciones de consulta y persistencia de CartItem.
+ * Maneja todas las operaciones de acceso a datos de carritos y sus items.
+ *
+ * @author Team Ecommerce Davivienda
+ * @since 1.0.0
+ */
+public interface CartItemTransactionalService {
+
+    /**
+     * Busca un carrito existente del usuario o crea uno nuevo.
+     *
+     * @param userRoleId ID del rol de usuario
+     * @return Cart existente o nuevo carrito creado
+     */
+    Cart findOrCreateCart(Integer userRoleId);
+
+    /**
+     * Busca un CartItem por carrito y producto.
+     *
+     * @param cartId ID del carrito
+     * @param productId ID del producto
+     * @return Optional con el CartItem si existe
+     */
+    Optional<CartItem> findCartItemByCartAndProduct(Integer cartId, Integer productId);
+
+    /**
+     * Busca un CartItem por ID o lanza excepción.
+     *
+     * @param itemId ID del item
+     * @return CartItem encontrado
+     */
+    CartItem findCartItemById(Integer itemId);
+
+    /**
+     * Verifica si existe un CartItem para el carrito y producto.
+     *
+     * @param cartId ID del carrito
+     * @param productId ID del producto
+     * @return true si existe, false en caso contrario
+     */
+    boolean existsCartItemByCartAndProduct(Integer cartId, Integer productId);
+
+    /**
+     * Obtiene todos los items de un carrito.
+     *
+     * @param cartId ID del carrito
+     * @return Lista de CartItem del carrito
+     */
+    List<CartItem> findCartItemsByCartId(Integer cartId);
+
+    /**
+     * Guarda un CartItem.
+     *
+     * @param cartItem Item a guardar
+     * @return CartItem guardado
+     */
+    CartItem saveCartItem(CartItem cartItem);
+
+    /**
+     * Elimina un CartItem.
+     *
+     * @param cartItem Item a eliminar
+     */
+    void deleteCartItem(CartItem cartItem);
+
+    /**
+     * Elimina todos los items de un carrito.
+     *
+     * @param cartId ID del carrito
+     */
+    void deleteCartItemsByCartId(Integer cartId);
+}
+```
+
+### Ejemplo 2: Implementación Transactional
+
+```java
+package com.ecommerce.davivienda.service.cartitem.transactional;
+
+import com.ecommerce.davivienda.entity.cart.Cart;
+import com.ecommerce.davivienda.entity.cart.CartItem;
+import com.ecommerce.davivienda.exception.CartException;
+import com.ecommerce.davivienda.repository.cart.CartItemRepository;
+import com.ecommerce.davivienda.repository.cart.CartRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Optional;
+
+import static com.ecommerce.davivienda.constants.Constants.CODE_CART_ITEM_NOT_FOUND;
+import static com.ecommerce.davivienda.constants.Constants.ERROR_CART_ITEM_NOT_FOUND;
+
+/**
+ * Implementación del servicio transaccional para operaciones de consulta y persistencia de CartItem.
+ * Centraliza todas las operaciones de acceso a datos.
+ *
+ * @author Team Ecommerce Davivienda
+ * @since 1.0.0
+ */
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class CartItemTransactionalServiceImpl implements CartItemTransactionalService {
+
+    private final CartRepository cartRepository;
+    private final CartItemRepository cartItemRepository;
+
+    @Override
+    @Transactional
+    public Cart findOrCreateCart(Integer userRoleId) {
+        log.debug("Buscando carrito para usuario {}", userRoleId);
+        
+        return cartRepository.findByUsuarioRolId(userRoleId)
+                .orElseGet(() -> {
+                    Cart newCart = Cart.builder()
+                            .usuarioRolId(userRoleId)
+                            .build();
+                    Cart savedCart = cartRepository.save(newCart);
+                    return savedCart;
+                });
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<CartItem> findCartItemByCartAndProduct(Integer cartId, Integer productId) {
+        log.debug("Buscando CartItem en carrito {} para producto {}", cartId, productId);
+        return cartItemRepository.findByCartAndProduct(cartId, productId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CartItem findCartItemById(Integer itemId) {
+        log.debug("Buscando CartItem con ID: {}", itemId);
+        
+        return cartItemRepository.findById(itemId)
+                .orElseThrow(() -> new CartException(
+                    ERROR_CART_ITEM_NOT_FOUND, 
+                    CODE_CART_ITEM_NOT_FOUND
+                ));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean existsCartItemByCartAndProduct(Integer cartId, Integer productId) {
+        log.debug("Verificando existencia de producto {} en carrito {}", productId, cartId);
+        return cartItemRepository.existsByCartAndProduct(cartId, productId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CartItem> findCartItemsByCartId(Integer cartId) {
+        log.debug("Obteniendo items del carrito {}", cartId);
+        return cartItemRepository.findByCartCarritoId(cartId);
+    }
+
+    @Override
+    @Transactional
+    public CartItem saveCartItem(CartItem cartItem) {
+        log.debug("Guardando CartItem en carrito {}", cartItem.getCart().getCarritoId());
+        return cartItemRepository.save(cartItem);
+    }
+
+    @Override
+    @Transactional
+    public void deleteCartItem(CartItem cartItem) {
+        log.debug("Eliminando CartItem con ID: {}", cartItem.getProductosCarritoId());
+        cartItemRepository.delete(cartItem);
+    }
+
+    @Override
+    @Transactional
+    public void deleteCartItemsByCartId(Integer cartId) {
+        log.debug("Eliminando todos los items del carrito {}", cartId);
+        cartItemRepository.deleteByCartCarritoId(cartId);
+    }
+}
+```
+
+### Ejemplo 3: ServiceImpl Usando Capacidad Transactional
+
+**❌ ANTES - Acceso directo a repositories**
+```java
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class CartItemServiceImpl implements CartItemService {
+
+    private final CartItemRepository cartItemRepository;  // ❌ Inyección directa
+    private final CartRepository cartRepository;          // ❌ Inyección directa
+    private final CartItemValidationService validationService;
+    private final CartItemBuilderService builderService;
+
+    @Override
+    @Transactional
+    public CartItemResponseDto addItemToCart(CartItemRequestDto request) {
+        // ❌ Acceso directo a repository
+        Cart cart = cartRepository.findByUsuarioRolId(userRoleId)
+                .orElseGet(() -> {
+                    Cart newCart = Cart.builder()
+                            .usuarioRolId(userRoleId)
+                            .build();
+                    return cartRepository.save(newCart);  // ❌ Save directo
+                });
+
+        // ❌ Acceso directo a repository
+        CartItem cartItem = cartItemRepository.findByCartAndProduct(
+                cart.getCarritoId(), request.getProductId())
+                .orElse(null);
+
+        // ❌ Save directo
+        CartItem savedItem = cartItemRepository.save(cartItem);
+        return cartItemMapper.toResponseDto(savedItem);
+    }
+}
+```
+
+**✅ DESPUÉS - Delegación a capacidad transactional**
+```java
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class CartItemServiceImpl implements CartItemService {
+
+    private final CartItemTransactionalService transactionalService;  // ✅ Capacidad
+    private final CartItemValidationService validationService;
+    private final CartItemBuilderService builderService;
+    private final CartItemMapper cartItemMapper;
+
+    @Override
+    @Transactional
+    public CartItemResponseDto addItemToCart(CartItemRequestDto request) {
+        Integer userRoleId = validationService.getUserRoleIdFromDocument(
+                request.getDocumentType(), request.getDocumentNumber());
+        
+        validationService.validateUserHasClientRole(userRoleId);
+        
+        // ✅ Delegación a transactional
+        Cart cart = transactionalService.findOrCreateCart(userRoleId);
+        
+        Product product = validationService.validateProductExists(request.getProductId());
+        validationService.validateProductActive(product);
+        validationService.validateQuantity(request.getQuantity());
+        
+        // ✅ Delegación a transactional
+        CartItem cartItem = transactionalService.findCartItemByCartAndProduct(
+                cart.getCarritoId(), request.getProductId())
+                .orElse(null);
+        
+        if (cartItem != null) {
+            Integer oldQuantity = cartItem.getCantidad();
+            builderService.updateQuantity(cartItem, request.getQuantity());
+            log.info("Producto {} actualizado de {} a {}", 
+                    request.getProductId(), oldQuantity, request.getQuantity());
+        } else {
+            cartItem = builderService.buildCartItem(request, cart, product);
+            log.info("Producto {} creado en carrito", request.getProductId());
+        }
+        
+        // ✅ Delegación a transactional
+        CartItem savedItem = transactionalService.saveCartItem(cartItem);
+        
+        return cartItemMapper.toResponseDto(savedItem);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CartItemResponseDto> getCartItems(Integer cartId) {
+        validationService.validateCartExists(cartId);
+        
+        // ✅ Delegación a transactional
+        List<CartItem> items = transactionalService.findCartItemsByCartId(cartId);
+        
+        return cartItemMapper.toResponseDtoList(items);
+    }
+
+    @Override
+    @Transactional
+    public void removeItemFromCart(Integer itemId) {
+        // ✅ Delegación a transactional
+        CartItem cartItem = transactionalService.findCartItemById(itemId);
+        transactionalService.deleteCartItem(cartItem);
+        
+        log.info("Item {} eliminado exitosamente", itemId);
+    }
+}
+```
+
+### Ejemplo 4: Operación Compleja findOrCreate
+
+```java
+@Override
+@Transactional
+public Cart findOrCreateCart(Integer userRoleId) {
+    log.debug("Buscando carrito para usuario {}", userRoleId);
+    
+    return cartRepository.findByUsuarioRolId(userRoleId)
+            .orElseGet(() -> {
+                // ✅ Crear si no existe
+                Cart newCart = Cart.builder()
+                        .usuarioRolId(userRoleId)
+                        .fechaCreacion(LocalDateTime.now())
+                        .activo(true)
+                        .build();
+                
+                Cart savedCart = cartRepository.save(newCart);
+                log.debug("Carrito {} creado para usuario {}", 
+                        savedCart.getCarritoId(), userRoleId);
+                
+                return savedCart;
+            });
+}
+```
+
+## 🚫 Restricciones
+
+1. **NO** inyectar repositories directamente en `ServiceImpl` (usar capacidad transactional)
+2. **NO** crear operaciones de BD sin `@Transactional` o `@Transactional(readOnly = true)`
+3. **NO** omitir interface `*TransactionalService`
+4. **NO** crear capacidad transactional sin documentación JavaDoc completa
+5. **NO** usar `log.info()` en operaciones transactionales (usar `log.debug()`)
+6. **NO** incluir lógica de negocio en métodos transactionales (solo acceso a datos)
+7. **NO** retornar null en métodos `find*OrThrow` (lanzar excepción)
+8. **NO** mezclar operaciones de lectura y escritura sin anotar correctamente
+9. **NO** crear métodos con nombres genéricos (`getData()`, `process()`)
+10. **NO** omitir logs debug en operaciones críticas
+
+## ✅ Validación Automática
+
+Cursor debe detectar:
+
+**Arquitectura:**
+- ❌ `ServiceImpl` inyectando repositories (`*Repository`) directamente
+- ❌ Llamadas a `repository.find*()`, `repository.save()`, `repository.delete()` desde `ServiceImpl`
+- ❌ Capacidad transactional sin interface correspondiente
+- ❌ Métodos transactionales sin `@Transactional`
+
+**Anotaciones:**
+- ❌ Métodos de consulta sin `@Transactional(readOnly = true)`
+- ❌ Métodos de escritura sin `@Transactional`
+- ❌ Falta de `@Service` en implementación
+- ❌ Falta de `@RequiredArgsConstructor`
+
+**Nomenclatura:**
+- ❌ Métodos sin prefijos estándar (`find*`, `save*`, `delete*`, `exists*`)
+- ❌ Métodos con nombres genéricos sin contexto
+- ❌ Interface sin sufijo `TransactionalService`
+- ❌ Implementación sin sufijo `TransactionalServiceImpl`
+
+**Logs:**
+- ❌ Uso de `log.info()` en lugar de `log.debug()` en operaciones BD
+- ❌ Logs excesivos que reducen legibilidad
+- ❌ Falta de logs en operaciones de escritura críticas
+
+**JavaDoc:**
+- ❌ Métodos sin documentación de parámetros y retorno
+- ❌ Interface sin JavaDoc de clase
+- ❌ Falta de descripción de excepciones lanzadas
+
+## 🎯 Objetivo + Regla de Oro
+
+**Objetivo**: Centralizar TODAS las operaciones de acceso a datos en una capacidad dedicada que separa claramente la lógica de negocio del acceso a BD, facilitando testing y mantenimiento.
+
+**REGLA DE ORO**: "TODA operación de BD (find, save, delete, exists) en `transactional/`. ServiceImpl NUNCA inyecta repositories. Interface + Implementación siempre. `@Transactional(readOnly = true)` para consultas, `@Transactional` para escritura. `log.debug()` en lugar de `log.info()`. Nomenclatura clara: `find*`, `save*`, `delete*`, `exists*`, `findOrCreate*`."
+
+---
+
+## 📊 Comparativa Antes/Después
+
+| Aspecto | Sin Transactional | Con Transactional |
+|---|---|---|
+| **Inyecciones en ServiceImpl** | 4+ repositories | 1 capacidad |
+| **Responsabilidades** | Mixtas (negocio + BD) | Separadas |
+| **Testing** | Difícil (mockear múltiples repos) | Fácil (mockear 1 capacidad) |
+| **Acoplamiento** | Alto (a implementaciones JPA) | Bajo (a interface) |
+| **Reutilización** | Duplicación entre servicios | Métodos compartidos |
+| **Mantenibilidad** | Cambios en BD afectan múltiples clases | Cambios en BD solo en transactional |
+
+## 📋 Checklist de Creación
+
+| Fase | Verificación |
+|---|---|
+| **Diseño** | Interface + Implementación • Ubicación en `transactional/` • Nomenclatura correcta |
+| **Interface** | JavaDoc completo • Métodos con propósito claro • Parámetros documentados |
+| **Implementación** | `@Service` + `@RequiredArgsConstructor` • Inyección de repositories • Anotaciones `@Transactional` |
+| **Métodos Consulta** | `@Transactional(readOnly = true)` • `log.debug()` • Retornar Optional o lanzar excepción |
+| **Métodos Escritura** | `@Transactional` • `log.debug()` • Validación de entrada |
+| **Integración** | ServiceImpl usa transactional • Sin inyección directa de repositories • Tests actualizados |
+
+## 🔗 Referencias
+
+> Ver también:
+> - [servicios-01-creacion-servicios.mdc](./servicios-01-creacion-servicios.mdc) - Arquitectura en capas
+> - [servicios-09-organizacion-capacidades.mdc](./servicios-09-organizacion-capacidades.mdc) - Organización por capacidades
+> - [servicios-10-buenas-practicas.mdc](./servicios-10-buenas-practicas.mdc) - Clean Code y SRP
+
+## 💡 Beneficios Clave
+
+| Beneficio | Impacto |
+|---|---|
+| **Alta Cohesión** | Todas las operaciones de BD en un lugar |
+| **Bajo Acoplamiento** | ServiceImpl independiente de tecnología de persistencia |
+| **Single Responsibility** | Transactional solo acceso a datos, Service solo lógica |
+| **Testeable** | Mock de 1 capacidad vs múltiples repositories |
+| **Mantenible** | Cambios en consultas no afectan lógica de negocio |
+| **Reutilizable** | Métodos transactionales compartidos entre servicios |
+| **Escalable** | Agregar operaciones BD sin tocar coordinador |

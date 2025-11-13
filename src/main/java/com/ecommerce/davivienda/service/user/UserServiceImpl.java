@@ -63,6 +63,12 @@ public class UserServiceImpl implements UserService {
         java.util.List<UserRole> savedUserRoles = userRoleRepository.saveAll(userRoles);
         savedUser.setRoles(savedUserRoles);
 
+        // Actualizar usuario_rol_id con el primer rol asignado
+        if (!savedUserRoles.isEmpty()) {
+            savedUser.setUsuarioRolId(savedUserRoles.get(0).getUsuarioRolId());
+            savedUser = userRepository.save(savedUser);
+        }
+
         log.info("Usuario creado exitosamente: ID={} con {} roles", savedUser.getUsuarioId(), savedUserRoles.size());
         return userMapper.toResponseDto(savedUser);
     }
@@ -118,6 +124,11 @@ public class UserServiceImpl implements UserService {
             java.util.List<UserRole> userRoles = builderService.buildUserRoles(user.getUsuarioId(), newRoles);
             java.util.List<UserRole> savedUserRoles = userRoleRepository.saveAll(userRoles);
             user.setRoles(savedUserRoles);
+
+            // Actualizar usuario_rol_id con el primer rol asignado
+            if (!savedUserRoles.isEmpty()) {
+                user.setUsuarioRolId(savedUserRoles.get(0).getUsuarioRolId());
+            }
             
             log.info("Roles actualizados: {} roles asignados", savedUserRoles.size());
         }

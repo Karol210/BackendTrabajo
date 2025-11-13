@@ -35,15 +35,19 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.ecommerce.davivienda.constants.ConstantsSecurity.*;
 import static com.ecommerce.davivienda.security.SecurityEndpoints.*;
 
 /**
  * Configuración de seguridad de Spring Security con autenticación JWT.
  * Define las políticas de acceso, filtros de autenticación y configuración CORS.
  * 
- * <p><b>⚠️ Endpoints públicos centralizados:</b></p>
- * <p>Todos los endpoints públicos están definidos en {@link SecurityEndpoints}.
- * Esta configuración los importa mediante static import.</p>
+ * <p><b>⚠️ Constantes centralizadas:</b></p>
+ * <ul>
+ *   <li>Endpoints públicos: Importados desde {@link SecurityEndpoints}</li>
+ *   <li>Mensajes de error de seguridad: Importados desde {@link com.ecommerce.davivienda.constants.ConstantsSecurity}</li>
+ *   <li>Configuraciones CORS: Definidas localmente en esta clase (específicas de configuración)</li>
+ * </ul>
  *
  * @author Team Tienda Digital
  * @since 1.0.0
@@ -72,21 +76,6 @@ public class SecurityConfig {
     
     private static final String CORS_PATH_PATTERN = "/**";
     private static final String CORS_FILTER_PATTERN = "/*";
-    
-    // ==================== ERROR MESSAGES ====================
-    
-    private static final String ERROR_ACCESS_DENIED_MESSAGE = 
-            "No tienes permisos suficientes para ejecutar esta acción";
-    
-    private static final String ERROR_UNAUTHENTICATED_MESSAGE = 
-            "No estás autenticado. Por favor, inicia sesión.";
-    
-    private static final String ERROR_UNKNOWN_USER = "Usuario desconocido";
-    
-    // ==================== JSON TEMPLATES ====================
-    
-    private static final String JSON_ERROR_TEMPLATE = 
-            "{\"failure\":true,\"code\":%d,\"message\":\"%s\",\"timestamp\":\"%d\"}";
 
     private final AuthenticationConfiguration authenticationConfiguration;
     private final CredentialsExtractor credentialsExtractor;
@@ -176,9 +165,8 @@ public class SecurityConfig {
     /**
      * Configura las reglas de autorización para endpoints públicos y protegidos.
      * 
-     * <p><b>⚠️ IMPORTANTE - ÚNICA FUENTE DE VERDAD:</b></p>
-     * <p>Esta configuración es el ÚNICO lugar donde se definen endpoints públicos.
-     * JwtValidationFilter NO duplica esta lógica, solo valida tokens JWT cuando están presentes.</p>
+     * Esta configuración es el ÚNICO lugar donde se definen endpoints públicos.
+     * JwtValidationFilter NO duplica esta lógica, solo valida tokens JWT cuando están presentes.
      *
      * @param authz AuthorizeHttpRequestsConfigurer para configurar endpoints
      */
@@ -188,25 +176,22 @@ public class SecurityConfig {
                 // Endpoints públicos - NO requieren autenticación
                 .requestMatchers(ENDPOINT_AUTH).permitAll()
                 .requestMatchers(ENDPOINT_ACTUATOR).permitAll()
-                .requestMatchers(ENDPOINT_DEBUG).permitAll()                          // ⚠️ TEMPORAL - Eliminar después
-                
+                .requestMatchers(ENDPOINT_DEBUG).permitAll()                          
+
                 // Endpoints específicos de productos públicos
-                .requestMatchers(ENDPOINT_PRODUCT_LIST_ACTIVE).permitAll()            // GET /api/v1/products/list-active
-                .requestMatchers(ENDPOINT_PRODUCT_LIST_ALL).permitAll()               // GET /api/v1/products/list-all
-                .requestMatchers(ENDPOINT_PRODUCT_SEARCH_PAGINATED).permitAll()       // GET /api/v1/products/search/paginated
-                .requestMatchers(ENDPOINT_PRODUCT_SEARCH).permitAll()                 // POST /api/v1/products/search
-                .requestMatchers(ENDPOINT_PRODUCT_GET_BY_ID).permitAll()              // GET /api/v1/products/get-by-id/{id}
+                .requestMatchers(ENDPOINT_PRODUCT_LIST_ACTIVE).permitAll()            
+                .requestMatchers(ENDPOINT_PRODUCT_LIST_ALL).permitAll()               
+                .requestMatchers(ENDPOINT_PRODUCT_SEARCH_PAGINATED).permitAll()       
+                .requestMatchers(ENDPOINT_PRODUCT_SEARCH).permitAll()                 
+                .requestMatchers(ENDPOINT_PRODUCT_GET_BY_ID).permitAll()             
 
                 .requestMatchers(ENDPOINT_CATEGORIES).permitAll()
                 .requestMatchers(ENDPOINT_DOCUMENT_TYPES).permitAll()
-                
+
                 // Endpoints específicos de usuarios públicos
                 .requestMatchers(ENDPOINT_USERS).permitAll()
-                // Endpoints protegidos por rol (ejemplos)
-                // .requestMatchers(HttpMethod.POST, "/api/v1/users").hasRole("ADMIN")
-                // .requestMatchers(HttpMethod.DELETE, "/api/v1/**").hasRole("ADMIN")
+
                 
-                // Todos los demás endpoints requieren autenticación
                 .anyRequest().authenticated();
     }
 

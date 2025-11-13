@@ -73,6 +73,13 @@ public class User {
     private UserStatus userStatus;
 
     /**
+     * ID de la relación usuario-rol principal.
+     * Este campo se actualiza automáticamente con el primer rol asignado.
+     */
+    @Column(name = "usuario_rol_id")
+    private Integer usuarioRolId;
+
+    /**
      * Relación con los roles del usuario.
      * Un usuario puede tener múltiples roles a través de la tabla usuario_rol.
      */

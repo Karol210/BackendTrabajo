@@ -2,7 +2,9 @@ package com.ecommerce.davivienda.exception;
 
 import com.ecommerce.davivienda.constants.Constants;
 import com.ecommerce.davivienda.dto.stock.StockValidationResponseDto;
+import com.ecommerce.davivienda.exception.cart.CartException;
 import com.ecommerce.davivienda.exception.document.DocumentTypeException;
+import com.ecommerce.davivienda.exception.payment.PaymentException;
 import com.ecommerce.davivienda.exception.product.ProductException;
 import com.ecommerce.davivienda.exception.role.RoleException;
 import com.ecommerce.davivienda.exception.stock.InsufficientStockException;
@@ -96,12 +98,7 @@ public class ExceptionHandlerController {
         log.error("CartException: URL={} | ErrorCode={} | Message={}", 
                 request.getRequestURI(), e.getErrorCode(), e.getMessage());
 
-        // Usar 404 para errores de "no encontrado"
-        HttpStatus status = (Constants.CODE_CART_NOT_FOUND.equals(e.getErrorCode())
-                || Constants.CODE_CART_ITEM_NOT_FOUND.equals(e.getErrorCode())
-                || Constants.CODE_USER_NOT_FOUND_BY_DOCUMENT.equals(e.getErrorCode()))
-                ? HttpStatus.NOT_FOUND
-                : HttpStatus.BAD_REQUEST;
+        HttpStatus status = determineCartExceptionStatus(e.getErrorCode());
 
         return Response.builder()
                 .failure(true)
@@ -110,6 +107,33 @@ public class ExceptionHandlerController {
                 .message(e.getMessage())
                 .timestamp(String.valueOf(System.currentTimeMillis()))
                 .build();
+    }
+
+    /**
+     * Determina el código HTTP apropiado basado en el código de error de CartException.
+     *
+     * @param errorCode Código de error de la excepción
+     * @return HttpStatus correspondiente
+     */
+    private HttpStatus determineCartExceptionStatus(String errorCode) {
+        if (Constants.CODE_CART_NOT_FOUND.equals(errorCode)
+                || Constants.CODE_CART_ITEM_NOT_FOUND.equals(errorCode)
+                || Constants.CODE_USER_NOT_FOUND_BY_DOCUMENT.equals(errorCode)
+                || Constants.CODE_USER_NOT_FOUND_FOR_CART.equals(errorCode)) {
+            return HttpStatus.NOT_FOUND;
+        }
+        
+        if (Constants.CODE_CART_AUTHENTICATION_REQUIRED.equals(errorCode)) {
+            return HttpStatus.UNAUTHORIZED;
+        }
+        
+        if (Constants.CODE_USER_NOT_CLIENT_ROLE.equals(errorCode)
+                || Constants.CODE_CART_ITEM_UNAUTHORIZED.equals(errorCode)
+                || Constants.CODE_CART_UNAUTHORIZED.equals(errorCode)) {
+            return HttpStatus.FORBIDDEN;
+        }
+        
+        return HttpStatus.BAD_REQUEST;
     }
 
     /**
@@ -289,6 +313,30 @@ public class ExceptionHandlerController {
                 .code(HttpStatus.FORBIDDEN.value())
                 .errorCode(Constants.CODE_ACCESS_DENIED)
                 .message("Acceso denegado: no tiene permisos para esta operación")
+                .timestamp(String.valueOf(System.currentTimeMillis()))
+                .build();
+    }
+
+    /**
+     * Maneja excepciones de procesamiento de pagos.
+     *
+     * @param e PaymentException
+     * @param request Request HTTP
+     * @return Response con error de pago
+     */
+    @ExceptionHandler({PaymentException.class})
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Response<Object> handlePaymentException(PaymentException e, HttpServletRequest request) {
+        log.error("PaymentException: URL={} | ErrorCode={} | Message={}", 
+                request.getRequestURI(), e.getErrorCode(), e.getMessage());
+
+        String messageWithCode = String.format("[%s] %s", e.getErrorCode(), e.getMessage());
+
+        return Response.builder()
+                .failure(true)
+                .errorCode(e.getErrorCode())
+                .code(HttpStatus.BAD_REQUEST.value())
+                .message(messageWithCode)
                 .timestamp(String.valueOf(System.currentTimeMillis()))
                 .build();
     }

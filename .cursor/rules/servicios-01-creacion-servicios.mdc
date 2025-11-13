@@ -10,7 +10,9 @@ alwaysApply: true
 
 - ✅ **CRÍTICO**: Verificar DTOs/modelos/servicios existentes ANTES de crear - reutilizar sin modificar tipos/nombres
 - ✅ **OBLIGATORIO**: Solicitar URL, CURL y responses (éxito + error) ANTES de crear servicio
-- ✅ **OBLIGATORIO**: Usar MapStruct para mapeo entre DTOs y entidades (NO mapeo manual ni ModelMapper)
+- ✅ **OBLIGATORIO**: TODO mapeo DTO ↔ Entidad en Mapper con MapStruct (NO Builder services, NO mapeo manual, NO ModelMapper)
+- ✅ **OBLIGATORIO**: Mapper maneja construcción (`toEntity()`), actualización (`updateEntity()`), y conversión (`toResponseDto()`)
+- ✅ **OBLIGATORIO**: Autenticar con `AuthUserService.getAuthenticatedUserRoleId()` (1 línea) y validar ownership EXCEPTO categorías, tipos documento, productos, crear usuario
 - ✅ Arquitectura: Controller → Service Principal → External Service → Feign Client • Inyección por interfaz
 - ✅ Organización: Simple (1 op) / Organizada (≥2 ops) / Modular (módulo completo)
 - ✅ Servicios External en `service/{dominio}/external/` • Para ≥2 capacidades, ver regla 09
@@ -19,10 +21,11 @@ alwaysApply: true
 
 1. **Verificación obligatoria**: Antes de crear, buscar DTOs/modelos/servicios/endpoints existentes en `dto/`, `documents/`, `models/`, `service/`. Reutilizar sin modificar tipos/nombres de campos (solo agregar nuevos). Preguntar al usuario sobre controller (nuevo o reutilizar).
 2. **Validación previa**: Solicitar URL, CURL y responses JSON (éxito + error) ANTES de crear cualquier servicio. No inventar estructura de DTOs.
-3. **Mapeo con MapStruct**: SIEMPRE usar MapStruct para convertir entre DTOs y entidades. Crear interface `@Mapper` con `componentModel = "spring"` en paquete `mapper/{dominio}/`. NO usar mapeo manual ni otras librerías (ModelMapper, Dozer).
+3. **Mapeo con MapStruct (OBLIGATORIO)**: TODO mapeo DTO ↔ Entidad debe hacerse en Mapper con MapStruct. Esto incluye: construcción de entidades (`toEntity()`), actualización de entidades (`updateEntity()` con `@MappingTarget`), y conversión a DTOs (`toResponseDto()`). NO crear servicios Builder separados para mapeo de DTOs. NO usar mapeo manual ni otras librerías (ModelMapper, Dozer, BeanUtils).
 4. **Arquitectura en capas**: Controller → Service (Interface) → Service Impl → External Service → Feign Client. Servicios External SIEMPRE en paquete `service/{dominio}/external/`.
 5. **Inyección de dependencias**: SIEMPRE por interfaz usando `@RequiredArgsConstructor` (NUNCA `@Autowired` ni implementaciones concretas).
 6. **Organización por complejidad**: Simple (1 op) en `service/{dominio}/`, Organizada (≥2 ops) con subcarpetas `service/{dominio}/{operacion}/`, Modular (módulo completo) con paquetes en todas las capas.
+7. **Autenticación por Token con AuthUserService (OBLIGATORIO)**: TODAS las operaciones DEBEN usar `AuthUserService.getAuthenticatedUserRoleId()` para obtener el userRoleId del usuario autenticado (1 línea). EXCEPCIONES: Consulta de categorías, tipos de documento, consulta/creación de productos, creación de usuarios.
 
 ## 📊 Referencia Rápida
 
@@ -150,18 +153,135 @@ service/{dominio}/
 
 | Aspecto | Convención | Ejemplo |
 |---|---|---|
-| Ubicación | `mapper/{dominio}/` | `mapper/user/UserMapper.java` |
+| Ubicación | `mapper/{dominio}/` | `mapper/cart/CartItemMapper.java` |
 | Anotación | `@Mapper(componentModel = "spring")` | Inyección automática |
-| Nomenclatura | `{Dominio}Mapper` | `UserMapper`, `ProductMapper` |
-| Métodos | Conversión bidireccional | `toEntity()`, `toResponseDto()` |
-| Inyección | Por interfaz en servicios | `private final UserMapper userMapper;` |
+| Nomenclatura | `{Dominio}Mapper` | `UserMapper`, `CartItemMapper` |
+| Métodos Construcción | `toEntity()` con parámetros múltiples | `toEntity(requestDto, cart, product)` |
+| Métodos Actualización | `updateEntity()` con `@MappingTarget` | `updateQuantity(@MappingTarget item, qty)` |
+| Métodos Conversión | `toResponseDto()`, `toDto()` | `toResponseDto(entity)` |
+| Inyección | Por interfaz en servicios | `private final CartItemMapper mapper;` |
+
+**🚫 PROHIBIDO: NO crear servicios Builder para mapeo de DTOs**
+- ❌ `CartItemBuilderService` con `buildCartItem(dto, cart, product)` → Usar `mapper.toEntity(dto, cart, product)`
+- ❌ `UserBuilderService` con `buildUserFromRequest(dto)` → Usar `mapper.toEntity(dto)`
+- ❌ Servicios con métodos `update*Fields()` para actualizar entidades → Usar `mapper.updateEntity(dto, entity)`
+
+**✅ CORRECTO: Mapper con MapStruct maneja TODO el mapeo**
+```java
+@Mapper(componentModel = "spring")
+public interface CartItemMapper {
+    // ✅ Construcción con múltiples parámetros
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "cart", source = "cart")
+    @Mapping(target = "product", source = "product")
+    @Mapping(target = "cantidad", source = "request.quantity")
+    CartItem toEntity(CartItemRequestDto request, Cart cart, Product product);
+    
+    // ✅ Actualización con @MappingTarget
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "cart", ignore = true)
+    @Mapping(target = "product", ignore = true)
+    void updateQuantity(@MappingTarget CartItem item, Integer newQuantity);
+    
+    // ✅ Conversión a DTO
+    CartItemResponseDto toResponseDto(CartItem item);
+}
+```
 
 **Beneficios de MapStruct:**
 - ✅ Mapeo compile-time (sin reflexión)
 - ✅ Type-safe y rápido
 - ✅ Código generado automáticamente
+- ✅ Reemplaza servicios Builder para mapeo (menos clases)
 - ✅ Fácil de testear y mantener
 - ✅ Manejo automático de campos con mismo nombre
+- ✅ Soporte para mapeo con múltiples parámetros
+- ✅ Actualización in-place con `@MappingTarget`
+
+### Autenticación por Token (OBLIGATORIO)
+
+**✅ Usar `AuthUserService` - Servicio Genérico de Autenticación**
+
+| Aspecto | Detalle |
+|---------|---------|
+| **Ubicación** | `service/auth/AuthUserService` |
+| **Responsabilidad** | Extraer email del token JWT, obtener userRoleId y validar rol de Cliente |
+| **Reutilizable** | ✅ SÍ - En todos los módulos del sistema (cart, order, payment, etc.) |
+| **Inyección** | `private final AuthUserService authUserService;` |
+
+**Patrón recomendado (con AuthUserService):**
+
+```java
+@Service
+@RequiredArgsConstructor
+public class CartItemServiceImpl implements CartItemService {
+    private final AuthUserService authUserService;  // ✅ Servicio genérico
+    
+    @Override
+    @Transactional
+    public CartItemResponseDto addItemToCart(CartItemRequestDto request) {
+        Integer userRoleId = authUserService.getAuthenticatedUserRoleId();  // ✅ Una línea
+        // ... lógica de negocio
+    }
+}
+```
+
+**Patrón alternativo (manual - solo si AuthUserService no cubre el caso de uso):**
+
+```java
+String userEmail = authenticatedUserUtil.getCurrentUsername();
+Integer userRoleId = validationService.getUserRoleIdFromEmail(userEmail);
+validationService.validateUserHasClientRole(userRoleId);
+```
+
+**¿Por qué usar `AuthUserService`?**
+- ✅ **Centralizado**: Lógica de autenticación en un solo lugar
+- ✅ **Reutilizable**: Disponible para todos los módulos
+- ✅ **Consistente**: Mismo comportamiento en todo el sistema
+- ✅ **Mantenible**: Cambios en autenticación solo en un servicio
+- ✅ **Testeable**: Fácil de mockear en tests unitarios
+- ✅ **Menos código**: 1 línea vs 3 líneas
+
+**Tabla de decisión - ¿Requiere autenticación por token?**
+
+| Operación | ¿Requiere Token? | Razón |
+|-----------|:----------------:|-------|
+| **Listar categorías** | ❌ NO | Información pública del catálogo |
+| **Listar tipos de documento** | ❌ NO | Información pública necesaria para registro |
+| **Consultar productos** | ❌ NO | Catálogo público de productos |
+| **Crear producto** | ❌ NO | Operación administrativa (protegida por otro mecanismo) |
+| **Crear usuario** | ❌ NO | Registro inicial de usuario (sin token previo) |
+| **Login** | ❌ NO | Generación del token (sin token previo) |
+| **Agregar item al carrito** | ✅ SÍ | Operación específica del usuario |
+| **Actualizar item del carrito** | ✅ SÍ | Operación específica del usuario |
+| **Eliminar item del carrito** | ✅ SÍ | Operación específica del usuario |
+| **Ver mi carrito** | ✅ SÍ | Información privada del usuario |
+| **Ver mis pedidos** | ✅ SÍ | Información privada del usuario |
+| **Actualizar mi perfil** | ✅ SÍ | Información privada del usuario |
+| **Cambiar mi contraseña** | ✅ SÍ | Operación de seguridad del usuario |
+
+**Validaciones adicionales según tipo de operación:**
+
+| Tipo Operación | Validaciones Requeridas | Ejemplo |
+|----------------|------------------------|---------|
+| **Consulta propia** | Email desde token | Ver mi carrito, mis pedidos |
+| **Modificación propia** | Email desde token + verificar ownership | Actualizar item de MI carrito |
+| **Eliminación propia** | Email desde token + verificar ownership | Eliminar item de MI carrito |
+| **Operación sobre recurso** | Email desde token + validar que recurso pertenece al usuario | `validateItemBelongsToUser(itemId, userRoleId)` |
+
+**Flujo estándar con validación de ownership:**
+
+```
+1. Extraer email del token JWT
+    ↓
+2. Obtener userRoleId desde email
+    ↓
+3. Validar rol de Cliente (si aplica)
+    ↓
+4. Validar que el recurso pertenece al usuario
+    ↓
+5. Ejecutar operación
+```
 
 ## ✅ Ejemplos
 
@@ -307,91 +427,306 @@ public class InsurabilityQuestionsOrganizationServiceImpl
 - ✅ Sin Feign Clients
 - ⚠️ Si usuario solicita exponer → PREGUNTAR antes de crear endpoint
 
-### Ejemplo 5: Mapeo con MapStruct (OBLIGATORIO)
+### Ejemplo 5: Mapeo con MapStruct (OBLIGATORIO) - Reemplaza Builder Services
 
-**Mapper (mapper/user/UserMapper.java):**
+**✅ CORRECTO - Mapper con construcción y actualización:**
 ```java
-package com.ecommerce.davivienda.mapper.user;
+package com.ecommerce.davivienda.mapper.cart;
 
-import com.ecommerce.davivienda.dto.user.UserRequestDto;
-import com.ecommerce.davivienda.dto.user.UserResponseDto;
-import com.ecommerce.davivienda.entity.User;
+import com.ecommerce.davivienda.dto.cart.CartItemRequestDto;
+import com.ecommerce.davivienda.dto.cart.CartItemResponseDto;
+import com.ecommerce.davivienda.entity.cart.Cart;
+import com.ecommerce.davivienda.entity.cart.CartItem;
+import com.ecommerce.davivienda.entity.product.Product;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
 /**
- * Mapper para conversiones entre User y DTOs.
- * MapStruct genera la implementación automáticamente en tiempo de compilación.
+ * Mapper MapStruct para CartItem.
+ * Maneja construcción, actualización y conversión de entidades.
+ * Este mapper reemplaza el CartItemBuilderService eliminado.
  */
 @Mapper(componentModel = "spring")
-public interface UserMapper {
+public interface CartItemMapper {
 
     /**
-     * Convierte UserRequestDto a entidad User.
+     * Construye CartItem desde DTO con entidades relacionadas.
+     * Reemplaza: CartItemBuilderService.buildCartItem()
      */
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    User toEntity(UserRequestDto requestDto);
+    @Mapping(target = "productosCarritoId", ignore = true)
+    @Mapping(target = "cart", source = "cart")
+    @Mapping(target = "product", source = "product")
+    @Mapping(target = "cantidad", source = "request.quantity")
+    CartItem toEntity(CartItemRequestDto request, Cart cart, Product product);
 
     /**
-     * Convierte entidad User a UserResponseDto.
+     * Actualiza cantidad de CartItem existente.
+     * Reemplaza: CartItemBuilderService.updateQuantity()
      */
-    UserResponseDto toResponseDto(User user);
+    @Mapping(target = "productosCarritoId", ignore = true)
+    @Mapping(target = "cart", ignore = true)
+    @Mapping(target = "product", ignore = true)
+    @Mapping(target = "cantidad", source = "newQuantity")
+    void updateQuantity(@MappingTarget CartItem cartItem, Integer newQuantity);
 
     /**
-     * Actualiza campos de User desde UserRequestDto.
+     * Convierte entidad a DTO de respuesta.
      */
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    void updateEntityFromDto(UserRequestDto requestDto, @MappingTarget User user);
+    @Mapping(target = "id", source = "productosCarritoId")
+    @Mapping(target = "cartId", source = "cart.carritoId")
+    @Mapping(target = "productId", source = "product.productoId")
+    CartItemResponseDto toResponseDto(CartItem cartItem);
 }
 ```
 
-**Uso en Servicio:**
+**✅ Uso en Servicio (sin Builder Service):**
 ```java
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class UserServiceImpl implements UserService {
-    private final UserRepository userRepository;
-    private final UserMapper userMapper;  // ✅ Inyección de MapStruct mapper
+public class CartItemServiceImpl implements CartItemService {
+    private final CartItemTransactionalService transactionalService;
+    private final CartItemValidationService validationService;
+    private final CartItemMapper cartItemMapper;  // ✅ SOLO Mapper (NO Builder)
 
     @Override
     @Transactional
-    public UserResponseDto createUser(UserRequestDto request) {
-        User user = userMapper.toEntity(request);  // ✅ Mapeo con MapStruct
-        User savedUser = userRepository.save(user);
-        return userMapper.toResponseDto(savedUser);  // ✅ Mapeo con MapStruct
+    public CartItemResponseDto addItemToCart(CartItemRequestDto request) {
+        Integer userRoleId = authUserService.getAuthenticatedUserRoleId();
+        Cart cart = transactionalService.findOrCreateCart(userRoleId);
+        Product product = validationService.validateProductExists(request.getProductId());
+        
+        // ✅ Mapper construye la entidad (reemplaza BuilderService)
+        CartItem cartItem = cartItemMapper.toEntity(request, cart, product);
+        CartItem savedItem = transactionalService.saveCartItem(cartItem);
+        
+        return cartItemMapper.toResponseDto(savedItem);
     }
 
     @Override
     @Transactional
-    public UserResponseDto updateUser(Long id, UserRequestDto request) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new UserException("Usuario no encontrado", CODE_USER_NOT_FOUND));
-        userMapper.updateEntityFromDto(request, user);  // ✅ Mapeo con MapStruct
-        return userMapper.toResponseDto(userRepository.save(user));
+    public CartItemResponseDto updateItemQuantity(Integer itemId, Integer quantity) {
+        Integer userRoleId = authUserService.getAuthenticatedUserRoleId();
+        validationService.validateItemBelongsToUser(itemId, userRoleId);
+        
+        CartItem cartItem = transactionalService.findCartItemById(itemId);
+        
+        // ✅ Mapper actualiza la entidad (reemplaza BuilderService)
+        cartItemMapper.updateQuantity(cartItem, quantity);
+        CartItem updatedItem = transactionalService.saveCartItem(cartItem);
+        
+        return cartItemMapper.toResponseDto(updatedItem);
+    }
+}
+```
+
+**❌ INCORRECTO - Builder Service para mapeo:**
+```java
+// ❌ NO CREAR - Servicio Builder para mapeo de DTOs
+@Service
+public class CartItemBuilderServiceImpl implements CartItemBuilderService {
+    // ❌ Este método debe estar en el Mapper
+    public CartItem buildCartItem(CartItemRequestDto request, Cart cart, Product product) {
+        return CartItem.builder()
+                .cart(cart)
+                .product(product)
+                .cantidad(request.getQuantity())
+                .build();
+    }
+    
+    // ❌ Este método debe estar en el Mapper
+    public void updateQuantity(CartItem cartItem, Integer newQuantity) {
+        cartItem.setCantidad(newQuantity);
     }
 }
 ```
 
 **❌ NO hacer mapeo manual:**
 ```java
-// ❌ INCORRECTO - Mapeo manual
-User user = new User();
-user.setName(request.getName());
-user.setEmail(request.getEmail());
-user.setDocumentType(request.getDocumentType());
-user.setDocumentNumber(request.getDocumentNumber());
-// ... 20 líneas más de setters
+// ❌ INCORRECTO - Mapeo manual con múltiples setters
+CartItem cartItem = new CartItem();
+cartItem.setCart(cart);
+cartItem.setProduct(product);
+cartItem.setCantidad(request.getQuantity());
+// ... más setters
 ```
 
-**✅ Beneficios de MapStruct:**
-- 🎯 5-10 líneas vs 20-30 líneas de mapeo manual
-- 🎯 Seguridad de tipos en tiempo de compilación
-- 🎯 Sin errores de reflexión en runtime
-- 🎯 Fácil de mantener cuando se agregan campos
+**✅ Beneficios de MapStruct vs Builder Services:**
+- 🎯 **Menos clases**: Elimina 2 archivos (Interface + Impl del Builder) por dominio
+- 🎯 **Menos inyecciones**: ServiceImpl solo inyecta Mapper (no Builder + Mapper)
+- 🎯 **Type-safe**: Validación en compile-time
+- 🎯 **Mantenible**: Agregar campos solo requiere actualizar DTO y entidad
+- 🎯 **Estándar**: Sigue convenciones de MapStruct ampliamente adoptadas
+
+### Ejemplo 6: Autenticación por Token con AuthUserService (OBLIGATORIO)
+
+**✅ CORRECTO - Con AuthUserService (RECOMENDADO):**
+
+```java
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class CartItemServiceImpl implements CartItemService {
+
+    private final CartItemTransactionalService transactionalService;
+    private final CartItemValidationService validationService;
+    private final CartItemBuilderService builderService;
+    private final CartItemMapper cartItemMapper;
+    private final AuthUserService authUserService;  // ✅ Servicio genérico de autenticación
+
+    @Override
+    @Transactional
+    public CartItemResponseDto addItemToCart(CartItemRequestDto request) {
+        log.info("Iniciando proceso para agregar producto {} al carrito", request.getProductId());
+        
+        try {
+            // ✅ 1. Obtener userRoleId del usuario autenticado (1 línea)
+            Integer userRoleId = authUserService.getAuthenticatedUserRoleId();
+            
+            // ✅ 2. Obtener/crear carrito del usuario autenticado
+            Cart cart = transactionalService.findOrCreateCart(userRoleId);
+            
+            // 3. Validar producto
+            Product product = validationService.validateProductExists(request.getProductId());
+            validationService.validateProductActive(product);
+            validationService.validateQuantity(request.getQuantity());
+            
+            // 4. Validar que producto no exista en el carrito
+            if (transactionalService.existsCartItemByCartAndProduct(
+                cart.getCarritoId(), request.getProductId())) {
+                throw new CartException(ERROR_CART_ITEM_ALREADY_EXISTS, CODE_CART_ITEM_ALREADY_EXISTS);
+            }
+            
+            // 5. Crear y guardar item
+            CartItem cartItem = builderService.buildCartItem(request, cart, product);
+            CartItem savedItem = transactionalService.saveCartItem(cartItem);
+            
+            return cartItemMapper.toResponseDto(savedItem);
+            
+        } catch (Exception e) {
+            throw new CartException(ERROR_GENERIC, CODE_GENERIC_ERROR, e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public CartItemResponseDto updateItemQuantity(Integer itemId, Integer quantity) {
+        log.info("Actualizando cantidad del item {} a {}", itemId, quantity);
+        
+        try {
+            // ✅ 1. Obtener userRoleId del usuario autenticado (1 línea)
+            Integer userRoleId = authUserService.getAuthenticatedUserRoleId();
+            
+            // ✅ 2. Validar que el item pertenece al usuario (ownership)
+            validationService.validateItemBelongsToUser(itemId, userRoleId);
+            
+            // 3. Validar cantidad
+            validationService.validateQuantity(quantity);
+            
+            // 4. Actualizar y guardar
+            CartItem cartItem = transactionalService.findCartItemById(itemId);
+            builderService.updateQuantity(cartItem, quantity);
+            CartItem updatedItem = transactionalService.saveCartItem(cartItem);
+            
+            return cartItemMapper.toResponseDto(updatedItem);
+            
+        } catch (Exception e) {
+            throw new CartException(ERROR_GENERIC, CODE_GENERIC_ERROR, e);
+        }
+    }
+}
+```
+
+**Beneficios de usar `AuthUserService`:**
+- 🎯 **Reducción de código**: 1 línea vs 3 líneas por operación
+- 🎯 **Sin código duplicado**: No repetir extracción de email + validación en cada método
+- 🎯 **Centralizado**: Cambios en autenticación solo en `AuthUserService`
+- 🎯 **Reutilizable**: Mismo servicio en cart, order, payment, etc.
+- 🎯 **Testeable**: Mock del servicio completo en lugar de múltiples componentes
+
+**❌ INCORRECTO - Sin autenticación por token:**
+
+```java
+@Override
+@Transactional
+public CartItemResponseDto addItemToCart(CartItemRequestDto request) {
+    // ❌ NO valida usuario autenticado
+    // ❌ Cualquier usuario podría agregar items al carrito de otro
+    
+    Product product = validationService.validateProductExists(request.getProductId());
+    Cart cart = transactionalService.findOrCreateCart(request.getUserRoleId());  // ❌ UserRoleId desde request
+    CartItem cartItem = builderService.buildCartItem(request, cart, product);
+    return cartItemMapper.toResponseDto(transactionalService.saveCartItem(cartItem));
+}
+```
+
+**❌ INCORRECTO - Sin validar ownership:**
+
+```java
+@Override
+@Transactional
+public CartItemResponseDto updateItemQuantity(Integer itemId, Integer quantity) {
+    // ✅ Usa AuthUserService para autenticar
+    Integer userRoleId = authUserService.getAuthenticatedUserRoleId();
+    
+    // ❌ NO valida que el item pertenece al usuario
+    // ❌ Usuario A podría modificar items del carrito de Usuario B
+    
+    CartItem cartItem = transactionalService.findCartItemById(itemId);
+    builderService.updateQuantity(cartItem, quantity);
+    return cartItemMapper.toResponseDto(transactionalService.saveCartItem(cartItem));
+}
+```
+
+**⚠️ Patrón manual (solo si AuthUserService no cubre el caso de uso):**
+
+```java
+@Override
+@Transactional
+public SomeResponseDto someOperation(SomeRequestDto request) {
+    // ⚠️ Patrón manual - preferir AuthUserService cuando sea posible
+    String userEmail = authenticatedUserUtil.getCurrentUsername();
+    Integer userRoleId = validationService.getUserRoleIdFromEmail(userEmail);
+    validationService.validateUserHasClientRole(userRoleId);
+    
+    // ... lógica de negocio
+}
+```
+
+**✅ Excepciones que NO requieren autenticación:**
+
+```java
+// ✅ CORRECTO - Operaciones públicas sin autenticación
+@RestController
+@RequestMapping("/api/v1/public")
+public class PublicController {
+
+    @GetMapping("/categories")
+    public List<CategoryResponseDto> getAllCategories() {
+        // ✅ NO requiere token - información pública
+        return categoryService.getAllCategories();
+    }
+
+    @GetMapping("/document-types")
+    public List<DocumentTypeResponseDto> getDocumentTypes() {
+        // ✅ NO requiere token - información necesaria para registro
+        return documentTypeService.getAllDocumentTypes();
+    }
+
+    @GetMapping("/products")
+    public List<ProductResponseDto> getAllProducts() {
+        // ✅ NO requiere token - catálogo público
+        return productService.getAllProducts();
+    }
+
+    @PostMapping("/users/register")
+    public UserResponseDto registerUser(@Valid @RequestBody UserRequestDto request) {
+        // ✅ NO requiere token - registro inicial
+        return userService.createUser(request);
+    }
+}
+```
 
 ## 🚫 Restricciones
 
@@ -399,18 +734,24 @@ user.setDocumentNumber(request.getDocumentNumber());
 2. **NO** modificar tipos de datos ni nombres de campos existentes al reutilizar (solo agregar nuevos)
 3. **NO** crear servicios sin URL, CURL y responses JSON reales (no inventar estructura)
 4. **NO** usar mapeo manual entre DTOs y entidades (usar MapStruct obligatoriamente)
-5. **NO** usar otras librerías de mapeo (ModelMapper, Dozer, BeanUtils) en lugar de MapStruct
-6. **NO** crear mappers sin `@Mapper(componentModel = "spring")`
-7. **NO** colocar mappers fuera del paquete `mapper/{dominio}/`
-8. **NO** inyectar implementaciones (`*ServiceImpl`) ni usar `@Autowired` (usar interfaces + `@RequiredArgsConstructor`)
-9. **NO** llamar Feign Clients directamente desde servicios principales (usar servicio External en `external/`)
-10. **NO** crear o modificar controllers sin preguntar PRIMERO al usuario si desea exponer la API
-11. **NO** exponer servicios de procesamiento/organización sin aprobación explícita del usuario
-12. **NO** crear servicios sin interfaz correspondiente
-13. **NO** hardcodear mensajes de error (usar constantes en `Constants.java`)
-14. **NO** usar nomenclatura inconsistente (`premiumcalculation` vs `premiumCalculation` - usar camelCase)
-15. **NO** crear servicios external fuera del paquete `service/{dominio}/external/`
-16. **NO** crear servicios de organización/procesamiento fuera del paquete `service/{dominio}/organization/`
+5. **NO** crear servicios Builder (`*BuilderService`) para mapeo de DTOs (usar Mapper con MapStruct)
+6. **NO** crear métodos `build*()` o `update*Fields()` en servicios separados (usar `mapper.toEntity()` y `mapper.updateEntity()`)
+7. **NO** usar otras librerías de mapeo (ModelMapper, Dozer, BeanUtils) en lugar de MapStruct
+8. **NO** crear mappers sin `@Mapper(componentModel = "spring")`
+9. **NO** colocar mappers fuera del paquete `mapper/{dominio}/`
+10. **NO** inyectar implementaciones (`*ServiceImpl`) ni usar `@Autowired` (usar interfaces + `@RequiredArgsConstructor`)
+11. **NO** llamar Feign Clients directamente desde servicios principales (usar servicio External en `external/`)
+12. **NO** crear o modificar controllers sin preguntar PRIMERO al usuario si desea exponer la API
+13. **NO** exponer servicios de procesamiento/organización sin aprobación explícita del usuario
+14. **NO** crear servicios sin interfaz correspondiente
+15. **NO** hardcodear mensajes de error (usar constantes en `Constants.java`)
+16. **NO** usar nomenclatura inconsistente (`premiumcalculation` vs `premiumCalculation` - usar camelCase)
+17. **NO** crear servicios external fuera del paquete `service/{dominio}/external/`
+18. **NO** crear servicios de organización/procesamiento fuera del paquete `service/{dominio}/organization/`
+19. **NO** omitir autenticación por token en operaciones que manipulan datos del usuario (excepto categorías, tipos de documento, consulta/creación de productos, creación de usuarios) - USAR `AuthUserService.getAuthenticatedUserRoleId()`
+20. **NO** usar patrón manual de autenticación (3 líneas) cuando se puede usar `AuthUserService` (1 línea)
+21. **NO** obtener userRoleId desde el request cuando está disponible en el token JWT
+22. **NO** omitir validación de ownership en operaciones de actualización/eliminación de recursos del usuario
 
 ## ✅ Validación Automática
 
@@ -420,6 +761,9 @@ Cursor debe detectar:
 - ❌ Modificación de tipos de datos (`boolean` → `Boolean`) o nombres de campos existentes
 - ❌ Creación de servicios sin URL, CURL y responses JSON
 - ❌ Mapeo manual entre DTOs y entidades (uso de `new Entity()` con múltiples setters)
+- ❌ **Servicios Builder (`*BuilderService`, `*BuilderServiceImpl`) que hacen mapeo de DTOs**
+- ❌ **Métodos `build*()` o `update*Fields()` en servicios que deberían estar en Mapper**
+- ❌ **Inyección de Builder services junto con Mapper en el mismo servicio**
 - ❌ Uso de `ModelMapper`, `Dozer`, `BeanUtils.copyProperties()` en lugar de MapStruct
 - ❌ Mappers sin anotación `@Mapper(componentModel = "spring")`
 - ❌ Mappers ubicados fuera del paquete `mapper/{dominio}/`
@@ -434,12 +778,18 @@ Cursor debe detectar:
 - ❌ Nomenclatura inconsistente (`premiumcalculation` vs `premiumCalculation`)
 - ❌ Llamadas directas a Feign Clients desde servicios principales
 - ❌ Estructura inventada de DTOs o campos "TODO"
+- ❌ Operaciones de usuario sin usar `AuthUserService.getAuthenticatedUserRoleId()` (excepto categorías, tipos documento, productos, crear usuario)
+- ❌ Uso de patrón manual de autenticación (3 líneas con `authenticatedUserUtil` + `validationService`) en lugar de `AuthUserService` (1 línea)
+- ❌ UserRoleId obtenido desde request en lugar del token JWT
+- ❌ Operaciones de actualización/eliminación sin validar ownership del recurso
+- ❌ Falta de inyección de `AuthUserService` en servicios que manipulan datos de usuario
+- ❌ Métodos de validación de ownership no implementados en servicios de validación
 
 ## 🎯 Objetivo + Regla de Oro
 
 **Objetivo**: Crear servicios mantenibles, testables y que cumplan principios SOLID con arquitectura en capas clara.
 
-**REGLA DE ORO**: "PRIMERO verificar existentes (dto/, documents/, models/, service/), LUEGO solicitar URL + CURL + responses, DESPUÉS preguntar si desea exponer API (servicios de procesamiento/organización son internos por defecto), FINALMENTE preguntar sobre controller (nuevo vs reutilizar). Reutilizar sin modificar tipos/nombres. Arquitectura: Controller (solo si aprobado) → Service → External (en external/) / Organization (en organization/) → Feign. SIEMPRE usar MapStruct para mapeo DTO ↔ Entidad. Una responsabilidad por servicio. Interfaces siempre."
+**REGLA DE ORO**: "PRIMERO verificar existentes (dto/, documents/, models/, service/), LUEGO solicitar URL + CURL + responses, DESPUÉS preguntar si desea exponer API (servicios de procesamiento/organización son internos por defecto), FINALMENTE preguntar sobre controller (nuevo vs reutilizar). Reutilizar sin modificar tipos/nombres. Arquitectura: Controller (solo si aprobado) → Service → External (en external/) / Organization (en organization/) → Feign. **TODO mapeo DTO ↔ Entidad en Mapper con MapStruct** (construcción `toEntity()`, actualización `updateEntity()`, conversión `toResponseDto()`) - **NO crear Builder services para mapeo**. SIEMPRE autenticar por token JWT usando `AuthUserService.getAuthenticatedUserRoleId()` (1 línea) y validar ownership en operaciones de usuario (EXCEPTO categorías, tipos documento, productos, crear usuario). Una responsabilidad por servicio. Interfaces siempre."
 
 
 > **Ver también**: 

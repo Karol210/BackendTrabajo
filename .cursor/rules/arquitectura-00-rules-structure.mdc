@@ -220,21 +220,23 @@ service/transaction/detail/
 | 🔧 Servicios | `servicios-03-feign-config` | Configuración transversal de Feign | 189 | ✅ |
 | 🔧 Servicios | `servicios-04-excepciones` | Excepciones + paquetes específicos | ~370 | ✅ Actualizada |
 | 🔧 Servicios | `servicios-05-dtos` | DTOs y Data Transfer Objects | 306 | ✅ |
-| 🔧 Servicios | `servicios-06-transaction` | Servicios de transacción (uso interno) | 226 | ✅ |
+| 💾 Servicios | `servicios-06-transactional` | Capa transactional - Acceso a datos y consultas BD | ~415 | ✅ Actualizada |
+| 🔍 Calidad | `servicios-07-sonar` | SonarQube - Complejidad cognitiva y code smells | 255 | ✅ Estandarizada |
 | 📝 Documentación | `servicios-08-documentacion` | Informes de cambios en DokuWiki + Ejemplos Uso | 223 | ✅ Estandarizada |
 | 🔧 Servicios | `servicios-09-organizacion-capacidades` | Organización por capacidades - Servicios y DTOs | 315 | ✅ Estandarizada |
 | 🧹 Calidad | `servicios-10-buenas-practicas` | Clean Code - SRP, constantes, métodos pequeños | 306 | ✅ Estandarizada |
-| 🎮 Servicios | `servicios-11-controllers` | Controllers REST - Paths descriptivos y mejores prácticas | 298 | ✅ Estandarizada |
+| 🎮 Servicios | `servicios-11-controllers` | Controllers REST - Paths descriptivos y mejores prácticas | 462 | ⚠️ Refactorizar |
 
-**Total:** 11 archivos (1 arquitectura + 9 servicios + 1 documentación)
+**Total:** 12 archivos (1 arquitectura + 9 servicios + 2 calidad + 1 documentación)
 
 **Estado de límites:**
-- ✅ 5 archivos dentro del rango ideal (< 300 líneas)
-- ✅ 6 archivos en rango medio (300-400 líneas)
-- ✅ 0 archivos requieren refactorización
-- ✅ Promedio: ~283 líneas por archivo
+- ✅ 6 archivos dentro del rango ideal (< 300 líneas)
+- ✅ 5 archivos en rango medio (300-400 líneas)
+- ⚠️ 1 archivo requiere refactorización (> 400 líneas)
+- ✅ Promedio: ~310 líneas por archivo
 
 **Últimas actualizaciones:**
+- ✨ **Reemplazada** regla de **Transaction** por **Capa Transactional** (`servicios-06-transactional`) - Capacidad dedicada para operaciones de BD
 - ✨ **Agregada** regla de **Controllers REST** (`servicios-11-controllers`)
 - ✨ **Estandarizada** regla de **Buenas Prácticas** (`servicios-10-buenas-practicas`)
 - ✨ Integrado "Checklist de Refactorización" en "Validación Automática"
@@ -327,14 +329,15 @@ service/transaction/detail/
 - Constantes en `Constants.java`
 - Handlers en `ExceptionHandlerController`
 
-**Para Transacciones (uso interno):**
-> Ver [servicios-06-transaction.mdc](./servicios-06-transaction.mdc) para servicios de transacción sin controllers.
+**Para Capa Transactional (Acceso a Datos):**
+> Ver [servicios-06-transactional.mdc](./servicios-06-transactional.mdc) para capacidad dedicada a operaciones de consulta y persistencia.
 
 **Evitar redundancia sobre:**
-- Servicios internos sin controllers
-- Nomenclatura `{id}` y `{paso}` (NO transactionId/step)
-- Reutilización de servicio base `tienda-seguros.url`
-- Path estándar `/tienda-seguros/api/v1/transaccion/{id}/paso/{paso}`
+- Separación obligatoria de operaciones de BD en capacidad transactional
+- Nomenclatura de métodos (`find*`, `save*`, `delete*`, `exists*`, `findOrCreate*`)
+- Anotaciones `@Transactional` y `@Transactional(readOnly = true)`
+- Interface + Implementación siempre
+- ServiceImpl no inyecta repositories directamente
 
 **Para Documentación de Cambios:**
 > Ver [servicios-08-documentacion.mdc](./servicios-08-documentacion.mdc) para informes de cambios en DokuWiki.
@@ -361,9 +364,9 @@ service/transaction/detail/
 
 | Regla | Depende de | Razonamiento |
 |-------|------------|--------------|
-| `servicios-01-creacion-servicios` | `servicios-02-feign-client`, `servicios-04-excepciones`, `servicios-05-dtos` | Servicios usan Feign Clients, Excepciones y DTOs |
+| `servicios-01-creacion-servicios` | `servicios-02-feign-client`, `servicios-04-excepciones`, `servicios-05-dtos`, `servicios-06-transactional` | Servicios usan Feign Clients, Excepciones, DTOs y capacidad transactional |
 | `servicios-02-feign-client` | `servicios-03-feign-config`, `servicios-05-dtos` | Feign Clients usan config transversal y DTOs |
-| `servicios-06-transaction` | `servicios-01-creacion-servicios`, `servicios-02-feign-client`, `servicios-04-excepciones`, `servicios-05-dtos` | Caso específico que aplica todas las reglas |
+| `servicios-06-transactional` | `servicios-04-excepciones`, `servicios-09-organizacion-capacidades` | Capacidad transactional usa excepciones y sigue organización por capacidades |
 | `servicios-09-organizacion-capacidades` | `servicios-01-creacion-servicios`, `servicios-02-feign-client`, `servicios-05-dtos` | Organiza servicios external y DTOs por capacidades |
 | `servicios-11-controllers` | `servicios-01-creacion-servicios`, `servicios-05-dtos`, `servicios-10-buenas-practicas` | Controllers usan servicios, DTOs y principios de clean code |
 

@@ -6,13 +6,13 @@ import com.ecommerce.davivienda.dto.stock.StockValidationResponseDto;
 import com.ecommerce.davivienda.entity.cart.Cart;
 import com.ecommerce.davivienda.entity.cart.CartItem;
 import com.ecommerce.davivienda.entity.product.Stock;
-import com.ecommerce.davivienda.exception.CartException;
+import com.ecommerce.davivienda.exception.cart.CartException;
 import com.ecommerce.davivienda.exception.stock.InsufficientStockException;
 import com.ecommerce.davivienda.exception.stock.StockException;
 import com.ecommerce.davivienda.repository.cart.CartItemRepository;
 import com.ecommerce.davivienda.repository.cart.CartRepository;
 import com.ecommerce.davivienda.repository.product.StockRepository;
-import com.ecommerce.davivienda.service.cart.validation.CartItemValidationService;
+import com.ecommerce.davivienda.service.cartitem.validation.user.CartItemUserValidationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -38,7 +38,7 @@ public class StockValidationServiceImpl implements StockValidationService {
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
     private final StockRepository stockRepository;
-    private final CartItemValidationService cartItemValidationService;
+    private final CartItemUserValidationService userValidationService;
 
     @Override
     @Transactional(readOnly = true)
@@ -91,7 +91,7 @@ public class StockValidationServiceImpl implements StockValidationService {
         log.debug("Obteniendo userRoleId para documento: {} {}", 
                 request.getDocumentType(), request.getDocumentNumber());
         
-        return cartItemValidationService.getUserRoleIdFromDocument(
+        return userValidationService.getUserRoleIdFromDocument(
                 request.getDocumentType(), 
                 request.getDocumentNumber()
         );

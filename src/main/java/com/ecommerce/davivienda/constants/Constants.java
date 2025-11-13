@@ -242,6 +242,11 @@ public class Constants {
      */
     public static final String ERROR_JWT_AUTHORITIES_PARSE = "Error al procesar permisos del token JWT";
 
+    /**
+     * Mensaje de error al extraer información del token JWT.
+     */
+    public static final String ERROR_JWT_TOKEN_INFO_EXTRACTION = "Error al extraer información del token JWT";
+
     // ==================== JWT VALIDATION - ERROR CODES ====================
     
     /**
@@ -255,6 +260,12 @@ public class Constants {
      * Formato: ED-JWT-02 (Ecommerce Davivienda - JWT - 02)
      */
     public static final String CODE_JWT_AUTHORITIES_PARSE_ERROR = "ED-JWT-02";
+    
+    /**
+     * Código de error: Error al extraer información del token JWT.
+     * Formato: ED-JWT-03 (Ecommerce Davivienda - JWT - 03)
+     */
+    public static final String CODE_JWT_TOKEN_INFO_ERROR = "ED-JWT-03";
 
     // ==================== PRODUCT - SUCCESS MESSAGES ====================
     
@@ -473,6 +484,16 @@ public class Constants {
      * Mensaje de error cuando el usuario no tiene el rol de Cliente.
      */
     public static final String ERROR_USER_NOT_CLIENT_ROLE = "Solo los usuarios con rol de Cliente pueden agregar productos al carrito";
+    
+    /**
+     * Mensaje de error cuando el item no pertenece al carrito del usuario.
+     */
+    public static final String ERROR_CART_ITEM_UNAUTHORIZED = "No tiene permisos para modificar este item del carrito";
+    
+    /**
+     * Mensaje de error cuando el carrito no pertenece al usuario autenticado.
+     */
+    public static final String ERROR_CART_UNAUTHORIZED = "El carrito no pertenece al usuario autenticado";
 
     // ==================== CART - ERROR CODES ====================
     
@@ -535,6 +556,18 @@ public class Constants {
      * Formato: ED-CAR-10 (Ecommerce Davivienda - Cart - 10)
      */
     public static final String CODE_USER_NOT_CLIENT_ROLE = "ED-CAR-10";
+    
+    /**
+     * Código de error: Item no pertenece al carrito del usuario.
+     * Formato: ED-CAR-11 (Ecommerce Davivienda - Cart - 11)
+     */
+    public static final String CODE_CART_ITEM_UNAUTHORIZED = "ED-CAR-11";
+    
+    /**
+     * Código de error: Carrito no pertenece al usuario autenticado.
+     * Formato: ED-CAR-12 (Ecommerce Davivienda - Cart - 12)
+     */
+    public static final String CODE_CART_UNAUTHORIZED = "ED-CAR-12";
 
     // ==================== STOCK - SUCCESS MESSAGES ====================
     
@@ -760,6 +793,225 @@ public class Constants {
      * Formato: ED-SEC-01 (Ecommerce Davivienda - Security - 01)
      */
     public static final String CODE_ACCESS_DENIED = "ED-SEC-01";
+
+    // ==================== PAYMENT - SUCCESS MESSAGES ====================
+    
+    /**
+     * Mensaje de éxito al procesar un pago.
+     */
+    public static final String SUCCESS_PAYMENT_PROCESSED = "Pago procesado exitosamente";
+    
+    /**
+     * Mensaje de éxito al consultar un pago.
+     */
+    public static final String SUCCESS_PAYMENT_FOUND = "Pago encontrado exitosamente";
+    
+    /**
+     * Mensaje de éxito al cancelar un pago.
+     */
+    public static final String SUCCESS_PAYMENT_CANCELLED = "Pago cancelado exitosamente";
+
+    // ==================== PAYMENT - ERROR MESSAGES ====================
+    
+    /**
+     * Mensaje de error cuando el pago no existe.
+     */
+    public static final String ERROR_PAYMENT_NOT_FOUND = "Pago no encontrado";
+    
+    /**
+     * Mensaje de error cuando los datos de tarjeta encriptados son inválidos.
+     */
+    public static final String ERROR_INVALID_ENCRYPTED_DATA = "Los datos encriptados de la tarjeta son inválidos";
+    
+    /**
+     * Mensaje de error cuando el formato de los datos de tarjeta es inválido.
+     */
+    public static final String ERROR_INVALID_CARD_DATA_FORMAT = "El formato de los datos de la tarjeta es inválido";
+    
+    /**
+     * Mensaje de error cuando el tipo de pago no existe o es inválido.
+     */
+    public static final String ERROR_INVALID_PAYMENT_TYPE = "Tipo de pago inválido. Debe ser 'debito' o 'credito'";
+    
+    /**
+     * Mensaje de error cuando el estado de pago no existe.
+     */
+    public static final String ERROR_PAYMENT_STATUS_NOT_FOUND = "Estado de pago no encontrado";
+    
+    /**
+     * Mensaje de error cuando el número de cuotas es inválido.
+     */
+    public static final String ERROR_INVALID_INSTALLMENTS = "El número de cuotas debe ser mayor a 0";
+    
+    /**
+     * Mensaje de error cuando se requiere número de cuotas para crédito.
+     */
+    public static final String ERROR_INSTALLMENTS_REQUIRED_FOR_CREDIT = "El número de cuotas es obligatorio para pagos a crédito";
+    
+    /**
+     * Mensaje de error cuando el carrito está vacío.
+     */
+    public static final String ERROR_CART_EMPTY_FOR_PAYMENT = "El carrito está vacío. No se puede procesar el pago";
+    
+    /**
+     * Mensaje de error cuando falla la generación de referencia.
+     */
+    public static final String ERROR_PAYMENT_REFERENCE_GENERATION_FAILED = "Error al generar número de referencia del pago";
+    
+    /**
+     * Mensaje de error cuando falla el procesamiento del pago.
+     */
+    public static final String ERROR_PAYMENT_PROCESSING_FAILED = "Error al procesar el pago";
+    
+    /**
+     * Mensaje de error cuando la fecha de vencimiento es inválida.
+     */
+    public static final String ERROR_INVALID_EXPIRATION_DATE = "Fecha de vencimiento inválida. Formato esperado: MM/YY";
+    
+    /**
+     * Mensaje de error cuando el número de tarjeta es inválido.
+     */
+    public static final String ERROR_INVALID_CARD_NUMBER = "Número de tarjeta inválido";
+
+    // ==================== PAYMENT - ERROR CODES ====================
+    
+    /**
+     * Código de error: Pago no encontrado.
+     * Formato: ED-PAY-01 (Ecommerce Davivienda - Payment - 01)
+     */
+    public static final String CODE_PAYMENT_NOT_FOUND = "ED-PAY-01";
+    
+    /**
+     * Código de error: Datos encriptados inválidos.
+     * Formato: ED-PAY-02 (Ecommerce Davivienda - Payment - 02)
+     */
+    public static final String CODE_INVALID_ENCRYPTED_DATA = "ED-PAY-02";
+    
+    /**
+     * Código de error: Formato de datos de tarjeta inválido.
+     * Formato: ED-PAY-03 (Ecommerce Davivienda - Payment - 03)
+     */
+    public static final String CODE_INVALID_CARD_DATA_FORMAT = "ED-PAY-03";
+    
+    /**
+     * Código de error: Tipo de pago inválido.
+     * Formato: ED-PAY-04 (Ecommerce Davivienda - Payment - 04)
+     */
+    public static final String CODE_INVALID_PAYMENT_TYPE = "ED-PAY-04";
+    
+    /**
+     * Código de error: Estado de pago no encontrado.
+     * Formato: ED-PAY-05 (Ecommerce Davivienda - Payment - 05)
+     */
+    public static final String CODE_PAYMENT_STATUS_NOT_FOUND = "ED-PAY-05";
+    
+    /**
+     * Código de error: Número de cuotas inválido.
+     * Formato: ED-PAY-06 (Ecommerce Davivienda - Payment - 06)
+     */
+    public static final String CODE_INVALID_INSTALLMENTS = "ED-PAY-06";
+    
+    /**
+     * Código de error: Cuotas requeridas para crédito.
+     * Formato: ED-PAY-07 (Ecommerce Davivienda - Payment - 07)
+     */
+    public static final String CODE_INSTALLMENTS_REQUIRED_FOR_CREDIT = "ED-PAY-07";
+    
+    /**
+     * Código de error: Carrito vacío para pago.
+     * Formato: ED-PAY-08 (Ecommerce Davivienda - Payment - 08)
+     */
+    public static final String CODE_CART_EMPTY_FOR_PAYMENT = "ED-PAY-08";
+    
+    /**
+     * Código de error: Fallo al generar referencia de pago.
+     * Formato: ED-PAY-09 (Ecommerce Davivienda - Payment - 09)
+     */
+    public static final String CODE_PAYMENT_REFERENCE_GENERATION_FAILED = "ED-PAY-09";
+    
+    /**
+     * Código de error: Fallo al procesar pago.
+     * Formato: ED-PAY-10 (Ecommerce Davivienda - Payment - 10)
+     */
+    public static final String CODE_PAYMENT_PROCESSING_FAILED = "ED-PAY-10";
+    
+    /**
+     * Código de error: Fecha de vencimiento inválida.
+     * Formato: ED-PAY-11 (Ecommerce Davivienda - Payment - 11)
+     */
+    public static final String CODE_INVALID_EXPIRATION_DATE = "ED-PAY-11";
+    
+    /**
+     * Código de error: Número de tarjeta inválido.
+     * Formato: ED-PAY-12 (Ecommerce Davivienda - Payment - 12)
+     */
+    public static final String CODE_INVALID_CARD_NUMBER = "ED-PAY-12";
+
+    // ==================== CART - ERROR MESSAGES ====================
+
+    /**
+     * Mensaje de error cuando no se encuentra un usuario para crear carrito.
+     */
+    public static final String ERROR_USER_NOT_FOUND_FOR_CART = "Usuario no encontrado. Verifique que el usuario esté registrado";
+
+    /**
+     * Mensaje de error cuando el usuario ya tiene un carrito existente.
+     */
+    public static final String ERROR_USER_ALREADY_HAS_CART = "El usuario ya tiene un carrito existente. No se puede crear uno nuevo";
+
+    /**
+     * Mensaje de error cuando el usuario no tiene roles asignados.
+     */
+    public static final String ERROR_USER_NO_ROLES = "El usuario no tiene roles asignados. No se puede crear carrito";
+
+    /**
+     * Mensaje de error cuando no hay usuario autenticado para crear carrito.
+     */
+    public static final String ERROR_CART_AUTHENTICATION_REQUIRED = "Autenticación requerida. Debe iniciar sesión para crear un carrito";
+
+    /**
+     * Mensaje de error cuando falla la creación del carrito.
+     */
+    public static final String ERROR_CART_CREATION_FAILED = "Error al crear el carrito. Intente nuevamente";
+
+    // ==================== CART - ERROR CODES ====================
+
+    /**
+     * Código de error: Usuario no encontrado para crear carrito.
+     * Formato: ED-CRT-01 (Ecommerce Davivienda - Cart - 01)
+     */
+    public static final String CODE_USER_NOT_FOUND_FOR_CART = "ED-CRT-01";
+
+    /**
+     * Código de error: Usuario ya tiene un carrito existente.
+     * Formato: ED-CRT-02 (Ecommerce Davivienda - Cart - 02)
+     */
+    public static final String CODE_USER_ALREADY_HAS_CART = "ED-CRT-02";
+
+    /**
+     * Código de error: Usuario sin roles asignados.
+     * Formato: ED-CRT-03 (Ecommerce Davivienda - Cart - 03)
+     */
+    public static final String CODE_USER_NO_ROLES = "ED-CRT-03";
+
+    /**
+     * Código de error: Autenticación requerida para crear carrito.
+     * Formato: ED-CRT-04 (Ecommerce Davivienda - Cart - 04)
+     */
+    public static final String CODE_CART_AUTHENTICATION_REQUIRED = "ED-CRT-04";
+
+    /**
+     * Código de error: Fallo en la creación del carrito.
+     * Formato: ED-CRT-05 (Ecommerce Davivienda - Cart - 05)
+     */
+    public static final String CODE_CART_CREATION_FAILED = "ED-CRT-05";
+
+    // ==================== CART - SUCCESS MESSAGES ====================
+
+    /**
+     * Mensaje de éxito al crear un carrito.
+     */
+    public static final String SUCCESS_CART_CREATED = "Carrito creado exitosamente";
 
     /**
      * Constructor privado para evitar instanciación.
