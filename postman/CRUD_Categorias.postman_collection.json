@@ -1,0 +1,235 @@
+{
+	"info": {
+		"_postman_id": "category-api-2025",
+		"name": "CRUD Categorías - Ecommerce Davivienda",
+		"description": "Colección de endpoints para consultar categorías de productos.\n\n**Características:**\n- Endpoints públicos (no requieren autenticación)\n- Consulta de todas las categorías\n- Búsqueda por ID\n- Búsqueda por nombre\n\n**Variables necesarias:**\n- `{{base_url}}` configurada (ej: http://localhost:8080)\n\n**Flujo recomendado:**\n1. Listar todas las categorías\n2. Consultar categoría específica por ID\n3. Buscar categoría por nombre",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Listar Todas las Categorías",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/v1/categories/list-all",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"categories",
+						"list-all"
+					]
+				},
+				"description": "Lista todas las categorías disponibles en el sistema.\n\n**Público:** No requiere autenticación\n\n**Uso:** Obtener lista completa de categorías para mostrar en el catálogo de productos."
+			},
+			"response": [
+				{
+					"name": "200 - Categorías Listadas",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/categories/list-all",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories",
+								"list-all"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"body": "{\n    \"failure\": false,\n    \"code\": 200,\n    \"message\": \"Categorías listadas exitosamente\",\n    \"body\": [\n        {\n            \"id\": 1,\n            \"name\": \"Electrónica\",\n            \"description\": \"Productos electrónicos y tecnología\"\n        },\n        {\n            \"id\": 2,\n            \"name\": \"Ropa\",\n            \"description\": \"Prendas de vestir y accesorios\"\n        },\n        {\n            \"id\": 3,\n            \"name\": \"Hogar\",\n            \"description\": \"Artículos para el hogar\"\n        },\n        {\n            \"id\": 4,\n            \"name\": \"Deportes\",\n            \"description\": \"Artículos deportivos y fitness\"\n        },\n        {\n            \"id\": 5,\n            \"name\": \"Libros\",\n            \"description\": \"Libros físicos y digitales\"\n        }\n    ],\n    \"timestamp\": \"1736696400000\"\n}"
+				}
+			]
+		},
+		{
+			"name": "2. Obtener Categoría por ID",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/v1/categories/get-by-id/1",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"categories",
+						"get-by-id",
+						"1"
+					]
+				},
+				"description": "Obtiene una categoría específica por su ID.\n\n**Público:** No requiere autenticación\n\n**Uso:** Consultar detalles de una categoría específica."
+			},
+			"response": [
+				{
+					"name": "200 - Categoría Encontrada",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/categories/get-by-id/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories",
+								"get-by-id",
+								"1"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"body": "{\n    \"failure\": false,\n    \"code\": 200,\n    \"message\": \"Categoría encontrada\",\n    \"body\": {\n        \"id\": 1,\n        \"name\": \"Electrónica\",\n        \"description\": \"Productos electrónicos y tecnología\"\n    },\n    \"timestamp\": \"1736696400000\"\n}"
+				},
+				{
+					"name": "400 - Categoría No Encontrada",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/categories/get-by-id/999",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories",
+								"get-by-id",
+								"999"
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"body": "{\n    \"failure\": true,\n    \"code\": 400,\n    \"errorCode\": \"ED-PRO-02\",\n    \"message\": \"[ED-PRO-02] Categoría no encontrada\",\n    \"timestamp\": \"1736696400000\"\n}"
+				}
+			]
+		},
+		{
+			"name": "3. Buscar Categoría por Nombre",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/v1/categories/find-by-name/Electrónica",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"categories",
+						"find-by-name",
+						"Electrónica"
+					]
+				},
+				"description": "Busca una categoría por su nombre exacto.\n\n**Público:** No requiere autenticación\n\n**Nota:** El nombre debe coincidir exactamente (case-sensitive).\n\n**Uso:** Buscar categoría cuando solo se conoce el nombre."
+			},
+			"response": [
+				{
+					"name": "200 - Categoría Encontrada",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/categories/find-by-name/Electrónica",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories",
+								"find-by-name",
+								"Electrónica"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"body": "{\n    \"failure\": false,\n    \"code\": 200,\n    \"message\": \"Categoría encontrada\",\n    \"body\": {\n        \"id\": 1,\n        \"name\": \"Electrónica\",\n        \"description\": \"Productos electrónicos y tecnología\"\n    },\n    \"timestamp\": \"1736696400000\"\n}"
+				},
+				{
+					"name": "400 - Categoría No Encontrada",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/categories/find-by-name/NoExiste",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"categories",
+								"find-by-name",
+								"NoExiste"
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [],
+					"cookie": [],
+					"body": "{\n    \"failure\": true,\n    \"code\": 400,\n    \"errorCode\": \"ED-PRO-02\",\n    \"message\": \"[ED-PRO-02] Categoría no encontrada\",\n    \"timestamp\": \"1736696400000\"\n}"
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		}
+	]
+}
+

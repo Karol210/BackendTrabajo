@@ -38,25 +38,24 @@ public class CartItemController {
      * Endpoint: POST /api/v1/cart-items/add
      *
      * @param request DTO con datos del item a agregar
-     * @return Response con item agregado/actualizado y cálculos
+     * @return Response con mensaje de confirmación
      */
     @PostMapping("/add")
-    public ResponseEntity<Response<CartItemResponseDto>> addItemToCart(
+    public ResponseEntity<Response<Void>> addItemToCart(
             @Valid @RequestBody CartItemRequestDto request) {
         
         log.info("Request para agregar producto {} al carrito {}", 
                 request.getProductId(), request.getCartId());
         
-        CartItemResponseDto cartItem = cartItemService.addItemToCart(request);
+        cartItemService.addItemToCart(request);
         
         log.info("Producto agregado exitosamente al carrito");
         
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(Response.<CartItemResponseDto>builder()
+                .body(Response.<Void>builder()
                         .failure(false)
                         .code(HttpStatus.CREATED.value())
                         .message(SUCCESS_CART_ITEM_ADDED)
-                        .body(cartItem)
                         .timestamp(String.valueOf(System.currentTimeMillis()))
                         .build());
     }

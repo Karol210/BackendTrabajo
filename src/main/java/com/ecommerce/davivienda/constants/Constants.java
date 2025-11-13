@@ -580,6 +580,145 @@ public class Constants {
      */
     public static final String CODE_USER_CART_NOT_FOUND = "ED-STO-04";
 
+    // ==================== DOCUMENT TYPE - SUCCESS MESSAGES ====================
+    
+    /**
+     * Mensaje de éxito al consultar un tipo de documento.
+     */
+    public static final String SUCCESS_DOCUMENT_TYPE_FOUND = "Tipo de documento encontrado exitosamente";
+    
+    /**
+     * Mensaje de éxito al listar tipos de documento.
+     */
+    public static final String SUCCESS_DOCUMENT_TYPES_LISTED = "Tipos de documento listados exitosamente";
+    
+    /**
+     * Mensaje de éxito al crear un tipo de documento.
+     */
+    public static final String SUCCESS_DOCUMENT_TYPE_CREATED = "Tipo de documento creado exitosamente";
+    
+    /**
+     * Mensaje de éxito al actualizar un tipo de documento.
+     */
+    public static final String SUCCESS_DOCUMENT_TYPE_UPDATED = "Tipo de documento actualizado exitosamente";
+    
+    /**
+     * Mensaje de éxito al eliminar un tipo de documento.
+     */
+    public static final String SUCCESS_DOCUMENT_TYPE_DELETED = "Tipo de documento eliminado exitosamente";
+
+    // ==================== DOCUMENT TYPE - ERROR MESSAGES ====================
+    
+    /**
+     * Mensaje de error cuando el tipo de documento no existe por ID.
+     */
+    public static final String ERROR_DOCUMENT_TYPE_NOT_FOUND_BY_ID = "Tipo de documento no encontrado con el ID proporcionado";
+    
+    /**
+     * Mensaje de error cuando el código de tipo de documento ya existe.
+     */
+    public static final String ERROR_DOCUMENT_TYPE_CODE_EXISTS = "Ya existe un tipo de documento con ese código";
+    
+    /**
+     * Mensaje de error cuando el nombre de tipo de documento ya existe.
+     */
+    public static final String ERROR_DOCUMENT_TYPE_NAME_EXISTS = "Ya existe un tipo de documento con ese nombre";
+    
+    /**
+     * Mensaje de error cuando el tipo de documento no existe por código.
+     */
+    public static final String ERROR_DOCUMENT_TYPE_NOT_FOUND_BY_CODE = "Tipo de documento no encontrado con el código proporcionado";
+
+    // ==================== DOCUMENT TYPE - ERROR CODES ====================
+    
+    /**
+     * Código de error: Tipo de documento no encontrado por ID.
+     * Formato: ED-DOC-01 (Ecommerce Davivienda - Document - 01)
+     */
+    public static final String CODE_DOCUMENT_TYPE_NOT_FOUND_BY_ID = "ED-DOC-01";
+    
+    /**
+     * Código de error: Código de tipo de documento duplicado.
+     * Formato: ED-DOC-02 (Ecommerce Davivienda - Document - 02)
+     */
+    public static final String CODE_DOCUMENT_TYPE_CODE_EXISTS = "ED-DOC-02";
+    
+    /**
+     * Código de error: Nombre de tipo de documento duplicado.
+     * Formato: ED-DOC-03 (Ecommerce Davivienda - Document - 03)
+     */
+    public static final String CODE_DOCUMENT_TYPE_NAME_EXISTS = "ED-DOC-03";
+    
+    /**
+     * Código de error: Tipo de documento no encontrado por código.
+     * Formato: ED-DOC-04 (Ecommerce Davivienda - Document - 04)
+     */
+    public static final String CODE_DOCUMENT_TYPE_NOT_FOUND_BY_CODE = "ED-DOC-04";
+
+    // ==================== ROLE - SUCCESS MESSAGES ====================
+    
+    /**
+     * Mensaje de éxito al consultar un rol.
+     */
+    public static final String SUCCESS_ROLE_FOUND = "Rol encontrado exitosamente";
+    
+    /**
+     * Mensaje de éxito al listar roles.
+     */
+    public static final String SUCCESS_ROLES_LISTED = "Roles listados exitosamente";
+    
+    /**
+     * Mensaje de éxito al crear un rol.
+     */
+    public static final String SUCCESS_ROLE_CREATED = "Rol creado exitosamente";
+    
+    /**
+     * Mensaje de éxito al actualizar un rol.
+     */
+    public static final String SUCCESS_ROLE_UPDATED = "Rol actualizado exitosamente";
+    
+    /**
+     * Mensaje de éxito al eliminar un rol.
+     */
+    public static final String SUCCESS_ROLE_DELETED = "Rol eliminado exitosamente";
+
+    // ==================== ROLE - ERROR MESSAGES ====================
+    
+    /**
+     * Mensaje de error cuando el rol no existe por ID.
+     */
+    public static final String ERROR_ROLE_NOT_FOUND_BY_ID = "Rol no encontrado con el ID proporcionado";
+    
+    /**
+     * Mensaje de error cuando el nombre de rol ya existe.
+     */
+    public static final String ERROR_ROLE_NAME_EXISTS = "Ya existe un rol con ese nombre";
+    
+    /**
+     * Mensaje de error cuando el rol no existe por nombre.
+     */
+    public static final String ERROR_ROLE_NOT_FOUND_BY_NAME = "Rol no encontrado con el nombre proporcionado";
+
+    // ==================== ROLE - ERROR CODES ====================
+    
+    /**
+     * Código de error: Rol no encontrado por ID.
+     * Formato: ED-ROL-01 (Ecommerce Davivienda - Role - 01)
+     */
+    public static final String CODE_ROLE_NOT_FOUND_BY_ID = "ED-ROL-01";
+    
+    /**
+     * Código de error: Nombre de rol duplicado.
+     * Formato: ED-ROL-02 (Ecommerce Davivienda - Role - 02)
+     */
+    public static final String CODE_ROLE_NAME_EXISTS = "ED-ROL-02";
+    
+    /**
+     * Código de error: Rol no encontrado por nombre.
+     * Formato: ED-ROL-03 (Ecommerce Davivienda - Role - 03)
+     */
+    public static final String CODE_ROLE_NOT_FOUND_BY_NAME = "ED-ROL-03";
+
     // ==================== GENERIC ERROR ====================
     
     /**

@@ -9,6 +9,7 @@ import com.ecommerce.davivienda.mapper.product.ProductMapper;
 import com.ecommerce.davivienda.repository.product.ProductRepository;
 import com.ecommerce.davivienda.service.product.builder.ProductBuilderService;
 import com.ecommerce.davivienda.service.product.validation.ProductValidationService;
+import com.ecommerce.davivienda.service.stock.StockService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -37,6 +38,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductMapper productMapper;
     private final ProductValidationService validationService;
     private final ProductBuilderService builderService;
+    private final StockService stockService;
 
     @Override
     @Transactional
@@ -51,6 +53,13 @@ public class ProductServiceImpl implements ProductService {
 
         Product savedProduct = productRepository.save(product);
         log.info("Producto creado exitosamente con ID: {}", savedProduct.getProductoId());
+
+        // Actualizar stock si se proporcionó cantidad de inventario
+        if (request.getInventory() != null && request.getInventory() >= 0) {
+            log.info("Actualizando stock inicial para producto ID: {}, cantidad: {}",
+                    savedProduct.getProductoId(), request.getInventory());
+            stockService.createOrUpdateStock(savedProduct.getProductoId(), request.getInventory());
+        }
 
         return productMapper.toResponseDto(savedProduct);
     }
@@ -137,6 +146,13 @@ public class ProductServiceImpl implements ProductService {
         Product updatedProduct = productRepository.save(product);
         log.info("Producto actualizado exitosamente: {}", id);
 
+        // Actualizar stock si se proporcionó cantidad de inventario
+        if (request.getInventory() != null && request.getInventory() >= 0) {
+            log.info("Actualizando stock para producto ID: {}, nueva cantidad: {}",
+                    id, request.getInventory());
+            stockService.updateStock(id, request.getInventory());
+        }
+
         return productMapper.toResponseDto(updatedProduct);
     }
 
@@ -174,11 +190,14 @@ public class ProductServiceImpl implements ProductService {
         validationService.validateInventoryQuantity(quantity);
         Product product = validationService.findProductByIdOrThrow(id);
 
-        // Nota: El inventario se maneja en tabla 'stock' separada
-        // Por ahora, solo se valida la operación
-        log.warn("La funcionalidad de inventario requiere tabla 'stock' separada");
-        log.info("Inventario NO actualizado. Se requiere implementar tabla stock");
+        // Obtener stock actual y sumar la nueva cantidad
+        Integer currentStock = stockService.getCurrentStock(id);
+        Integer newStock = currentStock + quantity;
 
+        log.info("Stock actual: {}, agregando: {}, nuevo total: {}", currentStock, quantity, newStock);
+        stockService.updateStock(id, newStock);
+
+        log.info("Inventario actualizado exitosamente para producto ID: {}", id);
         return productMapper.toResponseDto(product);
     }
 }

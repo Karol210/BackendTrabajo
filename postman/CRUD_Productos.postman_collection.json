@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "d8f9e2c1-4b5a-6c7d-8e9f-0a1b2c3d4e5f",
 		"name": "CRUD Productos - Ecommerce Davivienda",
-		"description": "Colección completa de endpoints para el CRUD de productos.\n\n**Requisitos:**\n- Autenticación con JWT para endpoints protegidos (rol ADMIN)\n- Variable de entorno `{{base_url}}` configurada (ej: http://localhost:8080)\n- Variable de entorno `{{jwt_token}}` con token de autenticación\n\n**Flujo recomendado:**\n1. Autenticarse con usuario ADMIN\n2. Crear categorías (si no existen)\n3. Crear productos\n4. Probar endpoints de consulta\n5. Probar actualización e inventario",
+		"description": "Colección completa de endpoints para el CRUD de productos con actualización automática de stock.\n\n**✨ NUEVA FUNCIONALIDAD:**\n- Al crear o actualizar un producto con el campo `inventory`, se actualiza automáticamente la tabla `stock`\n- La tabla `stock` mantiene un registro separado del inventario de cada producto\n- El campo `inventory` es opcional en requests de creación/actualización\n\n**Requisitos:**\n- Autenticación con JWT para endpoints protegidos (rol ADMIN)\n- Variable de entorno `{{base_url}}` configurada (ej: http://localhost:8080)\n- Variable de entorno `{{jwt_token}}` con token de autenticación\n\n**Flujo recomendado:**\n1. Autenticarse con usuario ADMIN\n2. Crear categorías (si no existen)\n3. Crear productos con `inventory` para actualizar stock automáticamente\n4. Probar endpoints de consulta\n5. Probar actualización de productos e inventario\n6. Validar stock con endpoint de validación",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -44,7 +44,7 @@
 						"create"
 					]
 				},
-				"description": "Crea un nuevo producto en el catálogo.\n\n**Requiere:** Rol ADMIN\n\n**Validaciones:**\n- Nombre único (no puede existir otro producto con el mismo nombre)\n- Precio final ≤ precio unitario\n- Categoría debe existir y estar activa\n- Todos los campos obligatorios presentes"
+				"description": "Crea un nuevo producto en el catálogo.\n\n**Requiere:** Rol ADMIN\n\n**✨ ACTUALIZACIÓN AUTOMÁTICA DE STOCK:**\n- Si se incluye el campo `inventory` (ej: 15), se crea automáticamente un registro en la tabla `stock`\n- Si NO se incluye `inventory` o es `null`, NO se crea registro de stock\n- La tabla `stock` mantiene el inventario separado del producto\n\n**Validaciones:**\n- Nombre único (no puede existir otro producto con el mismo nombre)\n- Categoría debe existir y estar activa\n- Todos los campos obligatorios presentes\n- Si se proporciona `inventory`, debe ser ≥ 0"
 			},
 			"response": [
 				{
@@ -484,7 +484,7 @@
 						"1"
 					]
 				},
-				"description": "Actualiza todos los campos de un producto existente.\n\n**Requiere:** Rol ADMIN\n\n**Validaciones:**\n- Producto debe existir\n- Nombre único (no puede coincidir con otro producto)\n- Precio final ≤ precio unitario\n- Categoría debe existir y estar activa"
+				"description": "Actualiza todos los campos de un producto existente.\n\n**Requiere:** Rol ADMIN\n\n**✨ ACTUALIZACIÓN AUTOMÁTICA DE STOCK:**\n- Si se incluye el campo `inventory` (ej: 20), se actualiza la cantidad en la tabla `stock`\n- Si NO se incluye `inventory` o es `null`, el stock NO se modifica\n- Si no existe registro de stock, se crea automáticamente\n- La cantidad especificada REEMPLAZA el stock actual (no se suma)\n\n**Validaciones:**\n- Producto debe existir\n- Nombre único (no puede coincidir con otro producto)\n- Categoría debe existir y estar activa\n- Si se proporciona `inventory`, debe ser ≥ 0"
 			},
 			"response": [
 				{
@@ -676,7 +676,7 @@
 						"add"
 					]
 				},
-				"description": "Agrega inventario a un producto existente.\n\n**Requiere:** Rol ADMIN\n\n**Validación:**\n- Cantidad debe ser mayor a 0\n- La cantidad se SUMA al inventario actual\n\n**Ejemplo:** Si el producto tiene 15 unidades y agregas 50, el nuevo inventario será 65."
+				"description": "Agrega inventario a un producto existente (operación INCREMENTAL).\n\n**Requiere:** Rol ADMIN\n\n**✨ DIFERENCIA CON ACTUALIZACIÓN:**\n- Este endpoint SUMA la cantidad al stock actual\n- El endpoint de actualización REEMPLAZA el stock\n- Si no existe registro de stock, se crea con la cantidad proporcionada\n\n**Validación:**\n- Cantidad debe ser mayor a 0\n- La cantidad se SUMA al inventario actual en la tabla `stock`\n\n**Ejemplo:** \n- Stock actual: 20 unidades\n- Agregas: 50 unidades\n- Nuevo stock: 70 unidades (20 + 50)"
 			},
 			"response": [
 				{
@@ -757,6 +757,47 @@
 			"name": "Ejemplos Adicionales",
 			"item": [
 				{
+					"name": "Crear Producto SIN Inventario",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Webcam Logitech C920\",\n    \"description\": \"Cámara web Full HD 1080p con micrófono estéreo\",\n    \"unitValue\": 280000.00,\n    \"iva\": 19.00,\n    \"imageUrl\": \"https://example.com/images/webcam-logitech.jpg\",\n    \"categoryId\": 1,\n    \"estadoProductoId\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/products/create",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"products",
+								"create"
+							]
+						},
+						"description": "Crea un producto SIN especificar el campo `inventory`.\n\n**Resultado:** Se crea el producto pero NO se crea registro en la tabla `stock`.\n\n**Uso:** Para productos que aún no tienen inventario disponible o se manejarán posteriormente."
+					},
+					"response": []
+				},
+				{
 					"name": "Crear Mouse Logitech",
 					"request": {
 						"method": "POST",
@@ -833,6 +874,48 @@
 								"create"
 							]
 						}
+					},
+					"response": []
+				},
+				{
+					"name": "Actualizar Producto SIN Modificar Stock",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Laptop HP Pavilion 15 - Oferta Especial\",\n    \"description\": \"Laptop HP Pavilion 15 pulgadas - PRECIO ESPECIAL\",\n    \"unitValue\": 2300000.00,\n    \"iva\": 19.00,\n    \"imageUrl\": \"https://example.com/images/laptop-hp-oferta.jpg\",\n    \"categoryId\": 1,\n    \"estadoProductoId\": 8\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/products/update/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"products",
+								"update",
+								"1"
+							]
+						},
+						"description": "Actualiza un producto SIN incluir el campo `inventory`.\n\n**Resultado:** Se actualiza el producto pero el stock NO se modifica.\n\n**Uso:** Para cambiar información del producto sin afectar el inventario actual."
 					},
 					"response": []
 				},
@@ -921,7 +1004,7 @@
 					"response": []
 				}
 			],
-			"description": "Ejemplos adicionales de uso de los endpoints con diferentes casos de uso."
+			"description": "Ejemplos adicionales de uso de los endpoints con diferentes casos de uso.\n\n**Incluye:**\n- Crear producto SIN inventario (no actualiza tabla `stock`)\n- Crear productos CON inventario (actualiza tabla `stock` automáticamente)\n- Actualizar producto SIN modificar stock (omitiendo campo `inventory`)\n- Búsquedas con filtros diversos\n\n**Nota:** Todos los ejemplos que incluyen `inventory` actualizan automáticamente la tabla `stock`."
 		}
 	],
 	"event": [

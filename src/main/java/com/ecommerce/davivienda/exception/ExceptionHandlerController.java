@@ -1,7 +1,12 @@
 package com.ecommerce.davivienda.exception;
 
 import com.ecommerce.davivienda.constants.Constants;
+import com.ecommerce.davivienda.dto.stock.StockValidationResponseDto;
+import com.ecommerce.davivienda.exception.document.DocumentTypeException;
 import com.ecommerce.davivienda.exception.product.ProductException;
+import com.ecommerce.davivienda.exception.role.RoleException;
+import com.ecommerce.davivienda.exception.stock.InsufficientStockException;
+import com.ecommerce.davivienda.exception.stock.StockException;
 import com.ecommerce.davivienda.exception.user.UserException;
 import com.ecommerce.davivienda.models.Response;
 import jakarta.servlet.http.HttpServletRequest;
@@ -83,6 +88,107 @@ public class ExceptionHandlerController {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Response<Object> handleCartException(CartException e, HttpServletRequest request) {
         log.error("CartException: URL={} | ErrorCode={} | Message={}", 
+                request.getRequestURI(), e.getErrorCode(), e.getMessage());
+
+        return Response.builder()
+                .failure(true)
+                .code(HttpStatus.BAD_REQUEST.value())
+                .errorCode(e.getErrorCode())
+                .message(e.getMessage())
+                .timestamp(String.valueOf(System.currentTimeMillis()))
+                .build();
+    }
+
+    /**
+     * Maneja excepciones de tipo de documento personalizadas.
+     *
+     * @param e Excepción de tipo de documento
+     * @param request Request HTTP
+     * @return Response con error de tipo de documento
+     */
+    @ExceptionHandler({DocumentTypeException.class})
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Response<Object> handleDocumentTypeException(DocumentTypeException e, HttpServletRequest request) {
+        log.error("DocumentTypeException: URL={} | ErrorCode={} | Message={}", 
+                request.getRequestURI(), e.getErrorCode(), e.getMessage());
+
+        return Response.builder()
+                .failure(true)
+                .code(HttpStatus.BAD_REQUEST.value())
+                .errorCode(e.getErrorCode())
+                .message(e.getMessage())
+                .timestamp(String.valueOf(System.currentTimeMillis()))
+                .build();
+    }
+
+    /**
+     * Maneja excepciones de rol personalizadas.
+     *
+     * @param e Excepción de rol
+     * @param request Request HTTP
+     * @return Response con error de rol
+     */
+    @ExceptionHandler({RoleException.class})
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Response<Object> handleRoleException(RoleException e, HttpServletRequest request) {
+        log.error("RoleException: URL={} | ErrorCode={} | Message={}", 
+                request.getRequestURI(), e.getErrorCode(), e.getMessage());
+
+        return Response.builder()
+                .failure(true)
+                .code(HttpStatus.BAD_REQUEST.value())
+                .errorCode(e.getErrorCode())
+                .message(e.getMessage())
+                .timestamp(String.valueOf(System.currentTimeMillis()))
+                .build();
+    }
+
+    /**
+     * Maneja excepciones de stock insuficiente.
+     *
+     * @param e Excepción de stock insuficiente
+     * @param request Request HTTP
+     * @return Response con detalles de productos sin stock
+     */
+    @ExceptionHandler({InsufficientStockException.class})
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Response<StockValidationResponseDto> handleInsufficientStockException(
+            InsufficientStockException e, 
+            HttpServletRequest request) {
+        
+        log.error("InsufficientStockException: URL={} | ErrorCode={} | Message={} | ProductsWithIssues={}", 
+                request.getRequestURI(), e.getErrorCode(), e.getMessage(), 
+                e.getInsufficientStockProducts().size());
+
+        StockValidationResponseDto responseBody = StockValidationResponseDto.builder()
+                .available(false)
+                .message(e.getMessage())
+                .insufficientStockProducts(e.getInsufficientStockProducts())
+                .totalProductsInCart(null)
+                .productsWithIssues(e.getInsufficientStockProducts().size())
+                .build();
+
+        return Response.<StockValidationResponseDto>builder()
+                .failure(true)
+                .code(HttpStatus.BAD_REQUEST.value())
+                .errorCode(e.getErrorCode())
+                .message(e.getMessage())
+                .body(responseBody)
+                .timestamp(String.valueOf(System.currentTimeMillis()))
+                .build();
+    }
+
+    /**
+     * Maneja excepciones genéricas de stock.
+     *
+     * @param e Excepción de stock
+     * @param request Request HTTP
+     * @return Response con error de stock
+     */
+    @ExceptionHandler({StockException.class})
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Response<Object> handleStockException(StockException e, HttpServletRequest request) {
+        log.error("StockException: URL={} | ErrorCode={} | Message={}", 
                 request.getRequestURI(), e.getErrorCode(), e.getMessage());
 
         return Response.builder()

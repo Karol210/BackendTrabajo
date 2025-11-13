@@ -2,6 +2,7 @@ package com.ecommerce.davivienda.service.user;
 
 import com.ecommerce.davivienda.dto.user.UserRequestDto;
 import com.ecommerce.davivienda.dto.user.UserResponseDto;
+import com.ecommerce.davivienda.dto.user.UserUpdateRequestDto;
 import com.ecommerce.davivienda.entity.user.*;
 import com.ecommerce.davivienda.mapper.user.UserMapper;
 import com.ecommerce.davivienda.repository.user.UserRepository;
@@ -79,41 +80,84 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserResponseDto updateUser(Integer id, UserRequestDto request) {
-        log.info("Actualizando usuario ID: {}", id);
+    public UserResponseDto updateUser(Integer id, UserUpdateRequestDto request) {
+        log.info("Actualizando usuario ID: {} con campos parciales", id);
 
         User user = validationService.findUserByIdOrThrow(id);
 
-        if (!user.getCorreo().equals(request.getEmail())) {
+        // Validar email solo si viene en el request y es diferente
+        if (request.getEmail() != null && !user.getCorreo().equals(request.getEmail())) {
             validationService.validateEmailNotExists(request.getEmail());
         }
 
-        validationService.validateDocumentCombination(
-                request.getDocumentTypeId(), 
-                request.getDocumentNumber(), 
-                id
-        );
+        // Validar combinación documento solo si alguno de los dos campos viene
+        if (request.getDocumentTypeId() != null || request.getDocumentNumber() != null) {
+            Integer documentTypeId = request.getDocumentTypeId() != null 
+                    ? request.getDocumentTypeId() 
+                    : user.getDocumentType().getDocumentoId();
+            String documentNumber = request.getDocumentNumber() != null 
+                    ? request.getDocumentNumber() 
+                    : user.getNumeroDeDoc();
+            
+            validationService.validateDocumentCombination(documentTypeId, documentNumber, id);
+        }
 
-        DocumentType documentType = validationService.validateDocumentType(request.getDocumentTypeId());
-        java.util.List<Role> newRoles = validationService.validateAndFindRolesByIds(request.getRoleIds());
-        validationService.validateRolesCombination(newRoles);
+        // Validar y obtener documentType solo si viene en el request
+        DocumentType documentType = request.getDocumentTypeId() != null
+                ? validationService.validateDocumentType(request.getDocumentTypeId())
+                : user.getDocumentType();
+
+        // Actualizar roles solo si vienen en el request
+        if (request.getRoleIds() != null && !request.getRoleIds().isEmpty()) {
+            java.util.List<Role> newRoles = validationService.validateAndFindRolesByIds(request.getRoleIds());
+            validationService.validateRolesCombination(newRoles);
+
+            userRoleRepository.deleteAll(user.getRoles());
+            user.getRoles().clear();
+
+            java.util.List<UserRole> userRoles = builderService.buildUserRoles(user.getUsuarioId(), newRoles);
+            java.util.List<UserRole> savedUserRoles = userRoleRepository.saveAll(userRoles);
+            user.setRoles(savedUserRoles);
+            
+            log.info("Roles actualizados: {} roles asignados", savedUserRoles.size());
+        }
+
+        // Actualizar userStatus solo si viene en el request
         UserStatus userStatus = request.getStatusId() != null
                 ? userRepository.findById(request.getStatusId())
                         .map(User::getUserStatus)
                         .orElse(user.getUserStatus())
                 : user.getUserStatus();
 
-        userRoleRepository.deleteAll(user.getRoles());
-        user.getRoles().clear();
+        // Actualizar solo los campos que vienen en el request
+        if (request.getNombre() != null) {
+            user.setNombre(request.getNombre());
+            log.debug("Nombre actualizado a: {}", request.getNombre());
+        }
+        if (request.getApellido() != null) {
+            user.setApellido(request.getApellido());
+            log.debug("Apellido actualizado a: {}", request.getApellido());
+        }
+        if (request.getDocumentTypeId() != null) {
+            user.setDocumentType(documentType);
+            log.debug("DocumentType actualizado");
+        }
+        if (request.getDocumentNumber() != null) {
+            user.setNumeroDeDoc(request.getDocumentNumber());
+            log.debug("Número de documento actualizado");
+        }
+        if (request.getEmail() != null && user.getCredenciales() != null) {
+            user.getCredenciales().setCorreo(request.getEmail());
+            log.debug("Email actualizado a: {}", request.getEmail());
+        }
+        if (request.getStatusId() != null) {
+            user.setUserStatus(userStatus);
+            log.debug("Status actualizado");
+        }
 
-        java.util.List<UserRole> userRoles = builderService.buildUserRoles(user.getUsuarioId(), newRoles);
-        java.util.List<UserRole> savedUserRoles = userRoleRepository.saveAll(userRoles);
-        user.setRoles(savedUserRoles);
-
-        builderService.updateUserFields(user, request, documentType, userStatus);
         User updatedUser = userRepository.save(user);
 
-        log.info("Usuario actualizado exitosamente: ID={} con {} roles", updatedUser.getUsuarioId(), savedUserRoles.size());
+        log.info("Usuario actualizado exitosamente: ID={}", updatedUser.getUsuarioId());
         return userMapper.toResponseDto(updatedUser);
     }
 

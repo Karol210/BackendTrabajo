@@ -4,6 +4,7 @@ import com.ecommerce.davivienda.constants.Constants;
 import com.ecommerce.davivienda.dto.user.PasswordChangeRequestDto;
 import com.ecommerce.davivienda.dto.user.UserRequestDto;
 import com.ecommerce.davivienda.dto.user.UserResponseDto;
+import com.ecommerce.davivienda.dto.user.UserUpdateRequestDto;
 import com.ecommerce.davivienda.models.Response;
 import com.ecommerce.davivienda.service.user.UserService;
 import jakarta.validation.Valid;
@@ -33,20 +34,19 @@ public class UserController {
      * Crea un nuevo usuario.
      *
      * @param request Datos del usuario a crear
-     * @return Response con el usuario creado
+     * @return Response con mensaje de éxito
      */
     @PostMapping("/create")
-    public ResponseEntity<Response<UserResponseDto>> createUser(
+    public ResponseEntity<Response<Void>> createUser(
             @Valid @RequestBody UserRequestDto request) {
         log.info("POST /api/v1/users/create - Crear usuario: {}", request.getEmail());
 
-        UserResponseDto user = userService.createUser(request);
+        userService.createUser(request);
 
-        Response<UserResponseDto> response = Response.<UserResponseDto>builder()
+        Response<Void> response = Response.<Void>builder()
                 .failure(false)
                 .code(HttpStatus.CREATED.value())
                 .message(Constants.SUCCESS_USER_CREATED)
-                .body(user)
                 .timestamp(String.valueOf(System.currentTimeMillis()))
                 .build();
 
@@ -78,16 +78,16 @@ public class UserController {
     }
 
     /**
-     * Actualiza un usuario existente.
-     * Permite actualizar datos personales, rol y estado.
-     * El ID del usuario debe venir en el body del request.
+     * Actualiza un usuario existente de forma parcial.
+     * Solo el ID es obligatorio, los demás campos son opcionales.
+     * Los campos que sean null no se actualizarán (se mantendrá el valor existente).
      *
-     * @param request Datos actualizados del usuario (incluyendo el ID)
+     * @param request Datos a actualizar del usuario (solo campos no-null)
      * @return Response con el usuario actualizado
      */
     @PutMapping("/update")
     public ResponseEntity<Response<UserResponseDto>> updateUser(
-            @Valid @RequestBody UserRequestDto request) {
+            @Valid @RequestBody UserUpdateRequestDto request) {
         log.info("PUT /api/v1/users/update - Actualizar usuario con ID: {}", request.getId());
 
         UserResponseDto user = userService.updateUser(request.getId(), request);

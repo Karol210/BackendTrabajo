@@ -1,0 +1,202 @@
+{
+	"info": {
+		"_postman_id": "role-crud-collection",
+		"name": "CRUD Roles",
+		"description": "Colección para probar los endpoints CRUD de roles en el sistema de e-commerce.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Listar Todos los Roles",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{jwt_token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/v1/roles",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"roles"
+					]
+				},
+				"description": "Obtiene todos los roles disponibles en el sistema.\n\n**Autenticación:** Requiere token JWT.\n\n**Response exitoso (200 OK):**\n```json\n{\n  \"failure\": false,\n  \"code\": 200,\n  \"message\": \"Roles listados exitosamente\",\n  \"body\": [\n    {\n      \"rolId\": 1,\n      \"nombre\": \"Administrador\"\n    },\n    {\n      \"rolId\": 2,\n      \"nombre\": \"Cliente\"\n    },\n    {\n      \"rolId\": 3,\n      \"nombre\": \"Vendedor\"\n    },\n    {\n      \"rolId\": 4,\n      \"nombre\": \"Invitado\"\n    }\n  ],\n  \"timestamp\": \"1699999999999\"\n}\n```"
+			},
+			"response": []
+		},
+		{
+			"name": "2. Buscar Rol por ID",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{jwt_token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/v1/roles/1",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"roles",
+						"1"
+					]
+				},
+				"description": "Busca un rol específico por su ID.\n\n**Autenticación:** Requiere token JWT.\n\n**Path Parameter:**\n- `id` (integer): ID del rol\n\n**Response exitoso (200 OK):**\n```json\n{\n  \"failure\": false,\n  \"code\": 200,\n  \"message\": \"Rol encontrado exitosamente\",\n  \"body\": {\n    \"rolId\": 1,\n    \"nombre\": \"Administrador\"\n  },\n  \"timestamp\": \"1699999999999\"\n}\n```\n\n**Response error (400 Bad Request):**\n```json\n{\n  \"failure\": true,\n  \"code\": 400,\n  \"errorCode\": \"ED-ROL-01\",\n  \"message\": \"Rol no encontrado con el ID proporcionado\",\n  \"timestamp\": \"1699999999999\"\n}\n```"
+			},
+			"response": []
+		},
+		{
+			"name": "3. Buscar Rol por Nombre",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{jwt_token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/v1/roles/name/Administrador",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"roles",
+						"name",
+						"Administrador"
+					]
+				},
+				"description": "Busca un rol específico por su nombre.\n\n**Autenticación:** Requiere token JWT.\n\n**Path Parameter:**\n- `nombre` (string): Nombre del rol (ej: \"Administrador\", \"Cliente\")\n\n**Response exitoso (200 OK):**\n```json\n{\n  \"failure\": false,\n  \"code\": 200,\n  \"message\": \"Rol encontrado exitosamente\",\n  \"body\": {\n    \"rolId\": 1,\n    \"nombre\": \"Administrador\"\n  },\n  \"timestamp\": \"1699999999999\"\n}\n```\n\n**Response error (400 Bad Request):**\n```json\n{\n  \"failure\": true,\n  \"code\": 400,\n  \"errorCode\": \"ED-ROL-03\",\n  \"message\": \"Rol no encontrado con el nombre proporcionado\",\n  \"timestamp\": \"1699999999999\"\n}\n```"
+			},
+			"response": []
+		},
+		{
+			"name": "4. Crear Nuevo Rol",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{jwt_token}}",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"nombre\": \"Supervisor\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/v1/roles",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"roles"
+					]
+				},
+				"description": "Crea un nuevo rol en el sistema.\n\n**Autenticación:** Requiere token JWT con rol de Administrador.\n\n**Request Body:**\n```json\n{\n  \"nombre\": \"Supervisor\"\n}\n```\n\n**Campos requeridos:**\n- `nombre` (string, max 100 caracteres): Nombre del rol\n\n**Response exitoso (201 Created):**\n```json\n{\n  \"failure\": false,\n  \"code\": 201,\n  \"message\": \"Rol creado exitosamente\",\n  \"body\": {\n    \"rolId\": 5,\n    \"nombre\": \"Supervisor\"\n  },\n  \"timestamp\": \"1699999999999\"\n}\n```\n\n**Response error - Nombre duplicado (400 Bad Request):**\n```json\n{\n  \"failure\": true,\n  \"code\": 400,\n  \"errorCode\": \"ED-ROL-02\",\n  \"message\": \"Ya existe un rol con ese nombre\",\n  \"timestamp\": \"1699999999999\"\n}\n```"
+			},
+			"response": []
+		},
+		{
+			"name": "5. Actualizar Rol",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{jwt_token}}",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"nombre\": \"Supervisor de Tienda\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/v1/roles/5",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"roles",
+						"5"
+					]
+				},
+				"description": "Actualiza un rol existente.\n\n**Autenticación:** Requiere token JWT con rol de Administrador.\n\n**Path Parameter:**\n- `id` (integer): ID del rol a actualizar\n\n**Request Body:**\n```json\n{\n  \"nombre\": \"Supervisor de Tienda\"\n}\n```\n\n**Response exitoso (200 OK):**\n```json\n{\n  \"failure\": false,\n  \"code\": 200,\n  \"message\": \"Rol actualizado exitosamente\",\n  \"body\": {\n    \"rolId\": 5,\n    \"nombre\": \"Supervisor de Tienda\"\n  },\n  \"timestamp\": \"1699999999999\"\n}\n```\n\n**Response error - No encontrado (400 Bad Request):**\n```json\n{\n  \"failure\": true,\n  \"code\": 400,\n  \"errorCode\": \"ED-ROL-01\",\n  \"message\": \"Rol no encontrado con el ID proporcionado\",\n  \"timestamp\": \"1699999999999\"\n}\n```"
+			},
+			"response": []
+		},
+		{
+			"name": "6. Eliminar Rol",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{jwt_token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/v1/roles/5",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"roles",
+						"5"
+					]
+				},
+				"description": "Elimina un rol del sistema.\n\n**Autenticación:** Requiere token JWT con rol de Administrador.\n\n**Path Parameter:**\n- `id` (integer): ID del rol a eliminar\n\n**⚠️ Advertencia:** No se puede eliminar un rol que esté siendo usado por usuarios existentes.\n\n**Response exitoso (200 OK):**\n```json\n{\n  \"failure\": false,\n  \"code\": 200,\n  \"message\": \"Rol eliminado exitosamente\",\n  \"timestamp\": \"1699999999999\"\n}\n```\n\n**Response error - No encontrado (400 Bad Request):**\n```json\n{\n  \"failure\": true,\n  \"code\": 400,\n  \"errorCode\": \"ED-ROL-01\",\n  \"message\": \"Rol no encontrado con el ID proporcionado\",\n  \"timestamp\": \"1699999999999\"\n}\n```\n\n**Response error - En uso (409 Conflict):**\n```json\n{\n  \"failure\": true,\n  \"code\": 409,\n  \"errorCode\": \"ED-DAT-01\",\n  \"message\": \"No se puede eliminar el rol porque está siendo usado por otros registros\",\n  \"timestamp\": \"1699999999999\"\n}\n```"
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "jwt_token",
+			"value": "Bearer <tu_token_aqui>",
+			"type": "string"
+		}
+	]
+}
+

@@ -1,0 +1,202 @@
+{
+	"info": {
+		"_postman_id": "document-type-crud-collection",
+		"name": "CRUD Tipos de Documento",
+		"description": "Colección para probar los endpoints CRUD de tipos de documento en el sistema de e-commerce.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Listar Todos los Tipos de Documento",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{jwt_token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/v1/document-types",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"document-types"
+					]
+				},
+				"description": "Obtiene todos los tipos de documento disponibles en el sistema.\n\n**Autenticación:** Requiere token JWT.\n\n**Response exitoso (200 OK):**\n```json\n{\n  \"failure\": false,\n  \"code\": 200,\n  \"message\": \"Tipos de documento listados exitosamente\",\n  \"body\": [\n    {\n      \"documentoId\": 1,\n      \"nombre\": \"Cédula de Ciudadanía\",\n      \"codigo\": \"CC\"\n    },\n    {\n      \"documentoId\": 2,\n      \"nombre\": \"Pasaporte\",\n      \"codigo\": \"PA\"\n    }\n  ],\n  \"timestamp\": \"1699999999999\"\n}\n```"
+			},
+			"response": []
+		},
+		{
+			"name": "2. Buscar Tipo de Documento por ID",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{jwt_token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/v1/document-types/1",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"document-types",
+						"1"
+					]
+				},
+				"description": "Busca un tipo de documento específico por su ID.\n\n**Autenticación:** Requiere token JWT.\n\n**Path Parameter:**\n- `id` (integer): ID del tipo de documento\n\n**Response exitoso (200 OK):**\n```json\n{\n  \"failure\": false,\n  \"code\": 200,\n  \"message\": \"Tipo de documento encontrado exitosamente\",\n  \"body\": {\n    \"documentoId\": 1,\n    \"nombre\": \"Cédula de Ciudadanía\",\n    \"codigo\": \"CC\"\n  },\n  \"timestamp\": \"1699999999999\"\n}\n```\n\n**Response error (400 Bad Request):**\n```json\n{\n  \"failure\": true,\n  \"code\": 400,\n  \"errorCode\": \"ED-DOC-01\",\n  \"message\": \"Tipo de documento no encontrado con el ID proporcionado\",\n  \"timestamp\": \"1699999999999\"\n}\n```"
+			},
+			"response": []
+		},
+		{
+			"name": "3. Buscar Tipo de Documento por Código",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{jwt_token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/v1/document-types/code/CC",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"document-types",
+						"code",
+						"CC"
+					]
+				},
+				"description": "Busca un tipo de documento específico por su código.\n\n**Autenticación:** Requiere token JWT.\n\n**Path Parameter:**\n- `codigo` (string): Código del tipo de documento (ej: \"CC\", \"PA\", \"CE\")\n\n**Response exitoso (200 OK):**\n```json\n{\n  \"failure\": false,\n  \"code\": 200,\n  \"message\": \"Tipo de documento encontrado exitosamente\",\n  \"body\": {\n    \"documentoId\": 1,\n    \"nombre\": \"Cédula de Ciudadanía\",\n    \"codigo\": \"CC\"\n  },\n  \"timestamp\": \"1699999999999\"\n}\n```\n\n**Response error (400 Bad Request):**\n```json\n{\n  \"failure\": true,\n  \"code\": 400,\n  \"errorCode\": \"ED-DOC-04\",\n  \"message\": \"Tipo de documento no encontrado con el código proporcionado\",\n  \"timestamp\": \"1699999999999\"\n}\n```"
+			},
+			"response": []
+		},
+		{
+			"name": "4. Crear Nuevo Tipo de Documento",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{jwt_token}}",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"nombre\": \"Registro Civil\",\n  \"codigo\": \"RC\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/v1/document-types",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"document-types"
+					]
+				},
+				"description": "Crea un nuevo tipo de documento en el sistema.\n\n**Autenticación:** Requiere token JWT con rol de Administrador.\n\n**Request Body:**\n```json\n{\n  \"nombre\": \"Registro Civil\",\n  \"codigo\": \"RC\"\n}\n```\n\n**Campos requeridos:**\n- `nombre` (string, max 100 caracteres): Nombre descriptivo del tipo de documento\n- `codigo` (string, max 50 caracteres): Código abreviado único\n\n**Response exitoso (201 Created):**\n```json\n{\n  \"failure\": false,\n  \"code\": 201,\n  \"message\": \"Tipo de documento creado exitosamente\",\n  \"body\": {\n    \"documentoId\": 6,\n    \"nombre\": \"Registro Civil\",\n    \"codigo\": \"RC\"\n  },\n  \"timestamp\": \"1699999999999\"\n}\n```\n\n**Response error - Código duplicado (400 Bad Request):**\n```json\n{\n  \"failure\": true,\n  \"code\": 400,\n  \"errorCode\": \"ED-DOC-02\",\n  \"message\": \"Ya existe un tipo de documento con ese código\",\n  \"timestamp\": \"1699999999999\"\n}\n```\n\n**Response error - Nombre duplicado (400 Bad Request):**\n```json\n{\n  \"failure\": true,\n  \"code\": 400,\n  \"errorCode\": \"ED-DOC-03\",\n  \"message\": \"Ya existe un tipo de documento con ese nombre\",\n  \"timestamp\": \"1699999999999\"\n}\n```"
+			},
+			"response": []
+		},
+		{
+			"name": "5. Actualizar Tipo de Documento",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{jwt_token}}",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"nombre\": \"Registro Civil de Nacimiento\",\n  \"codigo\": \"RC\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/v1/document-types/6",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"document-types",
+						"6"
+					]
+				},
+				"description": "Actualiza un tipo de documento existente.\n\n**Autenticación:** Requiere token JWT con rol de Administrador.\n\n**Path Parameter:**\n- `id` (integer): ID del tipo de documento a actualizar\n\n**Request Body:**\n```json\n{\n  \"nombre\": \"Registro Civil de Nacimiento\",\n  \"codigo\": \"RC\"\n}\n```\n\n**Response exitoso (200 OK):**\n```json\n{\n  \"failure\": false,\n  \"code\": 200,\n  \"message\": \"Tipo de documento actualizado exitosamente\",\n  \"body\": {\n    \"documentoId\": 6,\n    \"nombre\": \"Registro Civil de Nacimiento\",\n    \"codigo\": \"RC\"\n  },\n  \"timestamp\": \"1699999999999\"\n}\n```\n\n**Response error - No encontrado (400 Bad Request):**\n```json\n{\n  \"failure\": true,\n  \"code\": 400,\n  \"errorCode\": \"ED-DOC-01\",\n  \"message\": \"Tipo de documento no encontrado con el ID proporcionado\",\n  \"timestamp\": \"1699999999999\"\n}\n```"
+			},
+			"response": []
+		},
+		{
+			"name": "6. Eliminar Tipo de Documento",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "{{jwt_token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/v1/document-types/6",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"document-types",
+						"6"
+					]
+				},
+				"description": "Elimina un tipo de documento del sistema.\n\n**Autenticación:** Requiere token JWT con rol de Administrador.\n\n**Path Parameter:**\n- `id` (integer): ID del tipo de documento a eliminar\n\n**⚠️ Advertencia:** No se puede eliminar un tipo de documento que esté siendo usado por usuarios existentes.\n\n**Response exitoso (200 OK):**\n```json\n{\n  \"failure\": false,\n  \"code\": 200,\n  \"message\": \"Tipo de documento eliminado exitosamente\",\n  \"timestamp\": \"1699999999999\"\n}\n```\n\n**Response error - No encontrado (400 Bad Request):**\n```json\n{\n  \"failure\": true,\n  \"code\": 400,\n  \"errorCode\": \"ED-DOC-01\",\n  \"message\": \"Tipo de documento no encontrado con el ID proporcionado\",\n  \"timestamp\": \"1699999999999\"\n}\n```\n\n**Response error - En uso (409 Conflict):**\n```json\n{\n  \"failure\": true,\n  \"code\": 409,\n  \"errorCode\": \"ED-DAT-01\",\n  \"message\": \"No se puede eliminar el tipo de documento porque está siendo usado por otros registros\",\n  \"timestamp\": \"1699999999999\"\n}\n```"
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "jwt_token",
+			"value": "Bearer <tu_token_aqui>",
+			"type": "string"
+		}
+	]
+}
+

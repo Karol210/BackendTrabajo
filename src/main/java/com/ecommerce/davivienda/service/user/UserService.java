@@ -2,6 +2,7 @@ package com.ecommerce.davivienda.service.user;
 
 import com.ecommerce.davivienda.dto.user.UserRequestDto;
 import com.ecommerce.davivienda.dto.user.UserResponseDto;
+import com.ecommerce.davivienda.dto.user.UserUpdateRequestDto;
 
 /**
  * Servicio principal para operaciones CRUD sobre usuarios.
@@ -32,15 +33,15 @@ public interface UserService {
     UserResponseDto getUserById(Integer id);
 
     /**
-     * Actualiza un usuario existente.
-     * Permite actualizar datos personales, rol y estado.
+     * Actualiza un usuario existente de forma parcial.
+     * Solo actualiza los campos que no sean null en el request.
      *
      * @param id ID del usuario a actualizar
-     * @param request Datos actualizados del usuario
+     * @param request Datos a actualizar del usuario (solo campos no-null)
      * @return UserResponseDto con datos del usuario actualizado
      * @throws com.ecommerce.davivienda.exception.user.UserException si la validación falla
      */
-    UserResponseDto updateUser(Integer id, UserRequestDto request);
+    UserResponseDto updateUser(Integer id, UserUpdateRequestDto request);
 
     /**
      * Elimina un usuario (soft delete - marca como inactivo).

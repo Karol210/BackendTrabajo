@@ -66,8 +66,11 @@ public class SecurityConfig {
     private static final String ENDPOINT_USERS = "/api/v1/users/**";
     
 
-    //Endpoints específicos públicos de carrito
-    private static final String ENDPOINT_CART_ITEMS = "/api/v1/cart-items/**";
+    //Endpoints específicos públicos de documentos
+    private static final String ENDPOINT_DOCUMENT_TYPES = "/api/v1/document-types/**";
+
+    //Endpoints específicos públicos de categorías
+    private static final String ENDPOINT_CATEGORIES = "/api/v1/categories/**";
 
     // ==================== CORS CONFIGURATION ====================
     
@@ -209,9 +212,10 @@ public class SecurityConfig {
                 .requestMatchers(ENDPOINT_PRODUCT_SEARCH_PAGINATED).permitAll()       // GET /api/v1/products/search/paginated
                 .requestMatchers(ENDPOINT_PRODUCT_SEARCH).permitAll()                 // POST /api/v1/products/search
                 .requestMatchers(ENDPOINT_PRODUCT_GET_BY_ID).permitAll()              // GET /api/v1/products/get-by-id/{id}
-                
-                .requestMatchers(ENDPOINT_CART_ITEMS).permitAll()
 
+                .requestMatchers(ENDPOINT_CATEGORIES).permitAll()
+                .requestMatchers(ENDPOINT_DOCUMENT_TYPES).permitAll()
+                
                 // Endpoints específicos de usuarios públicos
                 .requestMatchers(ENDPOINT_USERS).permitAll()
                 // Endpoints protegidos por rol (ejemplos)
