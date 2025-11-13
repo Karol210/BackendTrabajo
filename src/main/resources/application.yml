@@ -1,0 +1,98 @@
+# ============================================
+# APPLICATION CONFIGURATION
+# ============================================
+spring:
+  application:
+    name: tienda-digital-davivienda
+  
+  # Deshabilitar verificador de compatibilidad Spring Cloud
+  cloud:
+    compatibility-verifier:
+      enabled: false
+
+  # ============================================
+  # DATABASE CONFIGURATION - PostgreSQL
+  # ============================================
+  datasource:
+    url: jdbc:postgresql://localhost:5433/ecommerceDavi
+    username: admin
+    password: admin123
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      schema: ecommerce
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        use_sql_comments: true
+        default_schema: ecommerce
+    open-in-view: false
+
+  # ============================================
+  # JACKSON CONFIGURATION
+  # ============================================
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    time-zone: UTC
+    default-property-inclusion: non_null
+
+# ============================================
+# SERVER CONFIGURATION
+# ============================================
+server:
+  port: 8080
+  servlet:
+    context-path: /
+  error:
+    include-message: always
+    include-binding-errors: always
+
+# ============================================
+# ACTUATOR CONFIGURATION
+# ============================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+# ============================================
+# LOGGING CONFIGURATION
+# ============================================
+logging:
+  level:
+    root: INFO
+    com.ecommerce.davivienda: DEBUG
+    org.springframework.web: INFO
+    org.hibernate: INFO
+    org.springframework.security: DEBUG
+    org.springframework.security.authentication: TRACE
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# ============================================
+# EXTERNAL SERVICES CONFIGURATION
+# ============================================
+services:
+  # Ejemplo de servicio externo
+  # parameter:
+  #   url: https://api.external-service.com
+  #   api-key: ${PARAMETER_API_KEY:}
+  #   endpoints:
+  #     channel-parameters: /api/v1/parametros/{channelParametersProduct}
+

@@ -1,0 +1,46 @@
+package com.ecommerce.davivienda.repository.cart;
+
+import com.ecommerce.davivienda.entity.cart.Cart;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
+
+/**
+ * Repositorio para operaciones de persistencia de carritos de compras.
+ * Proporciona métodos para gestionar carritos asociados a usuarios.
+ *
+ * @author Team Ecommerce Davivienda
+ * @since 1.0.0
+ */
+@Repository
+public interface CartRepository extends JpaRepository<Cart, Integer> {
+
+    /**
+     * Busca un carrito por ID de usuario_rol.
+     *
+     * @param usuarioRolId ID del usuario_rol
+     * @return Optional con el carrito si existe
+     */
+    Optional<Cart> findByUsuarioRolId(Integer usuarioRolId);
+
+    /**
+     * Busca un carrito con sus items cargados (fetch join).
+     *
+     * @param carritoId ID del carrito
+     * @return Optional con el carrito y sus items
+     */
+    @Query("SELECT c FROM Cart c LEFT JOIN FETCH c.items WHERE c.carritoId = :carritoId")
+    Optional<Cart> findByIdWithItems(@Param("carritoId") Integer carritoId);
+
+    /**
+     * Verifica si existe un carrito para un usuario_rol específico.
+     *
+     * @param usuarioRolId ID del usuario_rol
+     * @return true si existe un carrito
+     */
+    boolean existsByUsuarioRolId(Integer usuarioRolId);
+}
+

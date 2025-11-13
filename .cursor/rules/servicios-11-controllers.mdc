@@ -1,0 +1,461 @@
+---
+description: Controllers REST - Paths descriptivos y mejores prácticas
+globs: ["**/controller/**/*.java"]
+alwaysApply: false
+---
+
+# 🎮 Controllers REST - Endpoints Autodocumentados
+
+## 📋 TL;DR
+
+- ✅ Paths descriptivos que explican la acción: `/create`, `/find-by-id/{id}`, `/update/{id}`
+- ✅ Patrón consistente: `/acción` o `/acción/{id}`
+- ✅ Validaciones con `@Valid` en request DTOs
+- ✅ Responses con modelo `Response<T>` + HttpStatus correcto
+- ✅ **Controller SIN lógica**: Solo recibe, delega al servicio y retorna
+- ❌ NO paths ambiguos (`/{id}` para múltiples operaciones)
+- ❌ NO hardcodear status codes (usar `HttpStatus.OK.value()`)
+- ❌ **NO construir DTOs, Sort, Pageable ni lógica de negocio en controller**
+
+## 🚨 Reglas Principales
+
+1. **Paths Descriptivos**: Cada endpoint debe tener un path que explique su acción (`/create`, `/update/{id}`, `/delete/{id}`, `/find-by-id/{id}`)
+2. **Patrón Consistente**: Seguir `/acción/{id}` para operaciones sobre entidad específica, `/acción` para operaciones generales
+3. **Validaciones Automáticas**: `@Valid` en `@RequestBody`, validar parámetros requeridos
+4. **Status HTTP Correcto**: `CREATED (201)` para POST, `OK (200)` para GET/PUT/PATCH, usar `HttpStatus` enum
+5. **Logs Informativos**: Log en cada endpoint con método HTTP, path y datos relevantes (NO sensibles)
+6. **🔴 CRÍTICO - Sin Lógica en Controller**: Controller SOLO recibe parámetros, delega al servicio y construye Response. TODA la lógica (construcción de DTOs, Sort, Pageable, mapeos, validaciones de negocio) va en el servicio
+
+## 📊 Referencia Rápida
+
+### Convenciones de Paths por Operación
+
+| Operación | Verbo HTTP | Path Recomendado | Ejemplo Completo | Status |
+|-----------|------------|------------------|------------------|--------|
+| **Crear** | `POST` | `/create` | `POST /api/v1/users/create` | 201 |
+| **Buscar por ID** | `GET` | `/find-by-id/{id}` | `GET /api/v1/users/find-by-id/1` | 200 |
+| **Listar todos** | `GET` | `/all` | `GET /api/v1/users/all` | 200 |
+| **Buscar con filtros** | `GET` | `/search` | `GET /api/v1/users/search?email=test` | 200 |
+| **Buscar con paginación** | `GET` | `/search/paginated` | `GET /api/v1/users/search/paginated` | 200 |
+| **Actualizar** | `PUT` | `/update/{id}` | `PUT /api/v1/users/update/1` | 200 |
+| **Eliminar** | `DELETE` | `/delete/{id}` | `DELETE /api/v1/users/delete/1` | 200 |
+| **Activar/Desactivar** | `PATCH` | `/activate/{id}` | `PATCH /api/v1/users/activate/1` | 200 |
+| **Cambio de estado** | `PATCH` | `/change-estado/{id}` | `PATCH /api/v1/users/change-password/1` | 200 |
+
+### Estructura de Response Estándar
+
+| Campo | Tipo | Descripción | Ejemplo |
+|-------|------|-------------|---------|
+| `failure` | `boolean` | Indica si hubo error | `false` |
+| `code` | `int` | Status HTTP | `200` |
+| `message` | `String` | Mensaje descriptivo | `"Usuario creado exitosamente"` |
+| `body` | `T` | Datos de respuesta | `UserResponseDto` |
+| `timestamp` | `String` | Timestamp milisegundos | `"1699887600000"` |
+
+### Anotaciones en Controllers
+
+| Anotación | Uso | Ejemplo |
+|-----------|-----|---------|
+| `@RestController` | Marca clase como controller REST | Obligatorio en clase |
+| `@RequestMapping` | Path base del controller | `@RequestMapping("/api/v1/users")` |
+| `@RequiredArgsConstructor` | Inyección por constructor | Lombok |
+| `@Slf4j` | Logger automático | Lombok |
+| `@PostMapping("/path")` | Endpoint POST | Operaciones CREATE |
+| `@GetMapping("/path")` | Endpoint GET | Operaciones READ |
+| `@PutMapping("/path")` | Endpoint PUT | Operaciones UPDATE completo |
+| `@PatchMapping("/path")` | Endpoint PATCH | Operaciones UPDATE parcial |
+| `@DeleteMapping("/path")` | Endpoint DELETE | Operaciones DELETE |
+| `@Valid` | Validar request DTO | `@Valid @RequestBody UserRequestDto` |
+| `@PathVariable` | Variable en path | `@PathVariable Integer id` |
+| `@RequestParam` | Query parameter | `@RequestParam(required = false) String email` |
+| `@RequestBody` | Body del request | `@RequestBody UserRequestDto request` |
+
+## ✅ Ejemplos
+
+### Ejemplo 1: Endpoint CREATE con Path Descriptivo
+
+```java
+/**
+ * Crea un nuevo usuario.
+ *
+ * @param request Datos del usuario a crear
+ * @return Response con el usuario creado
+ */
+@PostMapping("/create")
+public ResponseEntity<Response<UserResponseDto>> createUser(
+        @Valid @RequestBody UserRequestDto request) {
+
+    log.info("POST /api/v1/users/create - Crear usuario: {}", request.getEmail());
+
+    UserResponseDto user = userService.createUser(request);
+
+    Response<UserResponseDto> response = Response.<UserResponseDto>builder()
+            .failure(false)
+            .code(HttpStatus.CREATED.value())  // ✅ Status 201
+            .message("Usuario creado exitosamente")
+            .body(user)
+            .timestamp(String.valueOf(System.currentTimeMillis()))
+            .build();
+
+    return ResponseEntity.status(HttpStatus.CREATED).body(response);
+}
+```
+
+**Características:**
+- ✅ Path `/create` explícito
+- ✅ Log con información relevante
+- ✅ `@Valid` para validaciones automáticas
+- ✅ Status `201 CREATED` correcto
+- ✅ JavaDoc completo
+
+### Ejemplo 2: Endpoint GET con Path Descriptivo
+
+```java
+/**
+ * Obtiene un usuario por su ID.
+ *
+ * @param id ID del usuario
+ * @return Response con el usuario encontrado
+ */
+@GetMapping("/find-by-id/{id}")
+public ResponseEntity<Response<UserResponseDto>> getUserById(@PathVariable Integer id) {
+
+    log.info("GET /api/v1/users/find-by-id/{} - Consultar usuario", id);
+
+    UserResponseDto user = userService.getUserById(id);
+
+    Response<UserResponseDto> response = Response.<UserResponseDto>builder()
+            .failure(false)
+            .code(HttpStatus.OK.value())  // ✅ Status 200
+            .message("Usuario encontrado")
+            .body(user)
+            .timestamp(String.valueOf(System.currentTimeMillis()))
+            .build();
+
+    return ResponseEntity.ok(response);
+}
+```
+
+**Beneficios:**
+- ✅ `/find-by-id/{id}` es autodocumentado
+- ✅ No ambigüedad con otros GET endpoints
+- ✅ Log con ID consultado
+
+### Ejemplo 3: Endpoint PATCH con Path Descriptivo
+
+```java
+/**
+ * Cambia la contraseña de un usuario.
+ *
+ * @param id ID del usuario
+ * @param passwordRequest Request con la nueva contraseña
+ * @return Response con confirmación
+ */
+@PatchMapping("/change-password/{id}")
+public ResponseEntity<Response<UserResponseDto>> changePassword(
+        @PathVariable Integer id,
+        @RequestBody PasswordChangeRequest passwordRequest) {
+
+    log.info("PATCH /api/v1/users/change-password/{} - Cambiar contraseña", id);
+
+    UserResponseDto user = userService.changePassword(id, passwordRequest.getNewPassword());
+
+    Response<UserResponseDto> response = Response.<UserResponseDto>builder()
+            .failure(false)
+            .code(HttpStatus.OK.value())
+            .message("Contraseña cambiada exitosamente")
+            .body(user)
+            .timestamp(String.valueOf(System.currentTimeMillis()))
+            .build();
+
+    return ResponseEntity.ok(response);
+}
+```
+
+**Características:**
+- ✅ `/change-password/{id}` muy explícito
+- ✅ PATCH para actualización parcial
+- ✅ DTO específico para la operación
+
+### Ejemplo 4: Comparación Antes y Después
+
+#### ❌ ANTES - Paths Ambiguos
+
+```java
+@PostMapping  // ← Ambiguo, no dice qué hace
+public ResponseEntity<Response<UserResponseDto>> createUser(...)
+
+@GetMapping("/{id}")  // ← Puede confundirse con otros GET
+public ResponseEntity<Response<UserResponseDto>> getUserById(...)
+
+@PutMapping("/{id}")  // ← Puede confundirse con otros PUT
+public ResponseEntity<Response<UserResponseDto>> updateUser(...)
+
+@PatchMapping("/{id}/activate")  // ← ID después de la acción
+public ResponseEntity<Response<UserResponseDto>> activateUser(...)
+```
+
+#### ✅ DESPUÉS - Paths Descriptivos y Consistentes
+
+```java
+@PostMapping("/create")  // ← Explícito: crea usuario
+public ResponseEntity<Response<UserResponseDto>> createUser(...)
+
+@GetMapping("/find-by-id/{id}")  // ← Explícito: busca por ID
+public ResponseEntity<Response<UserResponseDto>> getUserById(...)
+
+@PutMapping("/update/{id}")  // ← Explícito: actualiza usuario
+public ResponseEntity<Response<UserResponseDto>> updateUser(...)
+
+@PatchMapping("/activate/{id}")  // ← Patrón consistente: /acción/{id}
+public ResponseEntity<Response<UserResponseDto>> activateUser(...)
+```
+
+**Beneficios:**
+- 🎯 **Autodocumentados**: Path explica la operación
+- 🎯 **Consistentes**: Patrón `/acción/{id}` uniforme
+- 🎯 **Sin ambigüedad**: No hay conflictos entre rutas
+- 🎯 **Mantenibles**: Fácil agregar endpoints sin colisiones
+
+## 🚫 Restricciones
+
+1. **NO** usar paths ambiguos (`@PostMapping`, `@GetMapping("/{id}")` sin contexto)
+2. **NO** mezclar patrones (`/{id}/acción` y `/acción/{id}` en el mismo controller)
+3. **NO** hardcodear status codes (`response.setStatus(200)` → usar `HttpStatus.OK`)
+4. **NO** omitir `@Valid` en DTOs de entrada
+5. **NO** loguear información sensible (contraseñas, tokens, datos personales sin enmascarar)
+6. **NO** retornar tipos primitivos o DTOs directamente (usar `ResponseEntity<Response<T>>`)
+7. **NO** usar múltiples `@RequestMapping` con valores diferentes en la misma clase
+8. **NO** omitir JavaDoc en métodos públicos del controller
+9. **NO** crear endpoints sin logs informativos
+10. **NO** usar `ResponseEntity.ok()` para errores (usar status apropiado)
+11. **🔴 NO construir DTOs en controller** (`ProductFilterDto.builder()...` → mover al servicio)
+12. **🔴 NO construir Sort/Pageable en controller** (`Sort.by()`, `PageRequest.of()` → mover al servicio)
+13. **🔴 NO realizar mapeos en controller** (transformaciones DTO → Entity → mover al servicio)
+14. **🔴 NO validaciones de negocio en controller** (solo `@Valid` automático, validaciones complejas → servicio)
+15. **🔴 NO cálculos o procesamiento de datos** (toda lógica → servicio)
+
+## ✅ Validación Automática
+
+Cursor debe detectar:
+
+**Paths:**
+- ❌ `@PostMapping` sin path específico
+- ❌ `@GetMapping("/{id}")` sin prefijo descriptivo
+- ❌ `@PutMapping("/{id}")` sin prefijo descriptivo
+- ❌ Patrones inconsistentes (`/{id}/acción` mezclado con `/acción/{id}`)
+- ❌ Paths sin guiones donde corresponde (`/findbyid` → `/find-by-id`)
+
+**Responses:**
+- ❌ Hardcoded status codes (`200`, `201` → `HttpStatus.OK.value()`)
+- ❌ Retorno directo de DTOs sin `ResponseEntity<Response<T>>`
+- ❌ Falta de `failure`, `code`, `message`, `body`, `timestamp` en Response
+
+**Validaciones:**
+- ❌ `@RequestBody` sin `@Valid` en operaciones CREATE/UPDATE
+- ❌ Falta de logs en endpoints
+- ❌ Logs con información sensible
+
+**Documentación:**
+- ❌ Métodos públicos sin JavaDoc
+- ❌ JavaDoc sin descripción de parámetros (`@param`)
+- ❌ JavaDoc sin descripción de retorno (`@return`)
+
+**🔴 Lógica en Controller (CRÍTICO):**
+- ❌ `.builder()` en controller (construcción de DTOs)
+- ❌ `Sort.by()` o `PageRequest.of()` en controller
+- ❌ Imports de `PageRequest`, `Sort` en controller (señal de lógica de paginación)
+- ❌ Mapeos o transformaciones de datos (`.map()`, conversiones)
+- ❌ Condicionales de negocio (`if (price > 100)`, `if (user.isActive())`)
+- ❌ Cálculos (`total = price * quantity`, `discount = ...`)
+- ❌ Múltiples líneas de lógica antes de llamar al servicio
+
+### Ejemplo 5: Controller SIN Lógica vs CON Lógica
+
+#### ❌ ANTES - Controller con Lógica de Negocio
+
+```java
+@GetMapping("/search/paginated")
+public ResponseEntity<Response<PagedProductResponseDto>> searchProductsPaginated(
+        @RequestParam(required = false) Integer categoryId,
+        @RequestParam(required = false) BigDecimal minPrice,
+        @RequestParam(required = false) BigDecimal maxPrice,
+        @RequestParam(required = false) Boolean active,
+        @RequestParam(required = false) String searchTerm,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size,
+        @RequestParam(defaultValue = "id") String sortBy,
+        @RequestParam(defaultValue = "asc") String sortDir) {
+
+    log.info("GET /api/v1/products/search/paginated - Buscar con filtros");
+
+    // ❌ MAL: Construcción de DTO en controller
+    ProductFilterDto filter = ProductFilterDto.builder()
+            .categoryId(categoryId)
+            .minPrice(minPrice)
+            .maxPrice(maxPrice)
+            .active(active)
+            .searchTerm(searchTerm)
+            .build();
+
+    // ❌ MAL: Lógica de paginación en controller
+    Sort sort = sortDir.equalsIgnoreCase("desc") ?
+            Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+    Pageable pageable = PageRequest.of(page, size, sort);
+
+    Page<ProductResponseDto> productsPage = productService.getProductsByFilterPaginated(filter, pageable);
+
+    // ❌ MAL: Transformación de datos en controller
+    PagedProductResponseDto pagedResponse = PagedProductResponseDto.fromPage(productsPage);
+
+    return ResponseEntity.ok(Response.<PagedProductResponseDto>builder()
+            .failure(false)
+            .code(HttpStatus.OK.value())
+            .message("Productos encontrados")
+            .body(pagedResponse)
+            .timestamp(String.valueOf(System.currentTimeMillis()))
+            .build());
+}
+```
+
+**Problemas:**
+- 🔴 Controller tiene lógica de construcción de DTOs
+- 🔴 Controller maneja lógica de paginación (Sort, Pageable)
+- 🔴 Controller realiza transformaciones de datos
+- 🔴 Difícil de testear sin mockear muchas dependencias
+- 🔴 Viola Single Responsibility Principle
+
+#### ✅ DESPUÉS - Controller Limpio (Solo Delega)
+
+```java
+@GetMapping("/search/paginated")
+public ResponseEntity<Response<PagedProductResponseDto>> searchProductsPaginated(
+        @RequestParam(required = false) Integer categoryId,
+        @RequestParam(required = false) BigDecimal minPrice,
+        @RequestParam(required = false) BigDecimal maxPrice,
+        @RequestParam(required = false) Boolean active,
+        @RequestParam(required = false) String searchTerm,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size,
+        @RequestParam(defaultValue = "id") String sortBy,
+        @RequestParam(defaultValue = "asc") String sortDir) {
+
+    log.info("GET /api/v1/products/search/paginated - Buscar con filtros");
+
+    // ✅ BIEN: Solo delega al servicio con parámetros individuales
+    Page<ProductResponseDto> productsPage = productService.searchProductsPaginated(
+            categoryId, minPrice, maxPrice, active, searchTerm,
+            page, size, sortBy, sortDir);
+
+    PagedProductResponseDto pagedResponse = PagedProductResponseDto.fromPage(productsPage);
+
+    return ResponseEntity.ok(Response.<PagedProductResponseDto>builder()
+            .failure(false)
+            .code(HttpStatus.OK.value())
+            .message("Productos encontrados")
+            .body(pagedResponse)
+            .timestamp(String.valueOf(System.currentTimeMillis()))
+            .build());
+}
+```
+
+**Servicio (donde va la lógica):**
+
+```java
+@Override
+@Transactional(readOnly = true)
+public Page<ProductResponseDto> searchProductsPaginated(
+        Integer categoryId,
+        BigDecimal minPrice,
+        BigDecimal maxPrice,
+        Boolean active,
+        String searchTerm,
+        int page,
+        int size,
+        String sortBy,
+        String sortDir) {
+
+    // ✅ BIEN: Lógica de construcción de DTOs en servicio
+    ProductFilterDto filter = ProductFilterDto.builder()
+            .categoryId(categoryId)
+            .minPrice(minPrice)
+            .maxPrice(maxPrice)
+            .active(active)
+            .searchTerm(searchTerm)
+            .build();
+
+    // ✅ BIEN: Lógica de paginación en servicio
+    Sort sort = sortDir.equalsIgnoreCase("desc") ?
+            Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+    Pageable pageable = PageRequest.of(page, size, sort);
+
+    // Delegar a método base
+    return getProductsByFilterPaginated(filter, pageable);
+}
+```
+
+**Beneficios:**
+- ✅ **Controller limpio**: Solo recibe, delega y retorna
+- ✅ **Testeable**: Controller solo mockea servicio (1 dependencia)
+- ✅ **Mantenible**: Cambios de lógica no afectan controller
+- ✅ **Reutilizable**: Servicio puede usar lógica desde otros lugares
+- ✅ **SRP**: Cada capa tiene una responsabilidad clara
+
+**Regla de 3 Líneas:**
+Un método de controller debería tener máximo 3 acciones:
+1. Log informativo
+2. Llamada al servicio
+3. Construcción de Response y retorno
+
+## 🎯 Objetivo + Regla de Oro
+
+**Objetivo**: Crear controllers con endpoints autodocumentados, paths descriptivos y respuestas consistentes que faciliten el mantenimiento y comprensión de la API. **Controller sin lógica de negocio**.
+
+**REGLA DE ORO**: "Path descriptivo = Acción explícita. Patrón: `/acción/{id}`. Response estándar con `HttpStatus` enum. `@Valid` en inputs. Logs informativos sin datos sensibles. JavaDoc completo. **Controller SOLO recibe → delega → retorna. TODA lógica en servicio**."
+
+---
+
+## 📋 Checklist de Creación de Controller
+
+**Estructura:**
+- [ ] `@RestController` + `@RequestMapping("/api/v{version}/{recurso}")`
+- [ ] `@RequiredArgsConstructor` + `@Slf4j`
+- [ ] Inyección de servicios por interfaz
+
+**Endpoints:**
+- [ ] Paths descriptivos (CREATE: `/create`, READ: `/find-by-id/{id}`, UPDATE: `/update/{id}`)
+- [ ] Patrón consistente en todos los endpoints
+- [ ] `@Valid` en `@RequestBody` para validaciones
+- [ ] JavaDoc completo con `@param` y `@return`
+
+**Responses:**
+- [ ] `ResponseEntity<Response<T>>` en todos los métodos
+- [ ] Status HTTP correcto (`HttpStatus.CREATED` para POST, `HttpStatus.OK` para otros)
+- [ ] Campos `failure`, `code`, `message`, `body`, `timestamp` completos
+
+**Logs:**
+- [ ] Log informativo en cada endpoint
+- [ ] Sin información sensible en logs
+- [ ] Formato consistente: `"{MÉTODO} {PATH} - {Descripción}"`
+
+**🔴 Sin Lógica en Controller:**
+- [ ] **NO** construcción de DTOs (`.builder()`) → mover al servicio
+- [ ] **NO** construcción de Sort/Pageable → mover al servicio
+- [ ] **NO** imports de `PageRequest`, `Sort`, `Specification` → señal de lógica
+- [ ] **NO** mapeos o transformaciones de datos → mover al servicio
+- [ ] **NO** validaciones de negocio complejas → mover al servicio
+- [ ] **NO** cálculos o procesamiento → mover al servicio
+- [ ] ✅ Métodos siguen patrón: Log → Delegar al servicio → Construir Response
+
+**Validación:**
+- [ ] Sin errores de linter
+- [ ] Paths sin conflictos
+- [ ] Tests unitarios con mocks de servicios
+- [ ] Controller solo mockea servicio (1 dependencia)
+
+---
+
+> **Ver también**: 
+> - [servicios-01-creacion-servicios.mdc](./servicios-01-creacion-servicios.mdc) - Arquitectura en capas
+> - [servicios-05-dtos.mdc](./servicios-05-dtos.mdc) - Estructura de DTOs
+> - [servicios-10-buenas-practicas.mdc](./servicios-10-buenas-practicas.mdc) - Buenas prácticas generales

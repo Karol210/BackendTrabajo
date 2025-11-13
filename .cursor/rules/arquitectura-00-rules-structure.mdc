@@ -223,21 +223,24 @@ service/transaction/detail/
 | 🔧 Servicios | `servicios-06-transaction` | Servicios de transacción (uso interno) | 226 | ✅ |
 | 📝 Documentación | `servicios-08-documentacion` | Informes de cambios en DokuWiki + Ejemplos Uso | 223 | ✅ Estandarizada |
 | 🔧 Servicios | `servicios-09-organizacion-capacidades` | Organización por capacidades - Servicios y DTOs | 315 | ✅ Estandarizada |
+| 🧹 Calidad | `servicios-10-buenas-practicas` | Clean Code - SRP, constantes, métodos pequeños | 306 | ✅ Estandarizada |
+| 🎮 Servicios | `servicios-11-controllers` | Controllers REST - Paths descriptivos y mejores prácticas | 298 | ✅ Estandarizada |
 
-**Total:** 9 archivos (1 arquitectura + 7 servicios + 1 documentación)
+**Total:** 11 archivos (1 arquitectura + 9 servicios + 1 documentación)
 
 **Estado de límites:**
-- ✅ 8 archivos dentro del rango ideal (< 300 líneas)
-- ✅ 1 archivo en rango medio (300-400 líneas)
+- ✅ 5 archivos dentro del rango ideal (< 300 líneas)
+- ✅ 6 archivos en rango medio (300-400 líneas)
 - ✅ 0 archivos requieren refactorización
-- ✅ Promedio: ~272 líneas por archivo
+- ✅ Promedio: ~283 líneas por archivo
 
 **Últimas actualizaciones:**
+- ✨ **Agregada** regla de **Controllers REST** (`servicios-11-controllers`)
+- ✨ **Estandarizada** regla de **Buenas Prácticas** (`servicios-10-buenas-practicas`)
+- ✨ Integrado "Checklist de Refactorización" en "Validación Automática"
 - ✨ Agregada regla de **Documentación DokuWiki** (`servicios-08-documentacion`)
 - ✨ **Sección "Ejemplos de Uso"** obligatoria con curl + responses (éxito + error)
 - ✨ Agregada **Estructura Modular** para módulos completos
-- ✨ Documentación de paquetes específicos para excepciones
-- ✨ Ejemplos del módulo `processconfig` como referencia
 
 
 ### 📋 Reglas para Comandos
@@ -343,6 +346,17 @@ service/transaction/detail/
 - Formato de PRs en tablas por ambiente
 - Análisis de commits con comandos git
 
+**Para Controllers REST:**
+> Ver [servicios-11-controllers.mdc](./servicios-11-controllers.mdc) para endpoints autodocumentados y mejores prácticas.
+
+**Evitar redundancia sobre:**
+- Paths descriptivos y patrones consistentes (`/create`, `/find-by-id/{id}`, `/update/{id}`)
+- Estructura de Response estándar (`failure`, `code`, `message`, `body`, `timestamp`)
+- Anotaciones de controllers (`@RestController`, `@RequestMapping`, `@Valid`)
+- Validaciones automáticas con `@Valid`
+- Logs informativos sin datos sensibles
+- Status HTTP con `HttpStatus` enum
+
 ## 🔗 MATRIZ DE DEPENDENCIAS
 
 | Regla | Depende de | Razonamiento |
@@ -351,6 +365,7 @@ service/transaction/detail/
 | `servicios-02-feign-client` | `servicios-03-feign-config`, `servicios-05-dtos` | Feign Clients usan config transversal y DTOs |
 | `servicios-06-transaction` | `servicios-01-creacion-servicios`, `servicios-02-feign-client`, `servicios-04-excepciones`, `servicios-05-dtos` | Caso específico que aplica todas las reglas |
 | `servicios-09-organizacion-capacidades` | `servicios-01-creacion-servicios`, `servicios-02-feign-client`, `servicios-05-dtos` | Organiza servicios external y DTOs por capacidades |
+| `servicios-11-controllers` | `servicios-01-creacion-servicios`, `servicios-05-dtos`, `servicios-10-buenas-practicas` | Controllers usan servicios, DTOs y principios de clean code |
 
 **Principio:** Cuando una regla depende de otra, usar **referencias** en lugar de duplicar contenido.
 

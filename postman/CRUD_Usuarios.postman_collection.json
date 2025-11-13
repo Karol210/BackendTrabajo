@@ -1,0 +1,337 @@
+{
+	"info": {
+		"_postman_id": "crud-usuarios-ecommerce-davivienda",
+		"name": "CRUD Usuarios - Ecommerce Davivienda",
+		"description": "Colección completa de endpoints para operaciones CRUD sobre usuarios del sistema.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Crear Usuario",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"nombre\": \"Juan Carlos\",\n    \"apellido\": \"Pérez González\",\n    \"documentTypeId\": 1,\n    \"documentNumber\": \"1234567890\",\n    \"email\": \"juan.perez@example.com\",\n    \"password\": \"Password123!\",\n    \"roleId\": 2\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/users/create",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"users",
+						"create"
+					]
+				},
+				"description": "Crea un nuevo usuario en el sistema con estado 'Activo' por defecto.\n\n**Validaciones:**\n- Email único\n- Combinación tipo+número documento única\n- Contraseña obligatoria\n- Tipo documento y rol deben existir"
+			},
+			"response": []
+		},
+		{
+			"name": "1.1 Crear Usuario Admin",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"nombre\": \"María\",\n    \"apellido\": \"García López\",\n    \"documentTypeId\": 1,\n    \"documentNumber\": \"9876543210\",\n    \"email\": \"maria.garcia@admin.com\",\n    \"password\": \"Admin123!\",\n    \"roleId\": 1\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/users/create",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"users",
+						"create"
+					]
+				},
+				"description": "Crea un usuario con rol ADMIN para pruebas de autorización."
+			},
+			"response": []
+		},
+		{
+			"name": "1.2 Crear Usuario Vendedor",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"nombre\": \"Pedro\",\n    \"apellido\": \"Martínez Silva\",\n    \"documentTypeId\": 2,\n    \"documentNumber\": \"AB123456\",\n    \"email\": \"pedro.martinez@vendedor.com\",\n    \"password\": \"Vendedor123!\",\n    \"roleId\": 3\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/users/create",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"users",
+						"create"
+					]
+				},
+				"description": "Crea un usuario con rol VENDEDOR."
+			},
+			"response": []
+		},
+		{
+			"name": "2. Consultar Usuario por ID",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"description": "Token JWT - Requiere rol ADMIN"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/users/find-by-id/{{userId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"users",
+						"find-by-id",
+						"{{userId}}"
+					]
+				},
+				"description": "Obtiene los datos completos de un usuario por su ID.\n\n**Autorización:** Requiere token JWT con rol ADMIN.\n\n**Path Variables:**\n- `userId`: ID del usuario a consultar"
+			},
+			"response": []
+		},
+		{
+			"name": "3. Actualizar Usuario",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"id\": 5,\n    \"nombre\": \"Juan Carlos Actualizado\",\n    \"apellido\": \"Pérez González\",\n    \"documentTypeId\": 1,\n    \"documentNumber\": \"1234567890\",\n    \"email\": \"juan.perez.updated@example.com\",\n    \"roleId\": 2,\n    \"statusId\": 1\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/users/update",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"users",
+						"update"
+					]
+				},
+				"description": "Actualiza los datos de un usuario existente.\n\n**Importante:** El ID del usuario debe venir en el body del request.\n\n**Validaciones:**\n- ID obligatorio\n- Si cambia email, debe ser único\n- Si cambia documento, combinación debe ser única"
+			},
+			"response": []
+		},
+		{
+			"name": "4. Eliminar Usuario (Soft Delete)",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/users/delete/{{userId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"users",
+						"delete",
+						"{{userId}}"
+					]
+				},
+				"description": "Elimina un usuario (soft delete) marcándolo como 'Inactivo'.\n\n**Nota:** El usuario NO se elimina físicamente de la base de datos, solo cambia su estado.\n\n**Path Variables:**\n- `userId`: ID del usuario a eliminar"
+			},
+			"response": []
+		},
+		{
+			"name": "5. Activar Usuario",
+			"request": {
+				"method": "PATCH",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/users/activate/{{userId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"users",
+						"activate",
+						"{{userId}}"
+					]
+				},
+				"description": "Reactiva un usuario previamente desactivado, cambiando su estado a 'Activo'.\n\n**Path Variables:**\n- `userId`: ID del usuario a activar"
+			},
+			"response": []
+		},
+		{
+			"name": "6. Cambiar Contraseña",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"juan.perez.updated@example.com\",\n    \"newPassword\": \"NewPassword456!\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/users/change-password",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"users",
+						"change-password"
+					]
+				},
+				"description": "Cambia la contraseña de un usuario identificado por su email.\n\n**Validaciones:**\n- Email debe ser válido\n- Usuario debe existir\n- Nueva contraseña no puede estar vacía\n\n**Nota:** La contraseña se encripta automáticamente con BCrypt."
+			},
+			"response": []
+		},
+		{
+			"name": "Error - Correo Duplicado",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"nombre\": \"Usuario\",\n    \"apellido\": \"Duplicado\",\n    \"documentTypeId\": 1,\n    \"documentNumber\": \"9999999999\",\n    \"email\": \"juan.perez@example.com\",\n    \"password\": \"Password123!\",\n    \"roleId\": 2\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/users/create",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"users",
+						"create"
+					]
+				},
+				"description": "Intenta crear un usuario con un correo que ya existe.\n\n**Error esperado:** ED-USR-04 - El correo electrónico ya está registrado"
+			},
+			"response": []
+		},
+		{
+			"name": "Error - Usuario No Encontrado",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/users/find-by-id/99999",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"users",
+						"find-by-id",
+						"99999"
+					]
+				},
+				"description": "Intenta consultar un usuario con ID inexistente.\n\n**Error esperado:** ED-USR-01 - Usuario no encontrado"
+			},
+			"response": []
+		},
+		{
+			"name": "Error - Validación Campos",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"nombre\": \"J\",\n    \"apellido\": \"P\",\n    \"documentTypeId\": 1,\n    \"documentNumber\": \"123\",\n    \"email\": \"email-invalido\",\n    \"password\": \"Password123!\",\n    \"roleId\": 2\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/users/create",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"users",
+						"create"
+					]
+				},
+				"description": "Intenta crear un usuario con campos inválidos.\n\n**Errores esperados:**\n- Nombre/Apellido: mínimo 2 caracteres\n- Documento: mínimo 5 caracteres\n- Email: formato inválido"
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "userId",
+			"value": "5",
+			"type": "string"
+		}
+	]
+}
+

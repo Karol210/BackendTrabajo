@@ -1,0 +1,545 @@
+---
+description: Buenas prácticas Clean Code - SRP, constantes, métodos pequeños, código limpio
+globs: ["**/*.java"]
+alwaysApply: true
+---
+
+# 🧹 Buenas Prácticas - Clean Code en Servicios
+
+## 📋 TL;DR
+
+- ✅ **CRÍTICO**: Eliminar imports sin usar en CADA clase/interfaz ANTES de guardar cambios
+- ✅ Constantes: Strings literales → `Constants.java` con códigos de error `ED-XXX-NN` (Ecommerce Davivienda - Capa/Módulo - Número)
+- ✅ SRP: Un método = Una responsabilidad • Métodos < 20 líneas • Una clase = Una responsabilidad (≥2 capacidades → separar)
+- ✅ Nombres descriptivos: `extractCredentials()`, `buildSuccessBody()` vs `process()`, `handle()`
+- ✅ DRY: `ObjectMapper` como campo reutilizable • Sin instancias múltiples
+- ✅ Separación de capacidades: Validación, Builder, etc. en carpetas propias con interfaces
+- ✅ Código limpio: Eliminar métodos privados, constantes y variables sin usar • Revisar flujo completo periódicamente
+- ❌ NO hardcodear strings • NO métodos > 50 líneas • NO múltiples responsabilidades • NO código sin usar
+
+## 🚨 Reglas Principales
+
+1. **Imports Sin Usar (OBLIGATORIO)**: Eliminar imports sin usar en CADA clase e interfaz ANTES de guardar cambios • Aplica a Controllers, Services, DTOs, Mappers, etc.
+2. **Constantes Centralizadas**: Strings literales, mensajes de error y códigos en `Constants.java` con formato `ED-XXX-NN` (Ecommerce Davivienda - Capa/Módulo - Número)
+3. **Single Responsibility Principle**: Cada método tiene UNA responsabilidad • Máximo 20 líneas • Cada clase tiene UNA responsabilidad (≥2 capacidades → separar en carpetas)
+4. **Nombres Descriptivos**: Métodos que explican QUÉ hacen sin comentarios • Variables con contexto completo
+5. **Reutilización**: `ObjectMapper`, validadores y utilities como campos inyectados • NO crear instancias múltiples
+6. **Logs Informativos**: `log.info` para eventos principales, `log.debug` para detalles, `log.error` con contexto completo
+7. **Separación de Capacidades**: Organizar por responsabilidades en carpetas (validation/, builder/, etc.) cuando hay ≥2 capacidades diferentes
+8. **Código Limpio**: Eliminar periódicamente métodos privados, constantes y variables sin usar • Revisar flujo completo Controller → Service → Capacidades
+
+## 📊 Referencia Rápida
+
+### Limpieza de Imports (OBLIGATORIO para cada clase)
+
+| Situación | Qué hacer | Cuándo |
+|---|---|---|
+| **Después de crear clase** | Eliminar imports auto-generados no usados | ✅ ANTES de guardar |
+| **Después de refactorizar** | Revisar imports que quedaron huérfanos | ✅ ANTES de guardar |
+| **Después de eliminar código** | Eliminar imports relacionados | ✅ ANTES de guardar |
+| **Antes de commit** | Verificar que NO hay imports sin usar | ✅ OBLIGATORIO |
+
+**¿Cómo identificar imports sin usar?**
+- IDE los muestra en gris o con warning
+- No hay ninguna referencia a la clase en el archivo
+- La clase fue eliminada pero el import quedó
+- Se cambió implementación y ya no se necesita
+
+**Aplica a:**
+- ✅ Controllers (`@RestController`)
+- ✅ Services (`@Service`)
+- ✅ Service Interfaces
+- ✅ DTOs (clases con datos)
+- ✅ Mappers (`@Component`)
+- ✅ Exceptions (clases de error)
+- ✅ Configuration (`@Configuration`)
+- ✅ Filters y Components
+
+### Extracción de Constantes
+
+| Tipo | Dónde | Nomenclatura | Ejemplo |
+|---|---|---|---|
+| **Endpoints** | Clase local | `[NOMBRE]_ENDPOINT` | `LOGIN_ENDPOINT = "/api/v1/auth/login"` |
+| **Campos JSON** | Clase local | `FIELD_[NOMBRE]` | `FIELD_EMAIL = "email"` |
+| **Mensajes Error** | `Constants.java` | `ERROR_[CONTEXTO]_[ACCION]` | `ERROR_CREDENTIALS_READ` |
+| **Códigos Error** | `Constants.java` | `CODE_[CONTEXTO]_[ACCION]` | `CODE_AUTHENTICATION_FAILED` |
+| **Templates** | Clase local | `[NOMBRE]_TEMPLATE` | `SUCCESS_MESSAGE_TEMPLATE = "Hola %s"` |
+
+### Formato de Códigos de Error
+
+```
+ED-XXX-NN
+│  │   └─── Número secuencial (01-99)
+│  └─────── Capa/Módulo (3 letras)
+└────────── Ecommerce Davivienda
+```
+
+| Módulo/Capa | Prefijo | Ejemplo |
+|---|---|---|
+| Authentication | `AUT` | `ED-AUT-01` |
+| User | `USR` | `ED-USR-01` |
+| Product | `PRO` | `ED-PRO-01` |
+| Generic | `GEN` | `ED-GEN-01` |
+| Parameters | `PAR` | `ED-PAR-01` |
+
+### Single Responsibility Principle - Límites
+
+| Complejidad | Líneas | Acción |
+|---|---|---|
+| Simple | 1-10 | ✅ Ideal |
+| Media | 11-20 | ✅ Aceptable |
+| Alta | 21-50 | ⚠️ Refactorizar si es posible |
+| Muy Alta | > 50 | 🚨 OBLIGATORIO refactorizar |
+
+## ✅ Ejemplos
+
+### Ejemplo 1: Antes y Después - Método con Múltiples Responsabilidades
+
+**❌ ANTES - Violación de SRP (45 líneas)**
+```java
+protected void successfulAuthentication(
+        HttpServletRequest request, 
+        HttpServletResponse response, 
+        FilterChain chain,
+        Authentication authResult) throws IOException {
+
+    User user = (User) authResult.getPrincipal();
+    String userName = user.getUsername();
+    Collection<? extends GrantedAuthority> roles = authResult.getAuthorities();
+
+    // Serializar authorities
+    String authoritiesJson = new ObjectMapper().writeValueAsString(roles);  // ❌ Nueva instancia
+
+    // Crear claims
+    Claims claims = Jwts.claims()
+            .add("authorities", authoritiesJson)  // ❌ String literal
+            .add("username", userName)
+            .build();
+
+    // Generar token
+    String token = Jwts.builder()
+            .subject(userName)
+            .claims(claims)
+            .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+            .issuedAt(new Date())
+            .signWith(SECRET_KEY)
+            .compact();
+
+    // Agregar token al header
+    response.addHeader(HEADER_AUTHORIZATION, PREFIX_TOKEN + token);
+
+    // Crear body
+    Map<String, Object> body = new HashMap<>();
+    body.put("token", token);  // ❌ String literal
+    body.put("username", userName);
+    body.put("message", "Hola " + userName + ", has iniciado sesión");  // ❌ Hardcoded
+    body.put("expiresIn", EXPIRATION_TIME);
+
+    // Enviar respuesta
+    response.getWriter().write(new ObjectMapper().writeValueAsString(body));  // ❌ Nueva instancia
+    response.setContentType("application/json");  // ❌ String literal
+    response.setStatus(200);  // ❌ Magic number
+
+    log.info("Autenticación exitosa para: {}", userName);
+}
+```
+
+**✅ DESPUÉS - SRP Aplicado (14 líneas + 8 métodos auxiliares)**
+```java
+protected void successfulAuthentication(
+        HttpServletRequest request, 
+        HttpServletResponse response, 
+        FilterChain chain,
+        Authentication authResult) throws IOException {
+
+    User user = (User) authResult.getPrincipal();
+    String userName = user.getUsername();
+    Collection<? extends GrantedAuthority> authorities = authResult.getAuthorities();
+
+    log.info("Creando token para usuario: {} con roles: {}", userName, authorities);
+
+    String token = generateJwtToken(userName, authorities);  // ✅ Método específico
+    
+    addTokenToHeader(response, token);          // ✅ Método específico
+    writeSuccessResponse(response, token, userName);  // ✅ Método específico
+
+    log.info("Autenticación exitosa para el usuario: {}", userName);
+}
+
+// ✅ Métodos auxiliares con responsabilidad única
+private String generateJwtToken(String userName, Collection<? extends GrantedAuthority> authorities) 
+        throws IOException {
+    String authoritiesJson = objectMapper.writeValueAsString(authorities);  // ✅ Campo reutilizable
+    Claims claims = buildClaims(userName, authoritiesJson);
+    return Jwts.builder()
+            .subject(userName)
+            .claims(claims)
+            .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+            .issuedAt(new Date())
+            .signWith(SECRET_KEY)
+            .compact();
+}
+
+private Claims buildClaims(String userName, String authoritiesJson) {
+    return Jwts.claims()
+            .add(FIELD_AUTHORITIES, authoritiesJson)  // ✅ Constante
+            .add(FIELD_USERNAME, userName)
+            .build();
+}
+
+private void writeSuccessResponse(HttpServletResponse response, String token, String userName) 
+        throws IOException {
+    Map<String, Object> body = buildSuccessBody(token, userName);
+    response.setContentType(CONTENT_TYPE);  // ✅ Constante
+    response.setStatus(HttpStatus.OK.value());  // ✅ Enum
+    response.getWriter().write(objectMapper.writeValueAsString(body));  // ✅ Campo reutilizable
+}
+
+private Map<String, Object> buildSuccessBody(String token, String userName) {
+    Map<String, Object> body = new HashMap<>();
+    body.put(FIELD_TOKEN, token);  // ✅ Constante
+    body.put(FIELD_USERNAME, userName);
+    body.put(FIELD_MESSAGE, String.format(SUCCESS_MESSAGE_TEMPLATE, userName));  // ✅ Template
+    body.put(FIELD_EXPIRES_IN, EXPIRATION_TIME);
+    return body;
+}
+```
+
+**Beneficios:**
+- 🎯 Método principal: 45 líneas → **14 líneas** (69% reducción)
+- 🎯 Cada método auxiliar < 15 líneas
+- 🎯 Fácil de testear individualmente
+- 🎯 Sin strings hardcodeados
+
+### Ejemplo 2: Constantes en `Constants.java`
+
+**❌ ANTES - Strings en múltiples clases**
+```java
+// JwtAuthenticationFilter.java
+throw new RuntimeException("Error al leer credenciales del request", e);
+
+// JwtValidationFilter.java
+throw new RuntimeException("Error al leer credenciales del request", e);  // ❌ Duplicado
+
+// UserServiceImpl.java
+log.error("Error al leer credenciales del request");  // ❌ Duplicado
+```
+
+**✅ DESPUÉS - Centralizado en Constants.java**
+```java
+// Constants.java
+public class Constants {
+    // ==================== AUTHENTICATION - ERROR MESSAGES ====================
+    
+    /**
+     * Mensaje de error al leer credenciales del request.
+     */
+    public static final String ERROR_CREDENTIALS_READ = "Error al leer credenciales del request";
+    
+    /**
+     * Mensaje de error de autenticación fallida.
+     */
+    public static final String ERROR_AUTHENTICATION_FAILED = "Error en la autenticación: credenciales incorrectas";
+
+    // ==================== AUTHENTICATION - ERROR CODES ====================
+    
+    /**
+     * Código de error: Error al leer credenciales.
+     * Formato: ED-AUT-01 (Ecommerce Davivienda - Autenticación - Número)
+     */
+    public static final String CODE_CREDENTIALS_READ_ERROR = "ED-AUT-01";
+    
+    /**
+     * Código de error: Autenticación fallida.
+     * Formato: ED-AUT-02 (Ecommerce Davivienda - Autenticación - Número)
+     */
+    public static final String CODE_AUTHENTICATION_FAILED = "ED-AUT-02";
+}
+
+// Uso en clases
+import static com.ecommerce.davivienda.constants.Constants.*;
+
+throw new RuntimeException(ERROR_CREDENTIALS_READ, e);  // ✅ Centralizado
+```
+
+### Ejemplo 3: Nombres Descriptivos vs Genéricos
+
+| ❌ Nombre Genérico | ✅ Nombre Descriptivo | Responsabilidad |
+|---|---|---|
+| `process()` | `extractCredentials()` | Extrae credenciales del request |
+| `handle()` | `createAuthenticationToken()` | Crea token de autenticación |
+| `execute()` | `generateJwtToken()` | Genera token JWT |
+| `doWork()` | `writeSuccessResponse()` | Escribe respuesta exitosa |
+| `buildData()` | `buildSuccessBody()` | Construye body de éxito |
+| `getData()` | `extractUserFromToken()` | Extrae usuario del token |
+
+### Ejemplo 4: Separación por Capacidades
+
+**❌ ANTES - Todas las responsabilidades en una clase (122 líneas)**
+```java
+@Service
+public class JpaUserDetailsService implements UserDetailsService {
+    private final UserRepository userRepository;
+
+    @Override
+    public UserDetails loadUserByUsername(String email) {
+        User user = findUserByEmail(email);
+        validateUserStatus(user, email);      // Responsabilidad 1: Validación
+        List<GrantedAuthority> authorities = buildAuthorities(user);  // Responsabilidad 2: Builder
+        return buildUserDetails(user, authorities);  // Responsabilidad 3: Builder
+    }
+    
+    private void validateUserStatus(User user, String email) { /* 15 líneas */ }
+    private void validateUserActive(User user, String email) { /* 10 líneas */ }
+    private void validateUserRole(User user, String email) { /* 12 líneas */ }
+    private List<GrantedAuthority> buildAuthorities(User user) { /* 5 líneas */ }
+    private UserDetails buildUserDetails(User user, List<GrantedAuthority> authorities) { /* 15 líneas */ }
+}
+```
+
+**✅ DESPUÉS - Separación por Capacidades (3 servicios independientes)**
+
+**Estructura:**
+```
+service/detailsservice/
+├── validation/
+│   ├── JpaUserValidationService.java              (Interface)
+│   └── JpaUserValidationServiceImpl.java          (Validación - 60 líneas)
+├── builder/
+│   ├── UserDetailsBuilderService.java             (Interface)
+│   └── UserDetailsBuilderServiceImpl.java         (Construcción - 51 líneas)
+├── JpaUserDetailsService.java                     (Interface)
+└── JpaUserDetailsServiceImpl.java                 (Coordinador - 74 líneas)
+```
+
+**Coordinador limpio:**
+```java
+@Service
+@RequiredArgsConstructor
+public class JpaUserDetailsServiceImpl implements UserDetailsService {
+    private final UserRepository userRepository;
+    private final JpaUserValidationService validationService;     // ✅ Capacidad inyectada
+    private final UserDetailsBuilderService builderService;       // ✅ Capacidad inyectada
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserDetails loadUserByUsername(String email) {
+        User user = findUserByEmail(email);
+        validationService.validateUserStatus(user, email);    // ✅ Delega a capacidad
+        return builderService.buildUserDetails(user);         // ✅ Delega a capacidad
+    }
+    
+    private User findUserByEmail(String email) { /* Única responsabilidad local */ }
+}
+```
+
+**Beneficios:**
+- 🎯 **Alta Cohesión**: Cada capacidad agrupa código relacionado
+- 🎯 **Bajo Acoplamiento**: Cambios en validación no afectan builder
+- 🎯 **Testeable**: Tests unitarios específicos por capacidad
+- 🎯 **Reutilizable**: Capacidades pueden usarse en otros servicios
+- 🎯 **Escalable**: Agregar capacidades sin modificar existentes
+
+### Ejemplo 5: Eliminar Imports Sin Usar (OBLIGATORIO)
+
+**❌ ANTES - Imports sin usar en Controller**
+```java
+import com.ecommerce.davivienda.constants.Constants;
+import com.ecommerce.davivienda.dto.user.PasswordChangeRequestDto;
+import com.ecommerce.davivienda.dto.user.UserFilterDto;          // ❌ No usado
+import com.ecommerce.davivienda.dto.user.UserRequestDto;
+import com.ecommerce.davivienda.dto.user.UserResponseDto;
+import com.ecommerce.davivienda.models.Response;
+import com.ecommerce.davivienda.service.user.UserService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;                      // ❌ No usado
+import org.springframework.data.domain.PageRequest;               // ❌ No usado
+import org.springframework.data.domain.Pageable;                  // ❌ No usado
+import org.springframework.data.domain.Sort;                      // ❌ No usado
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;                                            // ❌ No usado
+
+@RestController
+@RequestMapping("/api/v1/users")
+public class UserController {
+    // ... endpoints sin paginación
+}
+```
+
+**✅ DESPUÉS - Solo imports necesarios**
+```java
+import com.ecommerce.davivienda.constants.Constants;
+import com.ecommerce.davivienda.dto.user.PasswordChangeRequestDto;
+import com.ecommerce.davivienda.dto.user.UserRequestDto;
+import com.ecommerce.davivienda.dto.user.UserResponseDto;
+import com.ecommerce.davivienda.models.Response;
+import com.ecommerce.davivienda.service.user.UserService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/v1/users")
+public class UserController {
+    // ... endpoints sin paginación
+}
+```
+
+**Beneficios:**
+- 🎯 **7 imports eliminados** (UserFilterDto, Page, PageRequest, Pageable, Sort, List)
+- 🎯 **Código más limpio**: Solo lo necesario
+- 🎯 **Menos confusión**: No hay clases importadas que no se usan
+- 🎯 **Performance**: Menos clases cargadas en memoria
+
+### Ejemplo 6: Proceso de Revisión - Eliminar Código Sin Usar
+
+**📋 Flujo de Revisión:**
+
+```
+Controller → Service (Interface) → ServiceImpl → Capacidades (Validation/Builder/etc.)
+```
+
+**Verificar cada capa:**
+
+| Capa | Qué revisar | Acción |
+|---|---|---|
+| Controller | Endpoints, imports | Eliminar no usados |
+| Service Interface | Métodos declarados | ¿Todos implementados y llamados? |
+| ServiceImpl | Imports, métodos, constantes | Eliminar sin referencias |
+| Capacidades | Métodos públicos | ¿Todos llamados desde coordinador? |
+| Constants | Constantes | ¿Todas usadas en alguna clase? |
+
+**📋 Checklist (aplicar ANTES de guardar CUALQUIER clase):**
+
+```
+✅ Imports sin usar eliminados (CRÍTICO - TODAS las clases)
+   ├─ Controllers (@RestController)
+   ├─ Services (@Service) y sus interfaces
+   ├─ DTOs (clases de datos)
+   ├─ Mappers (@Component)
+   ├─ Exceptions (clases de error)
+   ├─ Configuration (@Configuration)
+   └─ Filters y otras clases Java
+✅ Métodos privados sin llamar eliminados
+✅ Constantes sin usar eliminadas
+✅ Variables/parámetros sin usar eliminados
+✅ Código comentado eliminado (usar Git)
+✅ TODOs resueltos o documentados
+```
+
+**⚠️ Señales de código sin usar:**
+
+| Señal | Acción |
+|---|---|
+| Import gris en IDE | Eliminar import |
+| Método privado nunca llamado | Eliminar o hacer público si es API |
+| Constante sin referencias | Eliminar o documentar si es futura |
+| Variable asignada pero nunca leída | Eliminar asignación |
+| Parámetro nunca usado | Eliminar parámetro |
+| Código comentado > 1 sprint | Eliminar (está en Git) |
+| TODO > 3 meses | Resolver o crear ticket |
+
+**🎯 Beneficios:**
+- ✅ **Mantenibilidad**: Sin código confuso
+- ✅ **Performance**: Sin imports innecesarios
+- ✅ **Claridad**: Solo código usado
+- ✅ **Refactorización segura**: Sin código "zombie"
+
+## 🚫 Restricciones
+
+1. **NO** mantener imports sin usar en NINGUNA clase (Controllers, Services, DTOs, Mappers, etc.) - ELIMINAR ANTES de guardar cambios
+2. **NO** hardcodear strings literales (excepto logs con contexto único)
+3. **NO** crear métodos > 50 líneas (refactorizar obligatorio)
+4. **NO** usar nombres genéricos (`process()`, `handle()`, `execute()`, `doWork()`)
+5. **NO** crear instancias múltiples de utilities (`new ObjectMapper()` en cada método)
+6. **NO** usar magic numbers (usar constantes o `HttpStatus.OK.value()`)
+7. **NO** incluir múltiples responsabilidades en un método o clase
+8. **NO** omitir logs informativos en operaciones críticas
+9. **NO** crear mensajes de error sin código estandarizado `ED-XXX-NN`
+10. **NO** duplicar constantes entre clases (centralizar en `Constants.java`)
+11. **NO** usar comentarios para explicar código complejo (refactorizar el código)
+12. **NO** agrupar servicios sin separar por capacidades cuando hay ≥2 responsabilidades diferentes
+13. **NO** mantener constantes, métodos privados o variables sin usar
+14. **NO** dejar código comentado sin explicación por más de 1 sprint (usar Git para historial)
+15. **NO** dejar TODOs sin resolver por más de 3 meses (resolver o crear ticket)
+
+## ✅ Validación Automática
+
+Cursor debe detectar:
+
+**Imports Sin Usar (PRIORIDAD CRÍTICA):**
+- ❌ Imports no utilizados en Controllers
+- ❌ Imports no utilizados en Services e Interfaces
+- ❌ Imports no utilizados en DTOs
+- ❌ Imports no utilizados en Mappers
+- ❌ Imports no utilizados en Exceptions
+- ❌ Imports no utilizados en Configuration
+- ❌ Imports no utilizados en cualquier clase `.java`
+
+**Constantes:**
+- ❌ Strings literales hardcodeados (excepto logs únicos)
+- ❌ Mensajes de error sin código `ED-XXX-NN`
+- ❌ Códigos de error duplicados entre módulos
+- ❌ Constantes duplicadas en múltiples clases
+
+**Single Responsibility:**
+- ❌ Métodos > 50 líneas sin refactorizar
+- ❌ Métodos con múltiples `try-catch`, múltiples validaciones y múltiples transformaciones
+- ❌ Métodos que hacen más de 3 operaciones principales
+- ❌ Clases con múltiples responsabilidades (≥2 capacidades diferentes sin separar)
+
+**Nombres:**
+- ❌ Nombres genéricos sin contexto (`process()`, `handle()`, `data`, `temp`, `aux`)
+- ❌ Variables de una letra (excepto índices de bucles)
+- ❌ Abreviaciones no estándar (`usr`, `pwd`, `msg`)
+
+**Reutilización:**
+- ❌ `new ObjectMapper()` en métodos (usar campo inyectado)
+- ❌ Validadores instanciados múltiples veces
+- ❌ Código duplicado entre métodos
+
+**Código Sin Usar (Adicional a Imports):**
+- ❌ Constantes sin referencias en todo el proyecto
+- ❌ Métodos privados nunca llamados
+- ❌ Variables declaradas pero nunca leídas
+- ❌ Parámetros sin usar en métodos
+- ❌ Código comentado sin explicación o > 1 sprint
+- ❌ TODOs sin resolver > 3 meses
+
+**Checklist de Refactorización (aplicar a CADA clase):**
+- [ ] **Imports sin usar eliminados** (CRÍTICO - verificar en TODAS las clases)
+- [ ] Strings literales extraídos como constantes
+- [ ] Mensajes de error en `Constants.java` con códigos `ED-XXX-NN`
+- [ ] Métodos < 20 líneas (máximo 50)
+- [ ] Cada método tiene UNA responsabilidad
+- [ ] Cada clase tiene UNA responsabilidad (separar capacidades si hay ≥2)
+- [ ] Nombres descriptivos sin comentarios explicativos
+- [ ] `ObjectMapper` y utilities como campos reutilizables
+- [ ] Sin código duplicado
+- [ ] Logs informativos en operaciones críticas
+- [ ] Status codes usando `HttpStatus` enum
+- [ ] Sin magic numbers
+- [ ] Capacidades separadas en carpetas propias si son reutilizables
+- [ ] Sin constantes, métodos privados o variables sin usar
+- [ ] Código comentado eliminado (usar Git para historial)
+- [ ] TODOs resueltos o documentados
+
+## 🎯 Objetivo + Regla de Oro
+
+**Objetivo**: Escribir código limpio, mantenible y testeable aplicando principios SOLID, DRY y Clean Code con alta cohesión, bajo acoplamiento y sin código muerto.
+
+**REGLA DE ORO**: "PRIMERO: Eliminar imports sin usar en CADA clase ANTES de guardar. DESPUÉS: Un método = Una responsabilidad < 20 líneas. Una clase = Una responsabilidad (≥2 capacidades → separar). Strings → Constantes en `Constants.java` con código `ED-XXX-NN`. Nombres descriptivos. Utilities reutilizables. Capacidades independientes. Código limpio sin elementos sin usar."
+
+---
+
+> **Ver también**: 
+> - [servicios-01-creacion-servicios.mdc](./servicios-01-creacion-servicios.mdc) - Arquitectura en capas
+> - [servicios-04-excepciones.mdc](./servicios-04-excepciones.mdc) - Manejo de excepciones

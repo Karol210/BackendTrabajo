@@ -1,0 +1,793 @@
+{
+	"info": {
+		"_postman_id": "cart-items-crud-2025",
+		"name": "CRUD Cart Items - Ecommerce Davivienda",
+		"description": "Colección de endpoints para gestión de items del carrito con cálculos de precio e IVA",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Agregar Producto al Carrito",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"cartId\": 1,\n  \"productId\": 1,\n  \"quantity\": 2,\n  \"documentType\": \"CC\",\n  \"documentNumber\": \"1234567890\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/cart-items/add",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"cart-items",
+						"add"
+					]
+				},
+				"description": "Agrega un producto al carrito identificando al usuario por su tipo y número de documento. El sistema busca automáticamente el carrito existente del usuario o crea uno nuevo. El campo cartId es opcional e ignorado. Devuelve el item con cálculos de subtotal, IVA y total."
+			},
+			"response": [
+				{
+					"name": "Success - Producto Agregado (Carrito Existente)",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"cartId\": 1,\n  \"productId\": 1,\n  \"quantity\": 2,\n  \"documentType\": \"CC\",\n  \"documentNumber\": \"1234567890\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/cart-items/add",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"cart-items",
+								"add"
+							]
+						}
+					},
+					"status": "Created",
+					"code": 201,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n  \"failure\": false,\n  \"code\": 201,\n  \"message\": \"Producto agregado al carrito exitosamente\",\n  \"body\": {\n    \"id\": 1,\n    \"cartId\": 1,\n    \"productId\": 1,\n    \"productName\": \"Laptop Dell XPS 15\",\n    \"productDescription\": \"Laptop de alto rendimiento\",\n    \"imageUrl\": \"https://example.com/laptop.jpg\",\n    \"calculation\": {\n      \"unitValue\": 2500000.00,\n      \"ivaPercentage\": 19.00,\n      \"quantity\": 2,\n      \"subtotal\": 5000000.00,\n      \"ivaAmount\": 950000.00,\n      \"totalPrice\": 5950000.00\n    }\n  },\n  \"timestamp\": \"1699876543210\"\n}"
+				},
+				{
+					"name": "Success - Carrito Creado Automáticamente",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"cartId\": 10,\n  \"productId\": 1,\n  \"quantity\": 1,\n  \"documentType\": \"CC\",\n  \"documentNumber\": \"1234567890\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/cart-items/add",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"cart-items",
+								"add"
+							]
+						}
+					},
+					"status": "Created",
+					"code": 201,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n  \"failure\": false,\n  \"code\": 201,\n  \"message\": \"Producto agregado al carrito exitosamente\",\n  \"body\": {\n    \"id\": 5,\n    \"cartId\": 10,\n    \"productId\": 1,\n    \"productName\": \"Laptop Dell XPS 15\",\n    \"productDescription\": \"Laptop de alto rendimiento\",\n    \"imageUrl\": \"https://example.com/laptop.jpg\",\n    \"calculation\": {\n      \"unitValue\": 2500000.00,\n      \"ivaPercentage\": 19.00,\n      \"quantity\": 1,\n      \"subtotal\": 2500000.00,\n      \"ivaAmount\": 475000.00,\n      \"totalPrice\": 2975000.00\n    }\n  },\n  \"timestamp\": \"1699876543210\",\n  \"note\": \"Carrito con ID 10 fue creado automáticamente\"\n}"
+				},
+				{
+					"name": "Error - Usuario No Encontrado por Documento",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"cartId\": 999,\n  \"productId\": 1,\n  \"quantity\": 2\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/cart-items/add",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"cart-items",
+								"add"
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n  \"failure\": true,\n  \"code\": 400,\n  \"errorCode\": \"ED-CAR-08\",\n  \"message\": \"Usuario no encontrado con el documento proporcionado\",\n  \"timestamp\": \"1699876543210\"\n}"
+				},
+				{
+					"name": "Error - Producto Ya Existe en Carrito",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"cartId\": 1,\n  \"productId\": 1,\n  \"quantity\": 2,\n  \"documentType\": \"CC\",\n  \"documentNumber\": \"1234567890\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/cart-items/add",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"cart-items",
+								"add"
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n  \"failure\": true,\n  \"code\": 400,\n  \"errorCode\": \"ED-CAR-03\",\n  \"message\": \"El producto ya existe en el carrito\",\n  \"timestamp\": \"1699876543210\"\n}"
+				}
+			]
+		},
+		{
+			"name": "1B. Agregar Múltiples Productos al Carrito (Batch)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"cartId\": 1,\n  \"documentType\": \"CC\",\n  \"documentNumber\": \"1234567890\",\n  \"items\": [\n    {\n      \"productId\": 10,\n      \"quantity\": 2\n    },\n    {\n      \"productId\": 15,\n      \"quantity\": 1\n    },\n    {\n      \"productId\": 20,\n      \"quantity\": 3\n    },\n    {\n      \"productId\": 25,\n      \"quantity\": 1\n    }\n  ]\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/cart-items/add-batch",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"cart-items",
+						"add-batch"
+					]
+				},
+				"description": "Agrega múltiples productos al carrito de una sola vez identificando al usuario por su tipo y número de documento. Si algún producto ya existe, se omite sin error. Si el carrito no existe, se crea automáticamente. Devuelve la lista de items agregados con sus cálculos."
+			},
+			"response": [
+				{
+					"name": "Success - Todos los Productos Agregados",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"cartId\": 1,\n  \"documentType\": \"CC\",\n  \"documentNumber\": \"1234567890\",\n  \"items\": [\n    {\n      \"productId\": 10,\n      \"quantity\": 2\n    },\n    {\n      \"productId\": 15,\n      \"quantity\": 1\n    },\n    {\n      \"productId\": 20,\n      \"quantity\": 3\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/cart-items/add-batch",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"cart-items",
+								"add-batch"
+							]
+						}
+					},
+					"status": "Created",
+					"code": 201,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n  \"failure\": false,\n  \"code\": 201,\n  \"message\": \"Productos agregados al carrito exitosamente (3 de 3)\",\n  \"body\": [\n    {\n      \"id\": 101,\n      \"cartId\": 1,\n      \"productId\": 10,\n      \"productName\": \"Laptop HP\",\n      \"productDescription\": \"Laptop empresarial\",\n      \"imageUrl\": \"https://example.com/laptop-hp.jpg\",\n      \"calculation\": {\n        \"unitValue\": 1500000.00,\n        \"ivaPercentage\": 19.00,\n        \"quantity\": 2,\n        \"subtotal\": 3000000.00,\n        \"ivaAmount\": 570000.00,\n        \"totalPrice\": 3570000.00\n      }\n    },\n    {\n      \"id\": 102,\n      \"cartId\": 1,\n      \"productId\": 15,\n      \"productName\": \"Mouse Logitech\",\n      \"productDescription\": \"Mouse inalámbrico\",\n      \"imageUrl\": \"https://example.com/mouse.jpg\",\n      \"calculation\": {\n        \"unitValue\": 50000.00,\n        \"ivaPercentage\": 19.00,\n        \"quantity\": 1,\n        \"subtotal\": 50000.00,\n        \"ivaAmount\": 9500.00,\n        \"totalPrice\": 59500.00\n      }\n    },\n    {\n      \"id\": 103,\n      \"cartId\": 1,\n      \"productId\": 20,\n      \"productName\": \"Teclado Mecánico\",\n      \"productDescription\": \"Teclado gaming RGB\",\n      \"imageUrl\": \"https://example.com/teclado.jpg\",\n      \"calculation\": {\n        \"unitValue\": 200000.00,\n        \"ivaPercentage\": 19.00,\n        \"quantity\": 3,\n        \"subtotal\": 600000.00,\n        \"ivaAmount\": 114000.00,\n        \"totalPrice\": 714000.00\n      }\n    }\n  ],\n  \"timestamp\": \"1699876543210\"\n}"
+				},
+				{
+					"name": "Success - Algunos Productos Omitidos (Ya Existen)",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"cartId\": 1,\n  \"documentType\": \"CC\",\n  \"documentNumber\": \"1234567890\",\n  \"items\": [\n    {\n      \"productId\": 10,\n      \"quantity\": 2\n    },\n    {\n      \"productId\": 30,\n      \"quantity\": 1\n    },\n    {\n      \"productId\": 35,\n      \"quantity\": 4\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/cart-items/add-batch",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"cart-items",
+								"add-batch"
+							]
+						}
+					},
+					"status": "Created",
+					"code": 201,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n  \"failure\": false,\n  \"code\": 201,\n  \"message\": \"Productos agregados al carrito exitosamente (2 de 3)\",\n  \"body\": [\n    {\n      \"id\": 105,\n      \"cartId\": 1,\n      \"productId\": 30,\n      \"productName\": \"Cámara Web HD\",\n      \"productDescription\": \"Cámara 1080p\",\n      \"imageUrl\": \"https://example.com/camara.jpg\",\n      \"calculation\": {\n        \"unitValue\": 150000.00,\n        \"ivaPercentage\": 19.00,\n        \"quantity\": 1,\n        \"subtotal\": 150000.00,\n        \"ivaAmount\": 28500.00,\n        \"totalPrice\": 178500.00\n      }\n    },\n    {\n      \"id\": 106,\n      \"cartId\": 1,\n      \"productId\": 35,\n      \"productName\": \"Audífonos Bluetooth\",\n      \"productDescription\": \"Audífonos inalámbricos\",\n      \"imageUrl\": \"https://example.com/audifonos.jpg\",\n      \"calculation\": {\n        \"unitValue\": 80000.00,\n        \"ivaPercentage\": 19.00,\n        \"quantity\": 4,\n        \"subtotal\": 320000.00,\n        \"ivaAmount\": 60800.00,\n        \"totalPrice\": 380800.00\n      }\n    }\n  ],\n  \"timestamp\": \"1699876543210\",\n  \"note\": \"Producto ID 10 ya existía en el carrito y fue omitido\"\n}"
+				},
+				{
+					"name": "Success - Carrito Creado Automáticamente",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"cartId\": 999,\n  \"documentType\": \"TI\",\n  \"documentNumber\": \"9876543210\",\n  \"items\": [\n    {\n      \"productId\": 12,\n      \"quantity\": 1\n    },\n    {\n      \"productId\": 18,\n      \"quantity\": 2\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/cart-items/add-batch",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"cart-items",
+								"add-batch"
+							]
+						}
+					},
+					"status": "Created",
+					"code": 201,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n  \"failure\": false,\n  \"code\": 201,\n  \"message\": \"Productos agregados al carrito exitosamente (2 de 2)\",\n  \"body\": [\n    {\n      \"id\": 201,\n      \"cartId\": 999,\n      \"productId\": 12,\n      \"productName\": \"Tablet Samsung\",\n      \"productDescription\": \"Tablet 10 pulgadas\",\n      \"imageUrl\": \"https://example.com/tablet.jpg\",\n      \"calculation\": {\n        \"unitValue\": 900000.00,\n        \"ivaPercentage\": 19.00,\n        \"quantity\": 1,\n        \"subtotal\": 900000.00,\n        \"ivaAmount\": 171000.00,\n        \"totalPrice\": 1071000.00\n      }\n    },\n    {\n      \"id\": 202,\n      \"cartId\": 999,\n      \"productId\": 18,\n      \"productName\": \"Cable USB-C\",\n      \"productDescription\": \"Cable de carga rápida\",\n      \"imageUrl\": \"https://example.com/cable.jpg\",\n      \"calculation\": {\n        \"unitValue\": 25000.00,\n        \"ivaPercentage\": 19.00,\n        \"quantity\": 2,\n        \"subtotal\": 50000.00,\n        \"ivaAmount\": 9500.00,\n        \"totalPrice\": 59500.00\n      }\n    }\n  ],\n  \"timestamp\": \"1699876543210\",\n  \"note\": \"Carrito con ID 999 fue creado automáticamente\"\n}"
+				},
+				{
+					"name": "Error - Lista de Items Vacía",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"cartId\": 1,\n  \"documentType\": \"CC\",\n  \"documentNumber\": \"1234567890\",\n  \"items\": []\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/cart-items/add-batch",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"cart-items",
+								"add-batch"
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n  \"failure\": true,\n  \"code\": 400,\n  \"errorCode\": \"ED-VAL-01\",\n  \"message\": \"La lista de items no puede estar vacía\",\n  \"timestamp\": \"1699876543210\"\n}"
+				}
+			]
+		},
+		{
+			"name": "2. Actualizar Cantidad de Producto",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/cart-items/1/quantity?quantity=5",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"cart-items",
+						"1",
+						"quantity"
+					],
+					"query": [
+						{
+							"key": "quantity",
+							"value": "5",
+							"description": "Nueva cantidad del producto"
+						}
+					]
+				},
+				"description": "Actualiza la cantidad de un item del carrito. Recalcula subtotal, IVA y total."
+			},
+			"response": [
+				{
+					"name": "Success - Cantidad Actualizada",
+					"originalRequest": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/cart-items/1/quantity?quantity=5",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"cart-items",
+								"1",
+								"quantity"
+							],
+							"query": [
+								{
+									"key": "quantity",
+									"value": "5"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n  \"failure\": false,\n  \"code\": 200,\n  \"message\": \"Cantidad del producto actualizada exitosamente\",\n  \"body\": {\n    \"id\": 1,\n    \"cartId\": 1,\n    \"productId\": 1,\n    \"productName\": \"Laptop Dell XPS 15\",\n    \"productDescription\": \"Laptop de alto rendimiento\",\n    \"imageUrl\": \"https://example.com/laptop.jpg\",\n    \"calculation\": {\n      \"unitValue\": 2500000.00,\n      \"ivaPercentage\": 19.00,\n      \"quantity\": 5,\n      \"subtotal\": 12500000.00,\n      \"ivaAmount\": 2375000.00,\n      \"totalPrice\": 14875000.00\n    }\n  },\n  \"timestamp\": \"1699876543210\"\n}"
+				}
+			]
+		},
+		{
+			"name": "3. Obtener Items del Carrito",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/cart-items/cart/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"cart-items",
+						"cart",
+						"1"
+					]
+				},
+				"description": "Obtiene todos los items de un carrito con sus cálculos individuales."
+			},
+			"response": [
+				{
+					"name": "Success - Lista de Items",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/cart-items/cart/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"cart-items",
+								"cart",
+								"1"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n  \"failure\": false,\n  \"code\": 200,\n  \"message\": \"Items del carrito obtenidos exitosamente\",\n  \"body\": [\n    {\n      \"id\": 1,\n      \"cartId\": 1,\n      \"productId\": 1,\n      \"productName\": \"Laptop Dell XPS 15\",\n      \"productDescription\": \"Laptop de alto rendimiento\",\n      \"imageUrl\": \"https://example.com/laptop.jpg\",\n      \"calculation\": {\n        \"unitValue\": 2500000.00,\n        \"ivaPercentage\": 19.00,\n        \"quantity\": 2,\n        \"subtotal\": 5000000.00,\n        \"ivaAmount\": 950000.00,\n        \"totalPrice\": 5950000.00\n      }\n    },\n    {\n      \"id\": 2,\n      \"cartId\": 1,\n      \"productId\": 2,\n      \"productName\": \"Mouse Logitech MX Master 3\",\n      \"productDescription\": \"Mouse ergonómico inalámbrico\",\n      \"imageUrl\": \"https://example.com/mouse.jpg\",\n      \"calculation\": {\n        \"unitValue\": 350000.00,\n        \"ivaPercentage\": 19.00,\n        \"quantity\": 1,\n        \"subtotal\": 350000.00,\n        \"ivaAmount\": 66500.00,\n        \"totalPrice\": 416500.00\n      }\n    }\n  ],\n  \"timestamp\": \"1699876543210\"\n}"
+				}
+			]
+		},
+		{
+			"name": "4. Obtener Resumen del Carrito",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/cart-items/cart/1/summary",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"cart-items",
+						"cart",
+						"1",
+						"summary"
+					]
+				},
+				"description": "Obtiene un resumen completo del carrito con totales agregados (subtotal, IVA total, precio total)."
+			},
+			"response": [
+				{
+					"name": "Success - Resumen Completo",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/cart-items/cart/1/summary",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"cart-items",
+								"cart",
+								"1",
+								"summary"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n  \"failure\": false,\n  \"code\": 200,\n  \"message\": \"Items del carrito obtenidos exitosamente\",\n  \"body\": {\n    \"cartId\": 1,\n    \"items\": [\n      {\n        \"id\": 1,\n        \"cartId\": 1,\n        \"productId\": 1,\n        \"productName\": \"Laptop Dell XPS 15\",\n        \"productDescription\": \"Laptop de alto rendimiento\",\n        \"imageUrl\": \"https://example.com/laptop.jpg\",\n        \"calculation\": {\n          \"unitValue\": 2500000.00,\n          \"ivaPercentage\": 19.00,\n          \"quantity\": 2,\n          \"subtotal\": 5000000.00,\n          \"ivaAmount\": 950000.00,\n          \"totalPrice\": 5950000.00\n        }\n      },\n      {\n        \"id\": 2,\n        \"cartId\": 1,\n        \"productId\": 2,\n        \"productName\": \"Mouse Logitech MX Master 3\",\n        \"productDescription\": \"Mouse ergonómico inalámbrico\",\n        \"imageUrl\": \"https://example.com/mouse.jpg\",\n        \"calculation\": {\n          \"unitValue\": 350000.00,\n          \"ivaPercentage\": 19.00,\n          \"quantity\": 1,\n          \"subtotal\": 350000.00,\n          \"ivaAmount\": 66500.00,\n          \"totalPrice\": 416500.00\n        }\n      }\n    ],\n    \"totalItems\": 3,\n    \"totalSubtotal\": 5350000.00,\n    \"totalIva\": 1016500.00,\n    \"totalPrice\": 6366500.00\n  },\n  \"timestamp\": \"1699876543210\"\n}"
+				}
+			]
+		},
+		{
+			"name": "5. Obtener Item por ID",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/cart-items/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"cart-items",
+						"1"
+					]
+				},
+				"description": "Obtiene un item específico del carrito por su ID."
+			},
+			"response": [
+				{
+					"name": "Success - Item Encontrado",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/cart-items/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"cart-items",
+								"1"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n  \"failure\": false,\n  \"code\": 200,\n  \"message\": \"Items del carrito obtenidos exitosamente\",\n  \"body\": {\n    \"id\": 1,\n    \"cartId\": 1,\n    \"productId\": 1,\n    \"productName\": \"Laptop Dell XPS 15\",\n    \"productDescription\": \"Laptop de alto rendimiento\",\n    \"imageUrl\": \"https://example.com/laptop.jpg\",\n    \"calculation\": {\n      \"unitValue\": 2500000.00,\n      \"ivaPercentage\": 19.00,\n      \"quantity\": 2,\n      \"subtotal\": 5000000.00,\n      \"ivaAmount\": 950000.00,\n      \"totalPrice\": 5950000.00\n    }\n  },\n  \"timestamp\": \"1699876543210\"\n}"
+				}
+			]
+		},
+		{
+			"name": "6. Eliminar Item del Carrito",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/cart-items/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"cart-items",
+						"1"
+					]
+				},
+				"description": "Elimina un item específico del carrito."
+			},
+			"response": [
+				{
+					"name": "Success - Item Eliminado",
+					"originalRequest": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/cart-items/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"cart-items",
+								"1"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n  \"failure\": false,\n  \"code\": 200,\n  \"message\": \"Producto eliminado del carrito exitosamente\",\n  \"timestamp\": \"1699876543210\"\n}"
+				}
+			]
+		},
+		{
+			"name": "7. Limpiar Carrito Completo",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/cart-items/cart/1/clear",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"cart-items",
+						"cart",
+						"1",
+						"clear"
+					]
+				},
+				"description": "Elimina todos los items de un carrito específico."
+			},
+			"response": [
+				{
+					"name": "Success - Carrito Limpiado",
+					"originalRequest": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/cart-items/cart/1/clear",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"cart-items",
+								"cart",
+								"1",
+								"clear"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n  \"failure\": false,\n  \"code\": 200,\n  \"message\": \"Carrito limpiado exitosamente\",\n  \"timestamp\": \"1699876543210\"\n}"
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		}
+	]
+}
+

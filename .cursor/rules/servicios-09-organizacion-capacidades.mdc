@@ -8,18 +8,18 @@ alwaysApply: true
 
 ## 📋 TL;DR
 
-- ✅ Separación por capacidad: `external/auth/`, `dto/{dominio}/auth/`, `mapper/{dominio}/auth/`
-- ✅ Estructura paralela: service → dto → mapper con misma organización
-- ✅ Alta cohesión y bajo acoplamiento por carpeta
-- ✅ Subcapacidades (>50 líneas) para responsabilidades independientes
-- ❌ NO mezclar capacidades ni crear estructura inconsistente
+- ✅ **OBLIGATORIO**: ServiceImpl con ≥3 métodos privados → Separar en `validation/` + `builder/`
+- ✅ Estructura paralela: `service/{capacidad}/` → `dto/{capacidad}/` → `mapper/{capacidad}/`
+- ✅ Alta cohesión por capacidad • Subcapacidades (>50 líneas) si son independientes
+- ❌ NO mezclar capacidades • NO mantener métodos auxiliares privados en ServiceImpl
+- ❌ NO estructura inconsistente entre service/dto/mapper
 
 ## 🚨 Reglas Principales
 
-1. **Separación por Capacidad**: Cada capacidad tiene su propia carpeta en `external/`, `dto/` y `mapper/` con nombres descriptivos (`auth`, `questions`, `validation`)
-2. **Cohesión Alta**: Todos los archivos relacionados con una capacidad juntos (Client, Service, ServiceImpl, DTOs, Mapper)
-3. **Estructura Paralela**: `service/{dominio}/{capacidad}/` se refleja en `dto/{dominio}/{capacidad}/` y `mapper/{dominio}/{capacidad}/`
-4. **Escalabilidad**: Agregar nuevas capacidades solo requiere crear carpeta sin afectar existentes
+1. **Separación Obligatoria en Servicios CRUD**: Si `ServiceImpl` tiene ≥3 métodos auxiliares privados, separar en capacidades (`validation/`, `builder/`) con interfaces propias
+2. **Separación por Capacidad + Escalabilidad**: Cada capacidad tiene su propia carpeta en `external/`, `dto/` y `mapper/` con nombres descriptivos. Agregar nuevas capacidades sin afectar existentes
+3. **Cohesión Alta**: Todos los archivos relacionados con una capacidad juntos (Client, Service, ServiceImpl, DTOs, Mapper)
+4. **Estructura Paralela**: `service/{dominio}/{capacidad}/` se refleja en `dto/{dominio}/{capacidad}/` y `mapper/{dominio}/{capacidad}/`
 5. **Subcapacidades**: Para responsabilidades independientes (>50 líneas), usar subcarpetas (`validation/rules/`, `validation/storage/`)
 
 ## 📊 Referencia Rápida
@@ -37,13 +37,17 @@ alwaysApply: true
 
 | Capacidad | Responsabilidad | Archivos en carpeta | Archivos en `dto/` | Exposición |
 |-----------|-----------------|---------------------|-------------------|:----------:|
+| **`validation`** ⭐ | **Validaciones de negocio (CRUD)** | **`*ValidationService`, `*ValidationServiceImpl`** | **Ninguno (usa DTOs existentes)** | **❌ Interna** |
+| **`builder`** ⭐ | **Construcción/transformación (CRUD)** | **`*BuilderService`, `*BuilderServiceImpl`** | **Ninguno (usa DTOs existentes)** | **❌ Interna** |
 | `auth` | Autenticación y autorización | `*AuthClient`, `*AuthService`, `*AuthServiceImpl` | `*TokenDto`, `*CredentialsDto` | ❌ Interna |
 | `questions` | Consulta de datos | `*QuestionsClient`, `*QuestionsService`, `*QuestionsServiceImpl` | `*RequestDto`, `*ResponseDto` | ❌ Interna |
-| `validation` | Validación de reglas | `*ValidationClient`, `*ValidationService`, `*ValidationServiceImpl` | `*ValidationRequestDto`, `*ResultDto` | ❌ Interna |
+| `validation` | Validación de reglas (External) | `*ValidationClient`, `*ValidationService`, `*ValidationServiceImpl` | `*ValidationRequestDto`, `*ResultDto` | ❌ Interna |
 | `processing` | Procesamiento de transacciones | `*ProcessingClient`, `*ProcessingService`, `*ProcessingServiceImpl` | `*ProcessRequestDto`, `*ProcessResponseDto` | ❌ Interna |
 | `storage` | Almacenamiento de datos | `*StorageService`, `*StorageServiceImpl` | Opcional según caso | ❌ Interna |
 | `rules` | Reglas de negocio | `*RulesService`, `*RulesServiceImpl` | Ninguno (usa DTOs existentes) | ❌ Interna |
 | `organization` | Ordenar/agrupar datos | `*OrganizationService`, `*OrganizationServiceImpl` | Ninguno (usa DTOs existentes) | ❌ Interna (ver regla 01) |
+
+**⭐ CAPACIDADES OBLIGATORIAS**: `validation/` y `builder/` deben crearse cuando un servicio CRUD tiene ≥3 métodos auxiliares privados.
 
 ### Subcapacidades - Organización Anidada
 
@@ -152,146 +156,131 @@ mapper/insurability/
 usa los DTOs existentes de otras capacidades.
 ```
 
-### Ejemplo 2: Decisión - Subcarpetas vs Raíz + Agregar Capacidad
+### Ejemplo 2: Decisión y Extensibilidad
 
-**Escenario A: Una Sola Capacidad - Raíz es Suficiente**
-```
-service/email/external/
-├── ExternalEmailClient.java      ✅ Simple - una sola responsabilidad
-├── ExternalEmailService.java
-└── ExternalEmailServiceImpl.java
-```
+| Escenario | Estructura | Cuándo |
+|-----------|------------|--------|
+| **Una capacidad** | `external/` raíz | ✅ Simple, una responsabilidad |
+| **≥2 capacidades** | `external/auth/`, `external/questions/` | ✅ Mejor organización |
+| **Agregar capacidad** | `external/validation/` | ✅ Sin afectar existentes |
 
-**Escenario B: Múltiples Capacidades - Usar Subcarpetas**
-```
-service/insurability/external/
-├── auth/                          ✅ Capacidad 1: Autenticación
-│   ├── CognitoAuthClient.java
-│   └── CognitoAuthServiceImpl.java
-└── questions/                     ✅ Capacidad 2: Consultas
-    ├── ExternalInsurabilityQuestionsClient.java
-    └── ExternalInsurabilityQuestionsServiceImpl.java
-```
-
-**Escenario C: Agregar Nueva Capacidad sin Afectar Existentes**
-```
-service/insurability/external/
-├── auth/           (existente - intacto)
-├── questions/      (existente - intacto)
-└── validation/     ✅ Nueva capacidad
-    ├── ExternalValidationClient.java
-    └── ExternalValidationServiceImpl.java
-
-dto/insurability/
-├── auth/           (existente - intacto)
-├── questions/      (existente - intacto)
-└── validation/     ✅ DTOs correspondientes
-    ├── ValidationRequestDto.java
-    └── ValidationResponseDto.java
-```
-
-**Uso en servicio principal:**
+**Extensibilidad en servicio principal:**
 ```java
 @Service
 @RequiredArgsConstructor
 public class InsurabilityQuestionsServiceImpl implements InsurabilityQuestionsService {
     private final CognitoAuthService cognitoAuthService;              // Existente
     private final ExternalInsurabilityQuestionsService questionsService; // Existente
-    private final ExternalValidationService validationService;        // ✅ Nueva - sin modificar código anterior
+    private final ExternalValidationService validationService;        // ✅ Nueva capacidad
 }
 ```
 
-### Ejemplo 3: Subcapacidades - Coordinador que Delega Responsabilidades
+### Ejemplo 3: Subcapacidades - Coordinador Delegando
 
-**Estructura con Subcapacidades:**
+**Estructura:**
 ```
 service/insurability/validation/
-├── InsurabilityValidationService.java          (Interface principal)
-├── InsurabilityValidationServiceImpl.java      (Coordinador - delega a subcapacidades)
-│
-├── rules/                                       📋 Subcapacidad: Reglas de Negocio
-│   ├── InsurabilityValidationRulesService.java
-│   └── InsurabilityValidationRulesServiceImpl.java
-│
-└── storage/                                     💾 Subcapacidad: Almacenamiento
-    ├── InsurabilityValidationStorageService.java
-    └── InsurabilityValidationStorageServiceImpl.java
-
-test/.../validation/
-├── rules/
-│   └── InsurabilityValidationRulesServiceImplTest.java    (12 tests)
-└── storage/
-    └── InsurabilityValidationStorageServiceImplTest.java  (6 tests)
+├── InsurabilityValidationServiceImpl.java (Coordinador - 68 líneas)
+├── rules/InsurabilityValidationRulesServiceImpl.java (Validaciones)
+└── storage/InsurabilityValidationStorageServiceImpl.java (Persistencia)
 ```
 
-**Servicio Coordinador (Principal):**
+**Coordinador delega responsabilidades:**
 ```java
 @Service
 @RequiredArgsConstructor
 public class InsurabilityValidationServiceImpl implements InsurabilityValidationService {
-    
-    private final InsurabilityValidationRulesService rulesService;      // ✅ Subcapacidad: rules
-    private final InsurabilityValidationStorageService storageService;  // ✅ Subcapacidad: storage
+    private final InsurabilityValidationRulesService rulesService;      // ✅ Subcapacidad
+    private final InsurabilityValidationStorageService storageService;  // ✅ Subcapacidad
     private final InsurabilityValidationMapper mapper;
 
     @Override
     public InsurabilityValidationResponseDto validateInsurabilityDeclaration(
             InsurabilityValidationRequestDto request) {
-        
-        // 1. Validar request (delegado a rules)
-        rulesService.validateRequest(request);
-        
-        // 2. Validar asegurabilidad (delegado a rules)
+        rulesService.validateRequest(request);                          // ✅ Delega validación
         boolean isInsurable = rulesService.validatePersonsInsurability(request);
-        
-        // 3. Transformar datos (mapper)
         Map<String, Object> stepData = mapper.buildStepData(request.getPersons(), isInsurable);
-        
-        // 4. Guardar en transacción (delegado a storage)
-        storageService.saveValidationStep(stepData);
-        
-        return InsurabilityValidationResponseDto.builder()
-                .insurable(isInsurable)
-                .build();
+        storageService.saveValidationStep(stepData);                    // ✅ Delega persistencia
+        return InsurabilityValidationResponseDto.builder().insurable(isInsurable).build();
     }
 }
 ```
 
-**Beneficios de Subcapacidades:**
-- ✅ **Coordinador limpio**: 68 líneas vs 126 líneas originales (46% reducción)
-- ✅ **Alta cohesión**: Cada subcapacidad tiene una responsabilidad única
-  - `rules/`: Solo validaciones de negocio
-  - `storage/`: Solo persistencia
-- ✅ **Testeable**: 18 tests específicos (12 rules + 6 storage) vs tests acoplados
-- ✅ **Reutilizable**: `rules/` puede usarse sin `storage/` si es necesario
-- ✅ **Escalable**: Agregar nueva subcapacidad sin modificar existentes
+**Beneficios:** 68 vs 126 líneas (46% reducción), alta cohesión, testeable, reutilizable, escalable
 
-**Cuándo NO crear subcapacidades:**
-- ❌ Métodos pequeños (< 50 líneas cada uno)
-- ❌ Lógica fuertemente acoplada que no se puede separar
-- ❌ Solo 1-2 métodos auxiliares (usar métodos privados)
+### ⚠️ Caso Especial CRUD: Separación Obligatoria
 
-**Nota sobre Mappers:** Siguen estructura paralela al servicio. Ver tabla "Organización de Mappers" en Referencia Rápida.
+**Problema:** `ServiceImpl` con ≥3 métodos auxiliares privados (476 líneas, 12 métodos privados)
 
-**Nota sobre servicios `organization/`:** Van en `service/{dominio}/organization/` sin DTOs propios ni Feign Clients. Ver [servicios-01-creacion-servicios.mdc](./servicios-01-creacion-servicios.mdc)
+**Solución:** Separar en capacidades `validation/` + `builder/`
+
+| Métodos Privados | Capacidad Destino |
+|------------------|-------------------|
+| `validateEmailNotExists()`, `validateDocumentType()`, `validatePasswordNotEmpty()`, `findRoleById()`, `findUserByIdOrThrow()`, `validateUpdateRequest()`, `handleDataIntegrityViolation()` | `validation/UserValidationServiceImpl` (114 líneas) |
+| `buildUserFromRequest()`, `buildSpecification()`, `updateUserFields()` | `builder/UserBuilderServiceImpl` (106 líneas) |
+
+**Coordinador refactorizado (245 líneas, CERO métodos privados):**
+```java
+@Service
+@RequiredArgsConstructor
+public class UserServiceImpl implements UserService {
+    private final UserRepository userRepository;
+    private final UserMapper userMapper;
+    private final UserValidationService validationService;   // ✅ Capacidad
+    private final UserBuilderService builderService;         // ✅ Capacidad
+
+    @Override
+    @Transactional
+    public UserResponseDto createUser(UserRequestDto request) {
+        validationService.validateEmailNotExists(request.getEmail());     // ✅ Delega
+        validationService.validateDocumentType(request.getDocumentType());// ✅ Delega
+        validationService.validatePasswordNotEmpty(request.getPassword());// ✅ Delega
+        Role role = validationService.findRoleById(request.getRoleId());  // ✅ Delega
+        User user = builderService.buildUserFromRequest(request, role);   // ✅ Delega
+        return userMapper.toResponseDto(userRepository.save(user));
+    }
+    // ... resto métodos interfaz (8 total) - CERO métodos privados auxiliares
+}
+```
+
+**Métricas:**
+
+| Aspecto | Antes | Después | Mejora |
+|---------|-------|---------|--------|
+| Líneas ServiceImpl | 476 | 245 | 48% ↓ |
+| Métodos privados | 12 | 0 | 100% ↓ |
+| Responsabilidades | 3 mezcladas | 1 clara | Alta cohesión |
+
+**Criterios obligatorios:**
+- 🚨 ≥3 métodos auxiliares → Separar capacidades
+- 🚨 ServiceImpl > 300 líneas → Refactorizar
+- ✅ `validate*`, `find*OrThrow` → `validation/`
+- ✅ `build*`, `update*Fields` → `builder/`
 
 ## 🚫 Restricciones
 
-1. **NO** mezclar capacidades en la misma carpeta ni usar nombres genéricos (`common`, `utils`)
-2. **NO** organizar por tipo de archivo o tecnología (agrupar por capacidad de negocio)
-3. **NO** duplicar código entre capacidades (crear servicios compartidos si es necesario)
-4. **NO** crear dependencias circulares entre capacidades o subcapacidades
-5. **NO** crear estructura profunda (máximo 2 niveles, 3 con subcapacidades)
-6. **NO** tener estructura inconsistente entre `service/`, `dto/` y `mapper/`
-7. **NO** crear mappers en raíz cuando servicio tiene subcarpetas ni incluir lógica de negocio en mappers
-8. **NO** usar prefijos redundantes en carpetas (`auth/AuthTokenDto` → `auth/TokenDto`)
-9. **NO** crear subcapacidades para métodos pequeños (< 50 líneas) o lógica fuertemente acoplada
-10. **NO** omitir `@Component` en mappers ni dejar carpetas vacías
+1. **NO** mantener ≥3 métodos auxiliares privados en `ServiceImpl` ni métodos de validación/construcción (separar en capacidades OBLIGATORIO)
+2. **NO** mezclar capacidades en la misma carpeta ni usar nombres genéricos (`common`, `utils`) - agrupar por capacidad de negocio
+3. **NO** duplicar código entre capacidades ni crear dependencias circulares
+4. **NO** crear estructura profunda (máximo 2 niveles, 3 con subcapacidades)
+5. **NO** tener estructura inconsistente entre `service/`, `dto/` y `mapper/`
+6. **NO** crear mappers en raíz cuando servicio tiene subcarpetas ni incluir lógica de negocio en mappers
+7. **NO** usar prefijos redundantes en carpetas (`auth/AuthTokenDto` → `auth/TokenDto`)
+8. **NO** crear subcapacidades para métodos pequeños (< 50 líneas) o lógica fuertemente acoplada
+9. **NO** omitir `@Component` en mappers
+10. **NO** dejar carpetas vacías o código duplicado
 
 ## ✅ Validación Automática
 
 Cursor debe detectar:
 
+**Servicios CRUD (CRÍTICO):**
+- ❌ `ServiceImpl` con ≥3 métodos auxiliares privados sin separar en capacidades
+- ❌ Métodos de validación (`validate*`, `find*OrThrow`, `handle*Violation`) en `ServiceImpl`
+- ❌ Métodos de construcción (`build*`, `update*Fields`) en `ServiceImpl`
+- ❌ `ServiceImpl` > 300 líneas sin refactorizar
+
+**Capacidades External:**
 - ❌ Múltiples capacidades (≥2) en `external/` sin subcarpetas o estructura inconsistente
 - ❌ DTOs/Mappers sin reflejar estructura de servicio o mezclados entre capacidades
 - ❌ Nombres genéricos (`folder1`, `common`, `utils`) o imports incorrectos
@@ -302,9 +291,9 @@ Cursor debe detectar:
 
 ## 🎯 Objetivo + Regla de Oro
 
-**Objetivo**: Organizar servicios externos, DTOs y Mappers por capacidades de negocio para maximizar cohesión, minimizar acoplamiento y facilitar escalabilidad.
+**Objetivo**: Organizar servicios externos, DTOs y Mappers por capacidades de negocio para maximizar cohesión, minimizar acoplamiento y facilitar escalabilidad. **OBLIGATORIO**: Separar capacidades en servicios CRUD con ≥3 métodos auxiliares.
 
-**REGLA DE ORO**: "Una capacidad = Una carpeta en `service/`, `dto/` y `mapper/` con estructura paralela. Si ≥2 capacidades, usar subcarpetas (`auth/`, `questions/`). Si una capacidad tiene múltiples responsabilidades (>50 líneas), crear subcapacidades (`validation/rules/`, `validation/storage/`). Coordinador solo delega. Cada cambio afecta solo una carpeta."
+**REGLA DE ORO**: "Una capacidad = Una carpeta. **ServiceImpl con ≥3 métodos privados → SEPARAR en `validation/` + `builder/`**. Si ≥2 capacidades external, usar subcarpetas (`auth/`, `questions/`). Si una capacidad tiene múltiples responsabilidades (>50 líneas), crear subcapacidades (`validation/rules/`, `validation/storage/`). Coordinador solo delega. Cada cambio afecta solo una carpeta."
 
 ---
 

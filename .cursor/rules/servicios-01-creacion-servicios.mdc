@@ -10,6 +10,7 @@ alwaysApply: true
 
 - ✅ **CRÍTICO**: Verificar DTOs/modelos/servicios existentes ANTES de crear - reutilizar sin modificar tipos/nombres
 - ✅ **OBLIGATORIO**: Solicitar URL, CURL y responses (éxito + error) ANTES de crear servicio
+- ✅ **OBLIGATORIO**: Usar MapStruct para mapeo entre DTOs y entidades (NO mapeo manual ni ModelMapper)
 - ✅ Arquitectura: Controller → Service Principal → External Service → Feign Client • Inyección por interfaz
 - ✅ Organización: Simple (1 op) / Organizada (≥2 ops) / Modular (módulo completo)
 - ✅ Servicios External en `service/{dominio}/external/` • Para ≥2 capacidades, ver regla 09
@@ -18,9 +19,10 @@ alwaysApply: true
 
 1. **Verificación obligatoria**: Antes de crear, buscar DTOs/modelos/servicios/endpoints existentes en `dto/`, `documents/`, `models/`, `service/`. Reutilizar sin modificar tipos/nombres de campos (solo agregar nuevos). Preguntar al usuario sobre controller (nuevo o reutilizar).
 2. **Validación previa**: Solicitar URL, CURL y responses JSON (éxito + error) ANTES de crear cualquier servicio. No inventar estructura de DTOs.
-3. **Arquitectura en capas**: Controller → Service (Interface) → Service Impl → External Service → Feign Client. Servicios External SIEMPRE en paquete `service/{dominio}/external/`.
-4. **Inyección de dependencias**: SIEMPRE por interfaz usando `@RequiredArgsConstructor` (NUNCA `@Autowired` ni implementaciones concretas).
-5. **Organización por complejidad**: Simple (1 op) en `service/{dominio}/`, Organizada (≥2 ops) con subcarpetas `service/{dominio}/{operacion}/`, Modular (módulo completo) con paquetes en todas las capas.
+3. **Mapeo con MapStruct**: SIEMPRE usar MapStruct para convertir entre DTOs y entidades. Crear interface `@Mapper` con `componentModel = "spring"` en paquete `mapper/{dominio}/`. NO usar mapeo manual ni otras librerías (ModelMapper, Dozer).
+4. **Arquitectura en capas**: Controller → Service (Interface) → Service Impl → External Service → Feign Client. Servicios External SIEMPRE en paquete `service/{dominio}/external/`.
+5. **Inyección de dependencias**: SIEMPRE por interfaz usando `@RequiredArgsConstructor` (NUNCA `@Autowired` ni implementaciones concretas).
+6. **Organización por complejidad**: Simple (1 op) en `service/{dominio}/`, Organizada (≥2 ops) con subcarpetas `service/{dominio}/{operacion}/`, Modular (módulo completo) con paquetes en todas las capas.
 
 ## 📊 Referencia Rápida
 
@@ -143,6 +145,23 @@ service/{dominio}/
 
 > **Nota**: Si hay ≥2 capacidades en `external/` (ej: auth + questions), organizar en subcarpetas por capacidad.  
 > Ver [servicios-09-organizacion-capacidades.mdc](./servicios-09-organizacion-capacidades.mdc) para detalles.
+
+### Mapeo con MapStruct (OBLIGATORIO)
+
+| Aspecto | Convención | Ejemplo |
+|---|---|---|
+| Ubicación | `mapper/{dominio}/` | `mapper/user/UserMapper.java` |
+| Anotación | `@Mapper(componentModel = "spring")` | Inyección automática |
+| Nomenclatura | `{Dominio}Mapper` | `UserMapper`, `ProductMapper` |
+| Métodos | Conversión bidireccional | `toEntity()`, `toResponseDto()` |
+| Inyección | Por interfaz en servicios | `private final UserMapper userMapper;` |
+
+**Beneficios de MapStruct:**
+- ✅ Mapeo compile-time (sin reflexión)
+- ✅ Type-safe y rápido
+- ✅ Código generado automáticamente
+- ✅ Fácil de testear y mantener
+- ✅ Manejo automático de campos con mismo nombre
 
 ## ✅ Ejemplos
 
@@ -288,20 +307,110 @@ public class InsurabilityQuestionsOrganizationServiceImpl
 - ✅ Sin Feign Clients
 - ⚠️ Si usuario solicita exponer → PREGUNTAR antes de crear endpoint
 
+### Ejemplo 5: Mapeo con MapStruct (OBLIGATORIO)
+
+**Mapper (mapper/user/UserMapper.java):**
+```java
+package com.ecommerce.davivienda.mapper.user;
+
+import com.ecommerce.davivienda.dto.user.UserRequestDto;
+import com.ecommerce.davivienda.dto.user.UserResponseDto;
+import com.ecommerce.davivienda.entity.User;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+
+/**
+ * Mapper para conversiones entre User y DTOs.
+ * MapStruct genera la implementación automáticamente en tiempo de compilación.
+ */
+@Mapper(componentModel = "spring")
+public interface UserMapper {
+
+    /**
+     * Convierte UserRequestDto a entidad User.
+     */
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    User toEntity(UserRequestDto requestDto);
+
+    /**
+     * Convierte entidad User a UserResponseDto.
+     */
+    UserResponseDto toResponseDto(User user);
+
+    /**
+     * Actualiza campos de User desde UserRequestDto.
+     */
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    void updateEntityFromDto(UserRequestDto requestDto, @MappingTarget User user);
+}
+```
+
+**Uso en Servicio:**
+```java
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class UserServiceImpl implements UserService {
+    private final UserRepository userRepository;
+    private final UserMapper userMapper;  // ✅ Inyección de MapStruct mapper
+
+    @Override
+    @Transactional
+    public UserResponseDto createUser(UserRequestDto request) {
+        User user = userMapper.toEntity(request);  // ✅ Mapeo con MapStruct
+        User savedUser = userRepository.save(user);
+        return userMapper.toResponseDto(savedUser);  // ✅ Mapeo con MapStruct
+    }
+
+    @Override
+    @Transactional
+    public UserResponseDto updateUser(Long id, UserRequestDto request) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new UserException("Usuario no encontrado", CODE_USER_NOT_FOUND));
+        userMapper.updateEntityFromDto(request, user);  // ✅ Mapeo con MapStruct
+        return userMapper.toResponseDto(userRepository.save(user));
+    }
+}
+```
+
+**❌ NO hacer mapeo manual:**
+```java
+// ❌ INCORRECTO - Mapeo manual
+User user = new User();
+user.setName(request.getName());
+user.setEmail(request.getEmail());
+user.setDocumentType(request.getDocumentType());
+user.setDocumentNumber(request.getDocumentNumber());
+// ... 20 líneas más de setters
+```
+
+**✅ Beneficios de MapStruct:**
+- 🎯 5-10 líneas vs 20-30 líneas de mapeo manual
+- 🎯 Seguridad de tipos en tiempo de compilación
+- 🎯 Sin errores de reflexión en runtime
+- 🎯 Fácil de mantener cuando se agregan campos
+
 ## 🚫 Restricciones
 
 1. **NO** crear DTOs/modelos/servicios sin verificar existentes en `dto/`, `documents/`, `models/`, `service/`
 2. **NO** modificar tipos de datos ni nombres de campos existentes al reutilizar (solo agregar nuevos)
 3. **NO** crear servicios sin URL, CURL y responses JSON reales (no inventar estructura)
-4. **NO** inyectar implementaciones (`*ServiceImpl`) ni usar `@Autowired` (usar interfaces + `@RequiredArgsConstructor`)
-5. **NO** llamar Feign Clients directamente desde servicios principales (usar servicio External en `external/`)
-6. **NO** crear o modificar controllers sin preguntar PRIMERO al usuario si desea exponer la API
-7. **NO** exponer servicios de procesamiento/organización sin aprobación explícita del usuario
-8. **NO** crear servicios sin interfaz correspondiente
-9. **NO** hardcodear mensajes de error (usar constantes en `Constants.java`)
-10. **NO** usar nomenclatura inconsistente (`premiumcalculation` vs `premiumCalculation` - usar camelCase)
-11. **NO** crear servicios external fuera del paquete `service/{dominio}/external/`
-12. **NO** crear servicios de organización/procesamiento fuera del paquete `service/{dominio}/organization/`
+4. **NO** usar mapeo manual entre DTOs y entidades (usar MapStruct obligatoriamente)
+5. **NO** usar otras librerías de mapeo (ModelMapper, Dozer, BeanUtils) en lugar de MapStruct
+6. **NO** crear mappers sin `@Mapper(componentModel = "spring")`
+7. **NO** colocar mappers fuera del paquete `mapper/{dominio}/`
+8. **NO** inyectar implementaciones (`*ServiceImpl`) ni usar `@Autowired` (usar interfaces + `@RequiredArgsConstructor`)
+9. **NO** llamar Feign Clients directamente desde servicios principales (usar servicio External en `external/`)
+10. **NO** crear o modificar controllers sin preguntar PRIMERO al usuario si desea exponer la API
+11. **NO** exponer servicios de procesamiento/organización sin aprobación explícita del usuario
+12. **NO** crear servicios sin interfaz correspondiente
+13. **NO** hardcodear mensajes de error (usar constantes en `Constants.java`)
+14. **NO** usar nomenclatura inconsistente (`premiumcalculation` vs `premiumCalculation` - usar camelCase)
+15. **NO** crear servicios external fuera del paquete `service/{dominio}/external/`
+16. **NO** crear servicios de organización/procesamiento fuera del paquete `service/{dominio}/organization/`
 
 ## ✅ Validación Automática
 
@@ -310,6 +419,11 @@ Cursor debe detectar:
 - ❌ Creación sin verificar DTOs/modelos/servicios existentes
 - ❌ Modificación de tipos de datos (`boolean` → `Boolean`) o nombres de campos existentes
 - ❌ Creación de servicios sin URL, CURL y responses JSON
+- ❌ Mapeo manual entre DTOs y entidades (uso de `new Entity()` con múltiples setters)
+- ❌ Uso de `ModelMapper`, `Dozer`, `BeanUtils.copyProperties()` en lugar de MapStruct
+- ❌ Mappers sin anotación `@Mapper(componentModel = "spring")`
+- ❌ Mappers ubicados fuera del paquete `mapper/{dominio}/`
+- ❌ Servicios sin inyección de mapper cuando hay conversiones DTO ↔ Entidad
 - ❌ Creación o modificación de controller sin preguntar PRIMERO al usuario
 - ❌ Exposición automática de servicios de procesamiento/organización sin aprobación
 - ❌ Inyección de implementaciones (`*ServiceImpl`) en lugar de interfaces
@@ -325,7 +439,7 @@ Cursor debe detectar:
 
 **Objetivo**: Crear servicios mantenibles, testables y que cumplan principios SOLID con arquitectura en capas clara.
 
-**REGLA DE ORO**: "PRIMERO verificar existentes (dto/, documents/, models/, service/), LUEGO solicitar URL + CURL + responses, DESPUÉS preguntar si desea exponer API (servicios de procesamiento/organización son internos por defecto), FINALMENTE preguntar sobre controller (nuevo vs reutilizar). Reutilizar sin modificar tipos/nombres. Arquitectura: Controller (solo si aprobado) → Service → External (en external/) / Organization (en organization/) → Feign. Una responsabilidad por servicio. Interfaces siempre."
+**REGLA DE ORO**: "PRIMERO verificar existentes (dto/, documents/, models/, service/), LUEGO solicitar URL + CURL + responses, DESPUÉS preguntar si desea exponer API (servicios de procesamiento/organización son internos por defecto), FINALMENTE preguntar sobre controller (nuevo vs reutilizar). Reutilizar sin modificar tipos/nombres. Arquitectura: Controller (solo si aprobado) → Service → External (en external/) / Organization (en organization/) → Feign. SIEMPRE usar MapStruct para mapeo DTO ↔ Entidad. Una responsabilidad por servicio. Interfaces siempre."
 
 
 > **Ver también**: 

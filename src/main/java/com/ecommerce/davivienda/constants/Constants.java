@@ -1,0 +1,621 @@
+package com.ecommerce.davivienda.constants;
+
+/**
+ * Clase de constantes centralizada para todo el sistema.
+ * Define mensajes de error y códigos de error estandarizados.
+ * 
+ * <p>Formato de códigos de error: ED-XXX-NN</p>
+ * <ul>
+ *   <li>ED = Ecommerce Davivienda</li>
+ *   <li>XXX = Capa/Módulo (3 letras)</li>
+ *   <li>NN = Número secuencial (2 dígitos)</li>
+ * </ul>
+ *
+ * @author Team Ecommerce Davivienda
+ * @since 1.0.0
+ */
+public class Constants {
+
+    // ==================== USER - ERROR MESSAGES ====================
+    
+    /**
+     * Mensaje de error cuando el usuario no existe en el sistema.
+     */
+    public static final String ERROR_USER_NOT_FOUND = "Usuario no encontrado";
+    
+    /**
+     * Mensaje de error cuando el usuario está inactivo.
+     */
+    public static final String ERROR_USER_INACTIVE = "Usuario inactivo";
+    
+    /**
+     * Mensaje de error cuando el usuario no tiene rol activo asignado.
+     */
+    public static final String ERROR_USER_NO_ACTIVE_ROLE = "Usuario sin rol activo";
+
+    // ==================== USER - SUCCESS MESSAGES ====================
+    
+    /**
+     * Mensaje de éxito al crear un usuario.
+     */
+    public static final String SUCCESS_USER_CREATED = "Usuario creado exitosamente";
+    
+    /**
+     * Mensaje de éxito al consultar un usuario.
+     */
+    public static final String SUCCESS_USER_FOUND = "Usuario encontrado exitosamente";
+    
+    /**
+     * Mensaje de éxito al actualizar un usuario.
+     */
+    public static final String SUCCESS_USER_UPDATED = "Usuario actualizado exitosamente";
+    
+    /**
+     * Mensaje de éxito al eliminar un usuario.
+     */
+    public static final String SUCCESS_USER_DELETED = "Usuario eliminado exitosamente";
+    
+    /**
+     * Mensaje de éxito al activar un usuario.
+     */
+    public static final String SUCCESS_USER_ACTIVATED = "Usuario activado exitosamente";
+    
+    /**
+     * Mensaje de éxito al cambiar la contraseña.
+     */
+    public static final String SUCCESS_PASSWORD_CHANGED = "Contraseña actualizada exitosamente";
+
+    // ==================== USER - ERROR MESSAGES ====================
+    
+    /**
+     * Mensaje de error cuando el correo ya está registrado.
+     */
+    public static final String ERROR_EMAIL_EXISTS = "El correo electrónico ya está registrado";
+    
+    /**
+     * Mensaje de error cuando el tipo de documento no existe.
+     */
+    public static final String ERROR_DOCUMENT_TYPE_NOT_FOUND = "Tipo de documento no encontrado";
+    
+    /**
+     * Mensaje de error cuando el rol no existe.
+     */
+    public static final String ERROR_ROLE_NOT_FOUND = "Rol no encontrado";
+    
+    /**
+     * Mensaje de error cuando el estado de usuario no existe.
+     */
+    public static final String ERROR_STATUS_NOT_FOUND = "Estado de usuario no encontrado";
+    
+    /**
+     * Mensaje de error cuando la contraseña está vacía.
+     */
+    public static final String ERROR_PASSWORD_EMPTY = "La contraseña no puede estar vacía";
+    
+    /**
+     * Mensaje de error cuando el ID del usuario es nulo en actualización.
+     */
+    public static final String ERROR_USER_ID_NULL = "El ID del usuario es obligatorio para actualizar";
+    
+    /**
+     * Mensaje de error cuando la combinación de documento ya existe.
+     */
+    public static final String ERROR_DOCUMENT_COMBINATION_EXISTS = "Ya existe un usuario con este tipo y número de documento";
+    
+    /**
+     * Mensaje de error cuando no se proporcionan roles.
+     */
+    public static final String ERROR_ROLES_EMPTY = "Debe proporcionar al menos un rol";
+    
+    /**
+     * Mensaje de error cuando un cliente intenta tener rol de administrador.
+     */
+    public static final String ERROR_CLIENT_CANNOT_BE_ADMIN = "Un usuario con rol Cliente no puede tener rol Administrador";
+    
+    /**
+     * Mensaje de error cuando hay roles duplicados en la solicitud.
+     */
+    public static final String ERROR_ROLES_DUPLICATED = "Los roles no pueden estar duplicados";
+
+    // ==================== USER - ERROR CODES ====================
+    
+    /**
+     * Código de error: Usuario no encontrado.
+     * Formato: ED-USR-01 (Ecommerce Davivienda - User - 01)
+     */
+    public static final String CODE_USER_NOT_FOUND = "ED-USR-01";
+    
+    /**
+     * Código de error: Usuario inactivo.
+     * Formato: ED-USR-02 (Ecommerce Davivienda - User - 02)
+     */
+    public static final String CODE_USER_INACTIVE = "ED-USR-02";
+    
+    /**
+     * Código de error: Usuario sin rol activo.
+     * Formato: ED-USR-03 (Ecommerce Davivienda - User - 03)
+     */
+    public static final String CODE_USER_NO_ACTIVE_ROLE = "ED-USR-03";
+    
+    /**
+     * Código de error: Correo electrónico ya registrado.
+     * Formato: ED-USR-04 (Ecommerce Davivienda - User - 04)
+     */
+    public static final String CODE_EMAIL_EXISTS = "ED-USR-04";
+    
+    /**
+     * Código de error: Tipo de documento no encontrado.
+     * Formato: ED-USR-05 (Ecommerce Davivienda - User - 05)
+     */
+    public static final String CODE_DOCUMENT_TYPE_NOT_FOUND = "ED-USR-05";
+    
+    /**
+     * Código de error: Rol no encontrado.
+     * Formato: ED-USR-06 (Ecommerce Davivienda - User - 06)
+     */
+    public static final String CODE_ROLE_NOT_FOUND = "ED-USR-06";
+    
+    /**
+     * Código de error: Estado de usuario no encontrado.
+     * Formato: ED-USR-07 (Ecommerce Davivienda - User - 07)
+     */
+    public static final String CODE_STATUS_NOT_FOUND = "ED-USR-07";
+    
+    /**
+     * Código de error: Contraseña vacía.
+     * Formato: ED-USR-08 (Ecommerce Davivienda - User - 08)
+     */
+    public static final String CODE_PASSWORD_EMPTY = "ED-USR-08";
+    
+    /**
+     * Código de error: ID de usuario nulo en actualización.
+     * Formato: ED-USR-09 (Ecommerce Davivienda - User - 09)
+     */
+    public static final String CODE_USER_ID_NULL = "ED-USR-09";
+    
+    /**
+     * Código de error: Combinación de documento ya existe.
+     * Formato: ED-USR-10 (Ecommerce Davivienda - User - 10)
+     */
+    public static final String CODE_DOCUMENT_COMBINATION_EXISTS = "ED-USR-10";
+    
+    /**
+     * Código de error: Lista de roles vacía.
+     * Formato: ED-USR-11 (Ecommerce Davivienda - User - 11)
+     */
+    public static final String CODE_ROLES_EMPTY = "ED-USR-11";
+    
+    /**
+     * Código de error: Cliente no puede ser administrador.
+     * Formato: ED-USR-12 (Ecommerce Davivienda - User - 12)
+     */
+    public static final String CODE_CLIENT_CANNOT_BE_ADMIN = "ED-USR-12";
+    
+    /**
+     * Código de error: Roles duplicados en solicitud.
+     * Formato: ED-USR-13 (Ecommerce Davivienda - User - 13)
+     */
+    public static final String CODE_ROLES_DUPLICATED = "ED-USR-13";
+
+    // ==================== CREDENTIALS - ERROR MESSAGES ====================
+    
+    /**
+     * Mensaje de error al leer credenciales del request.
+     */
+    public static final String ERROR_CREDENTIALS_READ = "Error al leer credenciales del request";
+
+    // ==================== AUTHENTICATION - ERROR MESSAGES ====================
+    
+    /**
+     * Mensaje de error de autenticación fallida.
+     */
+    public static final String ERROR_AUTHENTICATION_FAILED = "Error en la autenticación: credenciales incorrectas";
+
+    // ==================== AUTHENTICATION - ERROR CODES ====================
+    
+    /**
+     * Código de error: Autenticación fallida.
+     * Formato: ED-AUT-01 (Ecommerce Davivienda - Autenticación - 01)
+     */
+    public static final String CODE_AUTHENTICATION_FAILED = "ED-AUT-01";
+
+    // ==================== JWT VALIDATION - ERROR MESSAGES ====================
+    
+    /**
+     * Mensaje de error cuando el token JWT es inválido.
+     */
+    public static final String ERROR_JWT_TOKEN_INVALID = "Token JWT inválido o expirado";
+    
+    /**
+     * Mensaje de error al parsear authorities del token JWT.
+     */
+    public static final String ERROR_JWT_AUTHORITIES_PARSE = "Error al procesar permisos del token JWT";
+
+    // ==================== JWT VALIDATION - ERROR CODES ====================
+    
+    /**
+     * Código de error: Token JWT inválido.
+     * Formato: ED-JWT-01 (Ecommerce Davivienda - JWT - 01)
+     */
+    public static final String CODE_JWT_TOKEN_INVALID = "ED-JWT-01";
+    
+    /**
+     * Código de error: Error al parsear authorities del JWT.
+     * Formato: ED-JWT-02 (Ecommerce Davivienda - JWT - 02)
+     */
+    public static final String CODE_JWT_AUTHORITIES_PARSE_ERROR = "ED-JWT-02";
+
+    // ==================== PRODUCT - SUCCESS MESSAGES ====================
+    
+    /**
+     * Mensaje de éxito al crear un producto.
+     */
+    public static final String SUCCESS_PRODUCT_CREATED = "Producto creado exitosamente";
+    
+    /**
+     * Mensaje de éxito al consultar un producto.
+     */
+    public static final String SUCCESS_PRODUCT_FOUND = "Producto encontrado";
+    
+    /**
+     * Mensaje de éxito al actualizar un producto.
+     */
+    public static final String SUCCESS_PRODUCT_UPDATED = "Producto actualizado exitosamente";
+    
+    /**
+     * Mensaje de éxito al eliminar un producto.
+     */
+    public static final String SUCCESS_PRODUCT_DELETED = "Producto eliminado exitosamente";
+    
+    /**
+     * Mensaje de éxito al activar un producto.
+     */
+    public static final String SUCCESS_PRODUCT_ACTIVATED = "Producto activado exitosamente";
+    
+    /**
+     * Mensaje de éxito al agregar inventario.
+     */
+    public static final String SUCCESS_INVENTORY_ADDED = "Inventario agregado exitosamente";
+    
+    /**
+     * Mensaje de éxito al listar productos.
+     */
+    public static final String SUCCESS_PRODUCTS_LISTED = "Productos listados exitosamente";
+    
+    /**
+     * Mensaje de éxito al buscar productos.
+     */
+    public static final String SUCCESS_PRODUCTS_SEARCH = "Búsqueda completada";
+
+    // ==================== PRODUCT - ERROR MESSAGES ====================
+    
+    /**
+     * Mensaje de error cuando el producto no existe.
+     */
+    public static final String ERROR_PRODUCT_NOT_FOUND = "Producto no encontrado";
+    
+    /**
+     * Mensaje de error cuando la categoría no existe.
+     */
+    public static final String ERROR_CATEGORY_NOT_FOUND = "Categoría no encontrada";
+    
+    /**
+     * Mensaje de error cuando la categoría está inactiva.
+     */
+    public static final String ERROR_CATEGORY_INACTIVE = "La categoría está inactiva";
+    
+    /**
+     * Mensaje de error cuando el nombre del producto ya existe.
+     */
+    public static final String ERROR_PRODUCT_NAME_EXISTS = "Ya existe un producto con ese nombre";
+    
+    /**
+     * Mensaje de error cuando el inventario es insuficiente.
+     */
+    public static final String ERROR_INSUFFICIENT_INVENTORY = "Inventario insuficiente";
+    
+    /**
+     * Mensaje de error cuando el producto está inactivo.
+     */
+    public static final String ERROR_PRODUCT_INACTIVE = "El producto está inactivo";
+    
+    /**
+     * Mensaje de error cuando el precio unitario es menor al precio final.
+     */
+    public static final String ERROR_PRICE_INVALID = "El precio final no puede ser mayor al precio unitario";
+    
+    /**
+     * Mensaje de error cuando la cantidad de inventario es inválida.
+     */
+    public static final String ERROR_INVALID_INVENTORY_QUANTITY = "La cantidad de inventario debe ser mayor a 0";
+
+    // ==================== PRODUCT - ERROR CODES ====================
+    
+    /**
+     * Código de error: Producto no encontrado.
+     * Formato: ED-PRO-01 (Ecommerce Davivienda - Product - 01)
+     */
+    public static final String CODE_PRODUCT_NOT_FOUND = "ED-PRO-01";
+    
+    /**
+     * Código de error: Categoría no encontrada.
+     * Formato: ED-PRO-02 (Ecommerce Davivienda - Product - 02)
+     */
+    public static final String CODE_CATEGORY_NOT_FOUND = "ED-PRO-02";
+    
+    /**
+     * Código de error: Categoría inactiva.
+     * Formato: ED-PRO-03 (Ecommerce Davivienda - Product - 03)
+     */
+    public static final String CODE_CATEGORY_INACTIVE = "ED-PRO-03";
+    
+    /**
+     * Código de error: Nombre de producto duplicado.
+     * Formato: ED-PRO-04 (Ecommerce Davivienda - Product - 04)
+     */
+    public static final String CODE_PRODUCT_NAME_EXISTS = "ED-PRO-04";
+    
+    /**
+     * Código de error: Inventario insuficiente.
+     * Formato: ED-PRO-05 (Ecommerce Davivienda - Product - 05)
+     */
+    public static final String CODE_INSUFFICIENT_INVENTORY = "ED-PRO-05";
+    
+    /**
+     * Código de error: Producto inactivo.
+     * Formato: ED-PRO-06 (Ecommerce Davivienda - Product - 06)
+     */
+    public static final String CODE_PRODUCT_INACTIVE = "ED-PRO-06";
+    
+    /**
+     * Código de error: Precio inválido.
+     * Formato: ED-PRO-07 (Ecommerce Davivienda - Product - 07)
+     */
+    public static final String CODE_PRICE_INVALID = "ED-PRO-07";
+    
+    /**
+     * Código de error: Cantidad de inventario inválida.
+     * Formato: ED-PRO-08 (Ecommerce Davivienda - Product - 08)
+     */
+    public static final String CODE_INVALID_INVENTORY_QUANTITY = "ED-PRO-08";
+
+    // ==================== CART - SUCCESS MESSAGES ====================
+    
+    /**
+     * Mensaje de éxito al agregar item al carrito.
+     */
+    public static final String SUCCESS_CART_ITEM_ADDED = "Producto agregado al carrito exitosamente";
+    
+    /**
+     * Mensaje de éxito al actualizar item del carrito.
+     */
+    public static final String SUCCESS_CART_ITEM_UPDATED = "Cantidad del producto actualizada exitosamente";
+    
+    /**
+     * Mensaje de éxito al eliminar item del carrito.
+     */
+    public static final String SUCCESS_CART_ITEM_DELETED = "Producto eliminado del carrito exitosamente";
+    
+    /**
+     * Mensaje de éxito al limpiar el carrito.
+     */
+    public static final String SUCCESS_CART_CLEARED = "Carrito limpiado exitosamente";
+    
+    /**
+     * Mensaje de éxito al obtener items del carrito.
+     */
+    public static final String SUCCESS_CART_ITEMS_FOUND = "Items del carrito obtenidos exitosamente";
+    
+    /**
+     * Mensaje de éxito al agregar múltiples items al carrito.
+     */
+    public static final String SUCCESS_CART_ITEMS_BATCH_ADDED = "Productos agregados al carrito exitosamente";
+
+    // ==================== CART - ERROR MESSAGES ====================
+    
+    /**
+     * Mensaje de error cuando el carrito no existe.
+     */
+    public static final String ERROR_CART_NOT_FOUND = "Carrito no encontrado";
+    
+    /**
+     * Mensaje de error cuando el item del carrito no existe.
+     */
+    public static final String ERROR_CART_ITEM_NOT_FOUND = "Item del carrito no encontrado";
+    
+    /**
+     * Mensaje de error cuando el producto ya existe en el carrito.
+     */
+    public static final String ERROR_CART_ITEM_ALREADY_EXISTS = "El producto ya existe en el carrito";
+    
+    /**
+     * Mensaje de error cuando la cantidad es inválida.
+     */
+    public static final String ERROR_CART_INVALID_QUANTITY = "La cantidad debe ser mayor a 0";
+    
+    /**
+     * Mensaje de error cuando el carrito está vacío.
+     */
+    public static final String ERROR_CART_EMPTY = "El carrito está vacío";
+    
+    /**
+     * Mensaje de error cuando se requiere userRoleId para crear el carrito.
+     */
+    public static final String ERROR_CART_USER_ROLE_REQUIRED = "Se requiere userRoleId para crear el carrito automáticamente";
+    
+    /**
+     * Mensaje de error cuando el userRoleId no existe en el sistema.
+     */
+    public static final String ERROR_USER_ROLE_NOT_FOUND = "El userRoleId proporcionado no existe en el sistema";
+    
+    /**
+     * Mensaje de error cuando el usuario no se encuentra por documento.
+     */
+    public static final String ERROR_USER_NOT_FOUND_BY_DOCUMENT = "Usuario no encontrado con el documento proporcionado";
+    
+    /**
+     * Mensaje de error cuando el usuario no tiene roles asignados.
+     */
+    public static final String ERROR_USER_WITHOUT_ROLES = "El usuario no tiene roles asignados en el sistema";
+    
+    /**
+     * Mensaje de error cuando el usuario no tiene el rol de Cliente.
+     */
+    public static final String ERROR_USER_NOT_CLIENT_ROLE = "Solo los usuarios con rol de Cliente pueden agregar productos al carrito";
+
+    // ==================== CART - ERROR CODES ====================
+    
+    /**
+     * Código de error: Carrito no encontrado.
+     * Formato: ED-CAR-01 (Ecommerce Davivienda - Cart - 01)
+     */
+    public static final String CODE_CART_NOT_FOUND = "ED-CAR-01";
+    
+    /**
+     * Código de error: Item del carrito no encontrado.
+     * Formato: ED-CAR-02 (Ecommerce Davivienda - Cart - 02)
+     */
+    public static final String CODE_CART_ITEM_NOT_FOUND = "ED-CAR-02";
+    
+    /**
+     * Código de error: Producto ya existe en el carrito.
+     * Formato: ED-CAR-03 (Ecommerce Davivienda - Cart - 03)
+     */
+    public static final String CODE_CART_ITEM_ALREADY_EXISTS = "ED-CAR-03";
+    
+    /**
+     * Código de error: Cantidad inválida.
+     * Formato: ED-CAR-04 (Ecommerce Davivienda - Cart - 04)
+     */
+    public static final String CODE_CART_INVALID_QUANTITY = "ED-CAR-04";
+    
+    /**
+     * Código de error: Carrito vacío.
+     * Formato: ED-CAR-05 (Ecommerce Davivienda - Cart - 05)
+     */
+    public static final String CODE_CART_EMPTY = "ED-CAR-05";
+    
+    /**
+     * Código de error: UserRoleId requerido para crear carrito.
+     * Formato: ED-CAR-06 (Ecommerce Davivienda - Cart - 06)
+     */
+    public static final String CODE_CART_USER_ROLE_REQUIRED = "ED-CAR-06";
+    
+    /**
+     * Código de error: UserRoleId no existe en el sistema.
+     * Formato: ED-CAR-07 (Ecommerce Davivienda - Cart - 07)
+     */
+    public static final String CODE_USER_ROLE_NOT_FOUND = "ED-CAR-07";
+    
+    /**
+     * Código de error: Usuario no encontrado por documento.
+     * Formato: ED-CAR-08 (Ecommerce Davivienda - Cart - 08)
+     */
+    public static final String CODE_USER_NOT_FOUND_BY_DOCUMENT = "ED-CAR-08";
+    
+    /**
+     * Código de error: Usuario sin roles asignados.
+     * Formato: ED-CAR-09 (Ecommerce Davivienda - Cart - 09)
+     */
+    public static final String CODE_USER_WITHOUT_ROLES = "ED-CAR-09";
+    
+    /**
+     * Código de error: Usuario sin rol de Cliente.
+     * Formato: ED-CAR-10 (Ecommerce Davivienda - Cart - 10)
+     */
+    public static final String CODE_USER_NOT_CLIENT_ROLE = "ED-CAR-10";
+
+    // ==================== STOCK - SUCCESS MESSAGES ====================
+    
+    /**
+     * Mensaje de éxito cuando todos los productos tienen stock suficiente.
+     */
+    public static final String SUCCESS_STOCK_AVAILABLE = "Todos los productos tienen stock suficiente";
+
+    // ==================== STOCK - ERROR MESSAGES ====================
+    
+    /**
+     * Mensaje de error cuando no hay stock suficiente para los productos del carrito.
+     */
+    public static final String ERROR_INSUFFICIENT_STOCK = "Stock insuficiente para uno o más productos";
+    
+    /**
+     * Mensaje de error cuando el stock no existe para un producto.
+     */
+    public static final String ERROR_STOCK_NOT_FOUND = "No existe registro de stock para el producto";
+    
+    /**
+     * Mensaje de error cuando el carrito no tiene productos.
+     */
+    public static final String ERROR_CART_NO_ITEMS = "El carrito no contiene productos para validar";
+    
+    /**
+     * Mensaje de error cuando no se encuentra el carrito del usuario.
+     */
+    public static final String ERROR_USER_CART_NOT_FOUND = "No se encontró carrito para el usuario especificado";
+
+    // ==================== STOCK - ERROR CODES ====================
+    
+    /**
+     * Código de error: Stock insuficiente.
+     * Formato: ED-STO-01 (Ecommerce Davivienda - Stock - 01)
+     */
+    public static final String CODE_INSUFFICIENT_STOCK = "ED-STO-01";
+    
+    /**
+     * Código de error: Stock no encontrado.
+     * Formato: ED-STO-02 (Ecommerce Davivienda - Stock - 02)
+     */
+    public static final String CODE_STOCK_NOT_FOUND = "ED-STO-02";
+    
+    /**
+     * Código de error: Carrito sin items.
+     * Formato: ED-STO-03 (Ecommerce Davivienda - Stock - 03)
+     */
+    public static final String CODE_CART_NO_ITEMS = "ED-STO-03";
+    
+    /**
+     * Código de error: Carrito de usuario no encontrado.
+     * Formato: ED-STO-04 (Ecommerce Davivienda - Stock - 04)
+     */
+    public static final String CODE_USER_CART_NOT_FOUND = "ED-STO-04";
+
+    // ==================== GENERIC ERROR ====================
+    
+    /**
+     * Mensaje de error genérico del sistema.
+     */
+    public static final String ERROR_GENERIC = "Ha ocurrido un error inesperado en el sistema";
+    
+    /**
+     * Código de error genérico.
+     * Formato: ED-GEN-01 (Ecommerce Davivienda - Generic - 01)
+     */
+    public static final String CODE_GENERIC_ERROR = "ED-GEN-01";
+    
+    /**
+     * Código de error: Validación de datos fallida.
+     * Formato: ED-VAL-01 (Ecommerce Davivienda - Validation - 01)
+     */
+    public static final String CODE_VALIDATION_EXCEPTION = "ED-VAL-01";
+    
+    /**
+     * Código de error: Violación de integridad de datos.
+     * Formato: ED-DAT-01 (Ecommerce Davivienda - Data - 01)
+     */
+    public static final String CODE_DATA_INTEGRITY_VIOLATION = "ED-DAT-01";
+    
+    /**
+     * Código de error: Acceso denegado.
+     * Formato: ED-SEC-01 (Ecommerce Davivienda - Security - 01)
+     */
+    public static final String CODE_ACCESS_DENIED = "ED-SEC-01";
+
+    /**
+     * Constructor privado para evitar instanciación.
+     */
+    private Constants() {
+        throw new IllegalStateException("Utility class - No se puede instanciar");
+    }
+}
+

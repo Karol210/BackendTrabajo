@@ -12,7 +12,8 @@ alwaysApply: true
 - ✅ Clases SEPARADAS (no internas) para objetos anidados
 - ✅ Agrupar por dominio: `dto/{dominio}/`
 - ✅ **Si múltiples operaciones**: usar subcarpetas `dto/{dominio}/{operacion}/`
-- ✅ Lombok + Jackson: `@Data`, `@Builder`, `@JsonProperty`
+- ✅ Lombok + Jackson: `@Data`, `@Builder`, `@JsonProperty`, `@JsonIgnoreProperties`, `@JsonInclude`
+- ✅ **Consistencia de idiomas**: Todos los campos en español O inglés (NO mixto)
 - ❌ NO lógica de negocio (solo métodos helper simples)
 
 ## 🚨 Reglas Principales
@@ -20,8 +21,9 @@ alwaysApply: true
 1. **Nomenclatura**: Todos terminan con `Dto` (ejemplo: `HealthInsurancePremiumRequestDto`)
 2. **Clases Separadas**: Objetos anidados en archivos SEPARADOS (NO clases internas estáticas)
 3. **Agrupación**: Un subpaquete `dto/{dominio}/` por funcionalidad (ejemplo: `dto/healthinsurance/`)
-4. **Anotaciones**: Lombok (`@Data`, `@Builder`, `@NoArgsConstructor`, `@AllArgsConstructor`) + Jackson (`@JsonProperty`)
+4. **Anotaciones**: Lombok (`@Data`, `@Builder`, `@NoArgsConstructor`, `@AllArgsConstructor`) + Jackson (`@JsonProperty`, `@JsonIgnoreProperties(ignoreUnknown = true)`, `@JsonInclude(JsonInclude.Include.NON_NULL)`)
 5. **JavaDoc Completo**: Documentar clase, campos y métodos helper
+6. **Consistencia de Idiomas**: Todos los campos (variables Java Y `@JsonProperty`) deben estar en un ÚNICO idioma por DTO (español O inglés, NO mixto)
 
 ## 📊 Referencia Rápida
 
@@ -83,10 +85,12 @@ dto/transaction/
 ### Orden de Anotaciones Estándar
 
 ```java
-@Data                    // 1. Lombok Data
-@Builder                 // 2. Builder pattern
-@NoArgsConstructor       // 3. Constructor sin args
-@AllArgsConstructor      // 4. Constructor con todos los args
+@Data                                               // 1. Lombok Data
+@Builder                                            // 2. Builder pattern
+@NoArgsConstructor                                  // 3. Constructor sin args
+@AllArgsConstructor                                 // 4. Constructor con todos los args
+@JsonIgnoreProperties(ignoreUnknown = true)         // 5. Ignorar campos desconocidos
+@JsonInclude(JsonInclude.Include.NON_NULL)          // 6. No serializar campos nulos
 public class MiDto {
 ```
 
@@ -97,6 +101,8 @@ public class MiDto {
 ```java
 package com.bolivar.tienda.digital.transaccional.comunes.ms.dto.healthinsurance;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -114,6 +120,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class HealthInsurancePremiumRequestDto {
 
     /**
@@ -137,6 +145,8 @@ public class HealthInsurancePremiumRequestDto {
 ```java
 package com.bolivar.tienda.digital.transaccional.comunes.ms.dto.healthinsurance;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -153,6 +163,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class HealthInsurancePremiumResponseDto {
 
     @JsonProperty("statusCode")
@@ -185,6 +197,8 @@ public class HealthInsurancePremiumResponseDto {
 ```java
 package com.bolivar.tienda.digital.transaccional.comunes.ms.dto.healthinsurance;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -201,6 +215,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class HealthInsurancePremiumDataDto {
 
     @JsonProperty("premium")
@@ -214,19 +230,99 @@ public class HealthInsurancePremiumDataDto {
 - ✅ Fácil de testear individualmente
 - ✅ Reutilizable si es necesario
 
+### Ejemplo 4: Consistencia de Idiomas
+
+**❌ INCORRECTO - Mezcla de idiomas en el mismo DTO**
+```java
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class ProductFilterDto {
+
+    /**
+     * Búsqueda por descripción (parcial).
+     */
+    @JsonProperty("searchTerm")       // ❌ Inglés
+    private String searchTerm;
+
+    /**
+     * Estado del producto (activo/inactivo).
+     */
+    @JsonProperty("estatus")          // ❌ Español (mezcla con inglés)
+    private String estado;            // ❌ Español (mezcla con inglés)
+}
+```
+
+**✅ CORRECTO - Opción 1: Todo en Inglés**
+```java
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class ProductFilterDto {
+
+    /**
+     * Búsqueda por descripción (parcial).
+     */
+    @JsonProperty("searchTerm")       // ✅ Inglés
+    private String searchTerm;        // ✅ Inglés
+
+    /**
+     * Estado del producto (activo/inactivo).
+     */
+    @JsonProperty("status")           // ✅ Inglés (consistente)
+    private String status;            // ✅ Inglés (consistente)
+}
+```
+
+**✅ CORRECTO - Opción 2: Todo en Español**
+```java
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class ProductFilterDto {
+
+    /**
+     * Búsqueda por descripción (parcial).
+     */
+    @JsonProperty("terminoBusqueda")  // ✅ Español
+    private String terminoBusqueda;   // ✅ Español
+
+    /**
+     * Estado del producto (activo/inactivo).
+     */
+    @JsonProperty("estatus")          // ✅ Español (consistente)
+    private String estado;            // ✅ Español (consistente)
+}
+```
+
+**Regla de consistencia:**
+- ✅ **Todos en inglés**: `searchTerm`, `status`, `category`, `price`
+- ✅ **Todos en español**: `terminoBusqueda`, `estatus`, `categoria`, `precio`
+- ❌ **Mixto**: `searchTerm` + `estatus` (PROHIBIDO)
+
 ## 🚫 Restricciones
 
 1. **NO** omitir sufijo `Dto` en nombres
 2. **NO** usar clases internas para objetos anidados (crear archivos separados)
 3. **NO** crear DTOs en paquete raíz `dto/` (usar `dto/{dominio}/` o `dto/{dominio}/{operacion}/`)
 4. **NO** omitir anotaciones Lombok (`@Data`, `@Builder`, `@NoArgsConstructor`, `@AllArgsConstructor`)
-5. **NO** omitir `@JsonProperty` en campos que mapean JSON
+5. **NO** omitir anotaciones Jackson (`@JsonProperty`, `@JsonIgnoreProperties(ignoreUnknown = true)`, `@JsonInclude(JsonInclude.Include.NON_NULL)`)
 6. **NO** usar nombres genéricos sin contexto (`Data.java`, `Error.java`)
 7. **NO** incluir lógica de negocio compleja (solo métodos helper simples)
 8. **NO** usar `@Autowired` o inyectar servicios en DTOs
 9. **NO** usar tipos primitivos para campos opcionales (usar wrappers: `Integer`, `Boolean`)
 10. **NO** mezclar DTOs de diferentes dominios en el mismo subpaquete
 11. **NO** mezclar DTOs de diferentes operaciones si hay múltiples endpoints (usar subcarpetas)
+12. **NO** mezclar idiomas en el mismo DTO (todos en español O todos en inglés, NO mixto en `@JsonProperty` ni en nombres de variables)
 
 ## ✅ Validación Automática
 
@@ -235,22 +331,81 @@ Cursor debe detectar:
 - ❌ Clases en `dto/` sin sufijo `Dto`
 - ❌ DTOs en paquete raíz `dto/` sin subpaquete
 - ❌ Clases internas estáticas (`public static class`) para objetos anidados
-- ❌ Falta de anotaciones Lombok
+- ❌ Falta de anotaciones Lombok (`@Data`, `@Builder`, `@NoArgsConstructor`, `@AllArgsConstructor`)
+- ❌ Falta de anotaciones Jackson (`@JsonIgnoreProperties(ignoreUnknown = true)`, `@JsonInclude(JsonInclude.Include.NON_NULL)`)
 - ❌ Campos sin `@JsonProperty` cuando mapean JSON
 - ❌ Falta de JavaDoc en clases
 - ❌ Lógica de negocio compleja más allá de métodos helper
 - ❌ Uso de `@Autowired` en DTOs
 - ❌ Nombres genéricos sin contexto de dominio
+- ❌ Mezcla de idiomas en el mismo DTO (español + inglés en `@JsonProperty` o nombres de variables)
 
 ## 🎯 Objetivo + Regla de Oro
 
 **Objetivo**: Crear DTOs organizados, mantenibles y reutilizables que representen claramente la estructura de datos de entrada/salida.
 
-**REGLA DE ORO**: "Un DTO = Un archivo. Todos con sufijo `Dto`. Agrupar por dominio en `dto/{dominio}/`. Si múltiples operaciones, usar subcarpetas `dto/{dominio}/{operacion}/`. Lombok + Jackson. Solo datos y métodos helper simples."
+**REGLA DE ORO**: "Un DTO = Un archivo. Todos con sufijo `Dto`. Agrupar por dominio en `dto/{dominio}/`. Si múltiples operaciones, usar subcarpetas `dto/{dominio}/{operacion}/`. Lombok (`@Data`, `@Builder`, constructores) + Jackson (`@JsonProperty`, `@JsonIgnoreProperties`, `@JsonInclude`). Consistencia de idioma (español O inglés, NO mixto). Solo datos y métodos helper simples."
 
 ---
 
 ## 📋 Aspectos Adicionales
+
+### Anotaciones Jackson Obligatorias
+
+#### `@JsonIgnoreProperties(ignoreUnknown = true)`
+**Propósito**: Ignora campos desconocidos durante la deserialización JSON → DTO.
+
+**Beneficios**:
+- ✅ **Tolerancia a cambios**: Si la API externa agrega campos nuevos, no lanza error
+- ✅ **Flexibilidad**: Solo mapea campos que necesitas, ignora el resto
+- ✅ **Retrocompatibilidad**: Aplicaciones antiguas no fallan con respuestas nuevas
+
+**Ejemplo**:
+```json
+// Response de API externa
+{
+  "username": "john",
+  "email": "john@example.com",
+  "newField": "valor desconocido"  // ← Nuevo campo agregado por API
+}
+```
+
+```java
+// DTO con solo los campos necesarios - NO falla al deserializar
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class UserDto {
+    private String username;
+    private String email;
+    // "newField" es ignorado automáticamente
+}
+```
+
+#### `@JsonInclude(JsonInclude.Include.NON_NULL)`
+**Propósito**: No serializa campos con valor `null` al convertir DTO → JSON.
+
+**Beneficios**:
+- ✅ **Responses limpios**: JSON más pequeño y legible
+- ✅ **Performance**: Menos datos en la red
+- ✅ **Claridad**: Solo muestra campos con valor
+
+**Ejemplo**:
+```java
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class UserResponseDto {
+    private String username = "john";
+    private String email = "john@example.com";
+    private String phoneNumber = null;  // ← No se serializará
+}
+```
+
+```json
+// JSON resultante - campo null omitido
+{
+  "username": "john",
+  "email": "john@example.com"
+  // "phoneNumber" NO aparece en el JSON
+}
+```
 
 ### Métodos Helper Permitidos
 ```java
@@ -278,6 +433,8 @@ import jakarta.validation.constraints.NotBlank;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class MiRequestDto {
     
     @NotBlank(message = "Campo obligatorio")
