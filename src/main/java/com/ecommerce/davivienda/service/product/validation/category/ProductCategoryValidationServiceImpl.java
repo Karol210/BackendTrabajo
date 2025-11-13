@@ -22,14 +22,7 @@ public class ProductCategoryValidationServiceImpl implements ProductCategoryVali
 
     private final ProductCategoryTransactionalService transactionalService;
 
-    @Override
-    public Category findCategoryByIdOrThrow(Integer categoryId) {
-        return transactionalService.findCategoryById(categoryId)
-                .orElseThrow(() -> {
-                    log.warn("Categoría no encontrada: {}", categoryId);
-                    return new ProductException(Constants.ERROR_CATEGORY_NOT_FOUND, Constants.CODE_CATEGORY_NOT_FOUND);
-                });
-    }
+
 
     @Override
     public Category findCategoryByNameOrThrow(String categoryName) {

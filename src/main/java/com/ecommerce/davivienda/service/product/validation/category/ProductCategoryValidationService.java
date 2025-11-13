@@ -12,15 +12,6 @@ import com.ecommerce.davivienda.entity.product.Category;
 public interface ProductCategoryValidationService {
 
     /**
-     * Busca una categoría por ID o lanza excepción si no existe.
-     *
-     * @param categoryId ID de la categoría
-     * @return Categoría encontrada
-     * @throws com.ecommerce.davivienda.exception.product.ProductException si no se encuentra
-     */
-    Category findCategoryByIdOrThrow(Integer categoryId);
-
-    /**
      * Busca una categoría por nombre o lanza excepción si no existe.
      *
      * @param categoryName Nombre de la categoría

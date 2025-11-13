@@ -13,13 +13,6 @@ import java.util.Optional;
  */
 public interface ProductCategoryTransactionalService {
 
-    /**
-     * Busca una categoría por ID.
-     *
-     * @param categoryId ID de la categoría
-     * @return Optional con la categoría si existe
-     */
-    Optional<Category> findCategoryById(Integer categoryId);
 
     /**
      * Busca una categoría por nombre.

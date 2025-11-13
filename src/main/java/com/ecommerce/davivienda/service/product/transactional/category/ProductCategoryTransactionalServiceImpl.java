@@ -25,13 +25,6 @@ public class ProductCategoryTransactionalServiceImpl implements ProductCategoryT
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<Category> findCategoryById(Integer categoryId) {
-        log.debug("Buscando categoría con ID: {}", categoryId);
-        return categoryRepository.findById(categoryId);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public Optional<Category> findCategoryByName(String categoryName) {
         log.debug("Buscando categoría con nombre: {}", categoryName);
         return categoryRepository.findByNombreIgnoreCase(categoryName);

@@ -51,14 +51,5 @@ public class ProductProductValidationServiceImpl implements ProductProductValida
                 });
     }
 
-    @Override
-    public void validateInventoryQuantity(Integer quantity) {
-        if (quantity == null || quantity <= 0) {
-            log.warn("Cantidad de inventario inválida: {}", quantity);
-            throw new ProductException(
-                    Constants.ERROR_INVALID_INVENTORY_QUANTITY, 
-                    Constants.CODE_INVALID_INVENTORY_QUANTITY);
-        }
-    }
 }
 
