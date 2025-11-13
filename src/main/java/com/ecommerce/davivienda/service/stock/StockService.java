@@ -1,8 +1,10 @@
 package com.ecommerce.davivienda.service.stock;
 
+import com.ecommerce.davivienda.dto.stock.StockValidationResponseDto;
+
 /**
  * Servicio para gestionar operaciones de stock/inventario.
- * Proporciona métodos para crear, actualizar y consultar inventario de productos.
+ * Proporciona métodos para crear, actualizar, consultar y validar inventario de productos.
  *
  * @author Team Ecommerce Davivienda
  * @since 1.0.0
@@ -43,5 +45,24 @@ public interface StockService {
      * @return true si hay suficiente stock
      */
     boolean hasEnoughStock(Integer productoId, Integer requestedQuantity);
+
+    /**
+     * Valida que todos los productos del carrito del usuario autenticado tengan stock suficiente.
+     * Usa el token JWT para identificar al usuario y obtener su carrito.
+     * 
+     * <p>Proceso:</p>
+     * <ol>
+     *   <li>Extrae el userRoleId del token JWT del usuario autenticado</li>
+     *   <li>Obtiene el carrito del usuario</li>
+     *   <li>Valida cada producto del carrito contra el stock disponible</li>
+     *   <li>Retorna respuesta con available=true si hay stock suficiente</li>
+     *   <li>Retorna respuesta con available=false y lista de productos faltantes si no hay stock</li>
+     * </ol>
+     *
+     * @return Respuesta con indicador de disponibilidad y productos con problemas (si los hay)
+     * @throws com.ecommerce.davivienda.exception.cart.CartException si no se encuentra el carrito
+     * @throws com.ecommerce.davivienda.exception.cart.CartException si el carrito está vacío
+     */
+    StockValidationResponseDto validateCartStock();
 }
 

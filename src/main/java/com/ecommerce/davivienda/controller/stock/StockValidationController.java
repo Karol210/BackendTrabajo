@@ -1,24 +1,19 @@
 package com.ecommerce.davivienda.controller.stock;
 
-import com.ecommerce.davivienda.dto.stock.StockValidationRequestDto;
 import com.ecommerce.davivienda.dto.stock.StockValidationResponseDto;
 import com.ecommerce.davivienda.models.Response;
-import com.ecommerce.davivienda.service.stock.StockValidationService;
-import jakarta.validation.Valid;
+import com.ecommerce.davivienda.service.stock.StockService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import static com.ecommerce.davivienda.constants.Constants.SUCCESS_STOCK_AVAILABLE;
-
 /**
- * Controlador REST para validación de stock/inventario.
- * Proporciona endpoint para verificar disponibilidad de productos en el carrito.
+ * Controlador REST para operaciones de stock/inventario.
+ * Proporciona endpoints para gestión y validación de inventario.
  *
  * @author Team Ecommerce Davivienda
  * @since 1.0.0
@@ -29,44 +24,40 @@ import static com.ecommerce.davivienda.constants.Constants.SUCCESS_STOCK_AVAILAB
 @RequiredArgsConstructor
 public class StockValidationController {
 
-    private final StockValidationService stockValidationService;
+    private final StockService stockService;
 
     /**
-     * Valida que todos los productos del carrito de un usuario tengan stock suficiente.
+     * Valida que todos los productos del carrito del usuario autenticado tengan stock suficiente.
+     * Usa el token JWT para identificar al usuario y obtener su carrito.
      * 
      * <p>Flujo del endpoint:</p>
      * <ol>
-     *   <li>Recibe tipo y número de documento del usuario</li>
-     *   <li>Busca al usuario y su carrito</li>
+     *   <li>Extrae el userRoleId del token JWT del usuario autenticado</li>
+     *   <li>Obtiene el carrito del usuario</li>
      *   <li>Valida stock de cada producto en el carrito</li>
-     *   <li>Si hay stock insuficiente → retorna 400 con lista de productos</li>
-     *   <li>Si todo tiene stock → retorna 200 con available=true</li>
-     * </ol>
-     * 
-     * <p>Endpoint: POST /api/v1/stock/validate</p>
+     *   <li>Si hay stock insuficiente → retorna 200 con available=false y lista de productos</li>
+     *   Si todo tiene stock → retorna 200 con available=true
      *
-     * @param request DTO con documentType y documentNumber
-     * @return Response con available=true si hay stock, o available=false con lista de productos sin stock
+     * @return Response con resultado de validación detallado
      */
-    @PostMapping("/validate")
-    public ResponseEntity<Response<StockValidationResponseDto>> validateCartStock(
-            @Valid @RequestBody StockValidationRequestDto request) {
+    @GetMapping("/validate")
+    public ResponseEntity<Response<StockValidationResponseDto>> validateCartStock() {
         
-        log.info("Request para validar stock del carrito - Usuario: {} {}", 
-                request.getDocumentType(), request.getDocumentNumber());
+        log.info("GET /api/v1/stock/validate - Validar stock del carrito (usuario autenticado)");
         
-        StockValidationResponseDto validationResult = stockValidationService.validateCartStock(request);
+        StockValidationResponseDto validationResult = stockService.validateCartStock();
         
-        log.info("Validación de stock exitosa - available: {}", validationResult.getAvailable());
+        log.info("Validación de stock completada - available: {}, productos con problemas: {}", 
+                validationResult.getAvailable(), validationResult.getProductsWithIssues());
         
+        // Siempre retornar 200 OK, el campo 'available' indica si puede continuar
         return ResponseEntity.status(HttpStatus.OK)
                 .body(Response.<StockValidationResponseDto>builder()
                         .failure(false)
                         .code(HttpStatus.OK.value())
-                        .message(SUCCESS_STOCK_AVAILABLE)
+                        .message(validationResult.getMessage())
                         .body(validationResult)
                         .timestamp(String.valueOf(System.currentTimeMillis()))
                         .build());
     }
 }
-
