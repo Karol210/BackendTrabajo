@@ -1,6 +1,5 @@
 package com.ecommerce.davivienda.service.cartitem.validation.cart;
 
-import com.ecommerce.davivienda.entity.cart.Cart;
 import com.ecommerce.davivienda.entity.cart.CartItem;
 
 /**

@@ -2,7 +2,6 @@ package com.ecommerce.davivienda.service.cartitem.transactional.cart;
 
 import com.ecommerce.davivienda.entity.cart.Cart;
 import com.ecommerce.davivienda.entity.cart.CartItem;
-import com.ecommerce.davivienda.exception.cart.CartException;
 import com.ecommerce.davivienda.repository.cart.CartItemRepository;
 import com.ecommerce.davivienda.repository.cart.CartRepository;
 import lombok.RequiredArgsConstructor;
@@ -13,8 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 
-import static com.ecommerce.davivienda.constants.Constants.CODE_CART_ITEM_NOT_FOUND;
-import static com.ecommerce.davivienda.constants.Constants.ERROR_CART_ITEM_NOT_FOUND;
+
 
 /**
  * Implementación del servicio transaccional para operaciones de Cart y CartItem.

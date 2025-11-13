@@ -488,12 +488,12 @@ public class Constants {
     /**
      * Mensaje de error cuando el item no pertenece al carrito del usuario.
      */
-    public static final String ERROR_CART_ITEM_UNAUTHORIZED = "No tiene permisos para modificar este item del carrito";
+    public static final String ERROR_CART_ITEM_UNAUTHORIZED = "Item del carrito no encontrado";
     
     /**
      * Mensaje de error cuando el carrito no pertenece al usuario autenticado.
      */
-    public static final String ERROR_CART_UNAUTHORIZED = "El carrito no pertenece al usuario autenticado";
+    public static final String ERROR_CART_UNAUTHORIZED = "Carrito no encontrado";
 
     // ==================== CART - ERROR CODES ====================
     

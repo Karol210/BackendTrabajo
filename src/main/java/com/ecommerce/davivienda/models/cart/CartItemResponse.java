@@ -1,6 +1,7 @@
 package com.ecommerce.davivienda.models.cart;
 
 import com.ecommerce.davivienda.dto.cart.item.CartItemCalculationDto;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -32,14 +33,16 @@ public class CartItemResponse {
 
     /**
      * ID del carrito al que pertenece.
+     * Campo interno - no se expone en JSON de respuesta.
      */
-    @JsonProperty("cartId")
+    @JsonIgnore
     private Integer cartId;
 
     /**
      * ID del producto.
+     * Campo interno - no se expone en JSON de respuesta.
      */
-    @JsonProperty("productId")
+    @JsonIgnore
     private Integer productId;
 
     /**

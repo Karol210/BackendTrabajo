@@ -1,9 +1,7 @@
 package com.ecommerce.davivienda.service.cartitem.validation.cart;
 
-import com.ecommerce.davivienda.entity.cart.Cart;
 import com.ecommerce.davivienda.entity.cart.CartItem;
 import com.ecommerce.davivienda.exception.cart.CartException;
-import com.ecommerce.davivienda.service.cart.autocreate.CartAutoCreateService;
 import com.ecommerce.davivienda.service.cartitem.transactional.cart.CartItemCartTransactionalService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
