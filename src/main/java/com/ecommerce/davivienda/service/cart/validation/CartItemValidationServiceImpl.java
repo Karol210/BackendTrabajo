@@ -73,7 +73,11 @@ public class CartItemValidationServiceImpl implements CartItemValidationService 
         return productRepository.findById(productId)
                 .orElseThrow(() -> {
                     log.warn("Producto no encontrado con ID: {}", productId);
-                    return new ProductException(ERROR_PRODUCT_NOT_FOUND, CODE_PRODUCT_NOT_FOUND);
+                    String message = String.format("[%s] %s con ID: %s", 
+                            CODE_PRODUCT_NOT_FOUND,
+                            ERROR_PRODUCT_NOT_FOUND,
+                            productId);
+                    return new ProductException(message, CODE_PRODUCT_NOT_FOUND);
                 });
     }
 

@@ -78,7 +78,11 @@ public class ProductValidationServiceImpl implements ProductValidationService {
         return productRepository.findById(productId)
                 .orElseThrow(() -> {
                     log.warn("Producto no encontrado: {}", productId);
-                    return new ProductException(Constants.ERROR_PRODUCT_NOT_FOUND, Constants.CODE_PRODUCT_NOT_FOUND);
+                    String message = String.format("[%s] %s con ID: %s", 
+                            Constants.CODE_PRODUCT_NOT_FOUND,
+                            Constants.ERROR_PRODUCT_NOT_FOUND,
+                            productId);
+                    return new ProductException(message, Constants.CODE_PRODUCT_NOT_FOUND);
                 });
     }
 

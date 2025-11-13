@@ -44,12 +44,13 @@ public class CartItemController {
     public ResponseEntity<Response<Void>> addItemToCart(
             @Valid @RequestBody CartItemRequestDto request) {
         
-        log.info("Request para agregar producto {} al carrito {}", 
-                request.getProductId(), request.getCartId());
+        log.info("Request para agregar producto {} al carrito (usuario: {} {})", 
+                request.getProductId(), request.getDocumentType(), request.getDocumentNumber());
         
         cartItemService.addItemToCart(request);
         
-        log.info("Producto agregado exitosamente al carrito");
+        log.info("Producto {} agregado exitosamente para usuario {} {}", 
+                request.getProductId(), request.getDocumentType(), request.getDocumentNumber());
         
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Response.<Void>builder()
