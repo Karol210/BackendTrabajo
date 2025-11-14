@@ -53,7 +53,7 @@ public interface CartRepository extends JpaRepository<Cart, Integer> {
      */
     @Query("""
             SELECT c FROM Cart c
-            WHERE c.usuarioRolId IN (
+            WHERE c.estadoCarritoId = 1 AND c.usuarioRolId IN (
                 SELECT ur.usuarioRolId FROM UserRole ur
                 WHERE ur.usuarioId IN (
                     SELECT u.usuarioId FROM User u
