@@ -1,9 +1,11 @@
 package com.ecommerce.davivienda.service.user;
 
 import com.ecommerce.davivienda.entity.user.*;
+import com.ecommerce.davivienda.exception.user.UserException;
 import com.ecommerce.davivienda.mapper.user.UserMapper;
 import com.ecommerce.davivienda.models.Response;
 import com.ecommerce.davivienda.models.user.UserRequest;
+import com.ecommerce.davivienda.models.user.UserResponse;
 import com.ecommerce.davivienda.models.user.UserUpdateRequest;
 import com.ecommerce.davivienda.service.auth.AuthUserService;
 import com.ecommerce.davivienda.service.user.transactional.role.UserRoleTransactionalService;
@@ -350,6 +352,71 @@ public class UserServiceImpl implements UserService {
 
         log.info("Contraseña actualizada exitosamente para: {}", email);
         return Response.success(SUCCESS_PASSWORD_CHANGED);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Response<List<UserResponse>> getAllUsers() {
+        log.info("Obteniendo todos los usuarios del sistema");
+
+        List<User> users = userTransactionalService.findAllUsers();
+        List<UserResponse> userResponses = userMapper.toResponseList(users);
+
+        log.info("Se encontraron {} usuarios", userResponses.size());
+        return Response.<List<UserResponse>>builder()
+                .failure(false)
+                .code(200)
+                .message(SUCCESS_USERS_FOUND)
+                .body(userResponses)
+                .timestamp(String.valueOf(System.currentTimeMillis()))
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Response<UserResponse> getUserById(Integer userId) {
+        log.info("Buscando usuario con ID: {}", userId);
+
+        User user = userTransactionalService.findUserById(userId)
+                .orElseThrow(() -> new UserException(
+                        ERROR_USER_NOT_FOUND,
+                        CODE_USER_NOT_FOUND
+                ));
+
+        UserResponse userResponse = userMapper.toResponse(user);
+
+        log.info("Usuario encontrado: {}", userResponse.getEmail());
+        return Response.<UserResponse>builder()
+                .failure(false)
+                .code(200)
+                .message(SUCCESS_USER_FOUND)
+                .body(userResponse)
+                .timestamp(String.valueOf(System.currentTimeMillis()))
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Response<UserResponse> getAuthenticatedUser() {
+        Integer authenticatedUserRoleId = authUserService.getAuthenticatedUserRoleId();
+        log.info("Obteniendo usuario autenticado con userRoleId: {}", authenticatedUserRoleId);
+
+        User user = userTransactionalService.findUserByUserRoleId(authenticatedUserRoleId)
+                .orElseThrow(() -> new UserException(
+                        ERROR_USER_NOT_FOUND,
+                        CODE_USER_NOT_FOUND
+                ));
+
+        UserResponse userResponse = userMapper.toResponse(user);
+
+        log.info("Usuario autenticado encontrado: {}", userResponse.getEmail());
+        return Response.<UserResponse>builder()
+                .failure(false)
+                .code(200)
+                .message(SUCCESS_USER_FOUND)
+                .body(userResponse)
+                .timestamp(String.valueOf(System.currentTimeMillis()))
+                .build();
     }
 }
 

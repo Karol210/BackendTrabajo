@@ -56,6 +56,11 @@ public class Constants {
     public static final String SUCCESS_USER_DELETED = "Usuario eliminado exitosamente";
     
     /**
+     * Mensaje de éxito al consultar todos los usuarios.
+     */
+    public static final String SUCCESS_USERS_FOUND = "Usuarios encontrados exitosamente";
+    
+    /**
      * Mensaje de éxito al activar un usuario.
      */
     public static final String SUCCESS_USER_ACTIVATED = "Usuario activado exitosamente";

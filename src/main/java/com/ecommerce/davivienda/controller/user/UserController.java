@@ -4,6 +4,7 @@ import com.ecommerce.davivienda.models.Response;
 import com.ecommerce.davivienda.models.user.PasswordChangeAuthenticatedRequest;
 import com.ecommerce.davivienda.models.user.PasswordRecoveryRequest;
 import com.ecommerce.davivienda.models.user.UserRequest;
+import com.ecommerce.davivienda.models.user.UserResponse;
 import com.ecommerce.davivienda.models.user.UserUpdateRequest;
 import com.ecommerce.davivienda.service.user.UserService;
 import jakarta.validation.Valid;
@@ -11,7 +12,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * Controlador REST para operaciones CRUD sobre usuarios.
@@ -112,6 +116,53 @@ public class UserController {
                 request.getEmail(),
                 request.getNewPassword()
         );
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Obtiene todos los usuarios del sistema.
+     * Retorna información pública sin datos sensibles como contraseñas.
+     *
+     * @return Response con lista de usuarios
+     */
+    @GetMapping("/all")
+    @PreAuthorize("hasAuthority('Administrador')")
+    public ResponseEntity<Response<List<UserResponse>>> getAllUsers() {
+        log.info("GET /api/v1/users/all - Obtener todos los usuarios");
+
+        Response<List<UserResponse>> response = userService.getAllUsers();
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Busca un usuario por su ID.
+     *
+     * @param id ID del usuario
+     * @return Response con datos del usuario
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<Response<UserResponse>> getUserById(@PathVariable Integer id) {
+        log.info("GET /api/v1/users/{} - Buscar usuario por ID", id);
+
+        Response<UserResponse> response = userService.getUserById(id);
+
+        return ResponseEntity.ok(response);
+    }
+    
+    /**
+     * Obtiene el usuario autenticado desde el token JWT.
+     * No requiere parámetros, usa el userRoleId extraído del token automáticamente.
+     *
+     * @return Response con datos del usuario autenticado
+     */
+    @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Response<UserResponse>> getAuthenticatedUser() {
+        log.info("GET /api/v1/users/me - Obtener usuario autenticado");
+
+        Response<UserResponse> response = userService.getAuthenticatedUser();
 
         return ResponseEntity.ok(response);
     }

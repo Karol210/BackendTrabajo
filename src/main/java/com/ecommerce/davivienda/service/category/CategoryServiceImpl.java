@@ -31,10 +31,10 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional(readOnly = true)
     public List<CategoryResponseDto> getAllCategories() {
-        log.info("Listando todas las categorías");
+        log.debug("Listando todas las categorías");
 
         List<Category> categories = categoryRepository.findAll();
-        log.info("Se encontraron {} categorías", categories.size());
+        log.debug("Se encontraron {} categorías", categories.size());
 
         return categoryMapper.toResponseDtoList(categories);
     }
@@ -42,7 +42,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional(readOnly = true)
     public CategoryResponseDto getCategoryById(Integer id) {
-        log.info("Obteniendo categoría por ID: {}", id);
+        log.debug("Obteniendo categoría por ID: {}", id);
 
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> {
@@ -53,14 +53,14 @@ public class CategoryServiceImpl implements CategoryService {
                     );
                 });
 
-        log.info("Categoría encontrada: {}", category.getNombre());
+        log.debug("Categoría encontrada: {}", category.getNombre());
         return categoryMapper.toResponseDto(category);
     }
 
     @Override
     @Transactional(readOnly = true)
     public CategoryResponseDto getCategoryByName(String name) {
-        log.info("Buscando categoría por nombre: {}", name);
+        log.debug("Buscando categoría por nombre: {}", name);
 
         Category category = categoryRepository.findByNombre(name)
                 .orElseThrow(() -> {
@@ -71,7 +71,7 @@ public class CategoryServiceImpl implements CategoryService {
                     );
                 });
 
-        log.info("Categoría encontrada: {}", category.getNombre());
+        log.debug("Categoría encontrada: {}", category.getNombre());
         return categoryMapper.toResponseDto(category);
     }
 }

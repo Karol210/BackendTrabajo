@@ -1,6 +1,5 @@
 package com.ecommerce.davivienda.service.document;
 
-import com.ecommerce.davivienda.dto.document.DocumentTypeRequestDto;
 import com.ecommerce.davivienda.dto.document.DocumentTypeResponseDto;
 
 import java.util.List;

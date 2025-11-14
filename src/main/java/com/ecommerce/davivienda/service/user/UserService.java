@@ -2,7 +2,10 @@ package com.ecommerce.davivienda.service.user;
 
 import com.ecommerce.davivienda.models.Response;
 import com.ecommerce.davivienda.models.user.UserRequest;
+import com.ecommerce.davivienda.models.user.UserResponse;
 import com.ecommerce.davivienda.models.user.UserUpdateRequest;
+
+import java.util.List;
 
 /**
  * Servicio principal para operaciones CRUD sobre usuarios.
@@ -59,5 +62,31 @@ public interface UserService {
      * @throws com.ecommerce.davivienda.exception.user.UserException si el usuario no existe o no coincide
      */
     Response<String> changePasswordAuthenticated(String email, String newPassword);
+
+    /**
+     * Obtiene todos los usuarios del sistema.
+     * Retorna información pública sin datos sensibles.
+     *
+     * @return Response con lista de usuarios
+     */
+    Response<List<UserResponse>> getAllUsers();
+
+    /**
+     * Busca un usuario por su ID (usuarioId).
+     *
+     * @param userId ID del usuario
+     * @return Response con datos del usuario
+     * @throws com.ecommerce.davivienda.exception.user.UserException si el usuario no existe
+     */
+    Response<UserResponse> getUserById(Integer userId);
+
+    /**
+     * Obtiene el usuario autenticado desde el token JWT.
+     * Usa el userRoleId extraído del token para buscar el usuario.
+     *
+     * @return Response con datos del usuario autenticado
+     * @throws com.ecommerce.davivienda.exception.user.UserException si el usuario no existe
+     */
+    Response<UserResponse> getAuthenticatedUser();
 }
 

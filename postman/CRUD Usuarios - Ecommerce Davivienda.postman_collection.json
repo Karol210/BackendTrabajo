@@ -1,11 +1,11 @@
 {
 	"info": {
-		"_postman_id": "bc6b0bd0-d6c4-4bf9-a073-64040ef37a0f",
+		"_postman_id": "999dad9f-cca0-437e-8759-96001ee27924",
 		"name": "CRUD Usuarios - Ecommerce Davivienda",
-		"description": "Colección de endpoints para operaciones sobre usuarios del sistema.",
+		"description": "Colección de endpoints para operaciones completas sobre usuarios del sistema.\n\n## 🎯 Funcionalidades\n\n1. ✅ **Crear Usuario**: Registro de nuevos usuarios (público)\n2. ✅ **Actualizar Usuario**: Modificación de datos (requiere JWT)\n3. ✅ **Cambiar Contraseña**: Público y autenticado\n4. ✅ **Obtener Todos los Usuarios**: Lista completa sin datos sensibles ⭐ NUEVO\n5. ✅ **Buscar por Número de Transacción**: Consulta específica por usuarioRolId ⭐ NUEVO\n6. ✅ **Buscar por ID**: Consulta específica por usuarioId ⭐ NUEVO\n\n## 🔐 Autenticación\n\n- ❌ **Público**: Crear usuario, Recuperar contraseña, GET all, GET por transactionNumber, GET por ID\n- ✅ **JWT Requerido**: Actualizar usuario, Cambiar contraseña autenticado\n\n## 🆕 Novedades v2.0\n\n- GET `/api/v1/users/all`: Obtener todos los usuarios del sistema\n- GET `/api/v1/users/transaction/{transactionNumber}`: Buscar usuario por usuarioRolId\n- GET `/api/v1/users/{id}`: Buscar usuario por usuarioId\n- Tests automáticos en todos los endpoints de consulta\n- Validación de no retornar contraseñas\n\n## 📋 Variables de Entorno\n\n- `baseUrl`: URL base del API (ej: http://localhost:8080)\n- `token`: Token JWT de autenticación\n- `userId`: ID del usuario (usuarioId) para consultas\n- `transactionNumber`: Número de transacción (usuarioRolId) para consultas",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "18867414",
-		"_collection_link": "https://ecommers-2960.postman.co/workspace/ecommer~52306ab3-2e24-474b-bbb0-b016a3973e77/collection/18867414-bc6b0bd0-d6c4-4bf9-a073-64040ef37a0f?action=share&source=collection_link&creator=18867414"
+		"_collection_link": "https://ecommers-2960.postman.co/workspace/ecommer~52306ab3-2e24-474b-bbb0-b016a3973e77/collection/18867414-999dad9f-cca0-437e-8759-96001ee27924?action=share&source=collection_link&creator=18867414"
 	},
 	"item": [
 		{
@@ -137,6 +137,244 @@
 				"description": "Cambio de contraseña (PRIVADO - requiere autenticación).\nValida que el usuario autenticado sea el dueño del email.\n\n**Validaciones:**\n- REQUIERE token JWT válido\n- Email debe ser válido\n- Email debe coincidir con el del token\n- Usuario debe existir\n- Nueva contraseña no puede estar vacía\n\n**Nota:**\n- La contraseña se encripta automáticamente con BCrypt\n- Solo el usuario autenticado puede cambiar su propia contraseña"
 			},
 			"response": []
+		},
+		{
+			"name": "5. Obtener Todos los Usuarios",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response has correct structure\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('failure');",
+							"    pm.expect(jsonData).to.have.property('code');",
+							"    pm.expect(jsonData).to.have.property('message');",
+							"    pm.expect(jsonData).to.have.property('body');",
+							"    pm.expect(jsonData).to.have.property('timestamp');",
+							"});",
+							"",
+							"pm.test(\"Users found successfully\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.failure).to.be.false;",
+							"    pm.expect(jsonData.code).to.equal(200);",
+							"    pm.expect(jsonData.message).to.equal('Usuarios encontrados exitosamente');",
+							"});",
+							"",
+							"pm.test(\"Body is an array of users\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.body).to.be.an('array');",
+							"});",
+							"",
+							"pm.test(\"Each user has required fields\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    if (jsonData.body.length > 0) {",
+							"        const user = jsonData.body[0];",
+							"        pm.expect(user).to.have.property('usuarioId');",
+							"        pm.expect(user).to.have.property('nombre');",
+							"        pm.expect(user).to.have.property('apellido');",
+							"        pm.expect(user).to.have.property('email');",
+							"        pm.expect(user).to.have.property('documentType');",
+							"        pm.expect(user).to.have.property('documentNumber');",
+							"        pm.expect(user).to.have.property('status');",
+							"        pm.expect(user).to.have.property('roles');",
+							"        pm.expect(user).to.have.property('usuarioRolId');",
+							"        pm.expect(user).to.not.have.property('contrasena');",
+							"        pm.expect(user).to.not.have.property('password');",
+							"    }",
+							"});",
+							"",
+							"// Guardar el usuarioRolId del primer usuario para otros tests",
+							"if (pm.response.code === 200) {",
+							"    const jsonData = pm.response.json();",
+							"    if (jsonData.body.length > 0) {",
+							"        pm.environment.set('transactionNumber', jsonData.body[0].usuarioRolId);",
+							"        console.log('✅ Transaction Number guardado:', jsonData.body[0].usuarioRolId);",
+							"    }",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/users/all",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"users",
+						"all"
+					]
+				},
+				"description": "Obtiene todos los usuarios del sistema.\nRetorna información pública sin datos sensibles como contraseñas.\n\n**Campos retornados:**\n- usuarioId: ID único del usuario\n- nombre: Nombre del usuario\n- apellido: Apellido del usuario\n- documentType: Tipo de documento (nombre completo)\n- documentNumber: Número de documento\n- email: Correo electrónico\n- status: Estado del usuario (Activo, Inactivo, etc.)\n- roles: Lista de roles asignados\n- usuarioRolId: Número de transacción del usuario\n- creationDate: Fecha de creación\n\n**Nota:**\n- NO requiere autenticación\n- NO retorna contraseñas ni información sensible\n- Retorna todos los usuarios activos e inactivos"
+			},
+			"response": []
+		},
+		{
+			"name": "7. Buscar Usuario me",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response has correct structure\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('failure');",
+							"    pm.expect(jsonData).to.have.property('code');",
+							"    pm.expect(jsonData).to.have.property('message');",
+							"    pm.expect(jsonData).to.have.property('body');",
+							"    pm.expect(jsonData).to.have.property('timestamp');",
+							"});",
+							"",
+							"pm.test(\"User found successfully\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.failure).to.be.false;",
+							"    pm.expect(jsonData.code).to.equal(200);",
+							"    pm.expect(jsonData.message).to.equal('Usuario encontrado exitosamente');",
+							"});",
+							"",
+							"pm.test(\"Body contains user data\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.body).to.be.an('object');",
+							"    pm.expect(jsonData.body).to.have.property('usuarioId');",
+							"    pm.expect(jsonData.body).to.have.property('nombre');",
+							"    pm.expect(jsonData.body).to.have.property('apellido');",
+							"    pm.expect(jsonData.body).to.have.property('email');",
+							"    pm.expect(jsonData.body).to.have.property('documentType');",
+							"    pm.expect(jsonData.body).to.have.property('documentNumber');",
+							"    pm.expect(jsonData.body).to.have.property('status');",
+							"    pm.expect(jsonData.body).to.have.property('roles');",
+							"    pm.expect(jsonData.body).to.have.property('usuarioRolId');",
+							"});",
+							"",
+							"pm.test(\"User does not contain sensitive data\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.body).to.not.have.property('contrasena');",
+							"    pm.expect(jsonData.body).to.not.have.property('password');",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqdWFuLnBlcmV6OUBleGFtcGxlLmNvbSIsImF1dGhvcml0aWVzIjoiW3tcImF1dGhvcml0eVwiOlwiQ2xpZW50ZVwifV0iLCJ1c2VybmFtZSI6Imp1YW4ucGVyZXo5QGV4YW1wbGUuY29tIiwiZXhwIjoxNzYzMDg0ODU2LCJpYXQiOjE3NjMwODEyNTZ9.yXz61PNk_4LkQfeirWfuoQnzlcL9r9_qHIla7c9ac1Y",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/users/me",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"users",
+						"me"
+					]
+				},
+				"description": "Busca un usuario por su ID (usuarioId).\n\n**Parámetros:**\n- userId: ID del usuario (usuarioId)\n\n**Campos retornados:**\n- usuarioId: ID único del usuario\n- nombre: Nombre del usuario\n- apellido: Apellido del usuario\n- documentType: Tipo de documento (nombre completo)\n- documentNumber: Número de documento\n- email: Correo electrónico\n- status: Estado del usuario (Activo, Inactivo, etc.)\n- roles: Lista de roles asignados\n- usuarioRolId: Número de transacción del usuario\n- creationDate: Fecha de creación\n\n**Errores:**\n- 404: Usuario no encontrado (ED-USR-01)\n\n**Nota:**\n- NO requiere autenticación\n- NO retorna contraseñas ni información sensible"
+			},
+			"response": []
+		},
+		{
+			"name": "7. Buscar Usuario por ID",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response has correct structure\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('failure');",
+							"    pm.expect(jsonData).to.have.property('code');",
+							"    pm.expect(jsonData).to.have.property('message');",
+							"    pm.expect(jsonData).to.have.property('body');",
+							"    pm.expect(jsonData).to.have.property('timestamp');",
+							"});",
+							"",
+							"pm.test(\"User found successfully\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.failure).to.be.false;",
+							"    pm.expect(jsonData.code).to.equal(200);",
+							"    pm.expect(jsonData.message).to.equal('Usuario encontrado exitosamente');",
+							"});",
+							"",
+							"pm.test(\"Body contains user data\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.body).to.be.an('object');",
+							"    pm.expect(jsonData.body).to.have.property('usuarioId');",
+							"    pm.expect(jsonData.body).to.have.property('nombre');",
+							"    pm.expect(jsonData.body).to.have.property('apellido');",
+							"    pm.expect(jsonData.body).to.have.property('email');",
+							"    pm.expect(jsonData.body).to.have.property('documentType');",
+							"    pm.expect(jsonData.body).to.have.property('documentNumber');",
+							"    pm.expect(jsonData.body).to.have.property('status');",
+							"    pm.expect(jsonData.body).to.have.property('roles');",
+							"    pm.expect(jsonData.body).to.have.property('usuarioRolId');",
+							"});",
+							"",
+							"pm.test(\"User does not contain sensitive data\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData.body).to.not.have.property('contrasena');",
+							"    pm.expect(jsonData.body).to.not.have.property('password');",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqdWFuLnBlcmV6OUBleGFtcGxlLmNvbSIsImF1dGhvcml0aWVzIjoiW3tcImF1dGhvcml0eVwiOlwiQ2xpZW50ZVwifV0iLCJ1c2VybmFtZSI6Imp1YW4ucGVyZXo5QGV4YW1wbGUuY29tIiwiZXhwIjoxNzYzMDg0ODU2LCJpYXQiOjE3NjMwODEyNTZ9.yXz61PNk_4LkQfeirWfuoQnzlcL9r9_qHIla7c9ac1Y",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/users/{{userId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"users",
+						"{{userId}}"
+					]
+				},
+				"description": "Busca un usuario por su ID (usuarioId).\n\n**Parámetros:**\n- userId: ID del usuario (usuarioId)\n\n**Campos retornados:**\n- usuarioId: ID único del usuario\n- nombre: Nombre del usuario\n- apellido: Apellido del usuario\n- documentType: Tipo de documento (nombre completo)\n- documentNumber: Número de documento\n- email: Correo electrónico\n- status: Estado del usuario (Activo, Inactivo, etc.)\n- roles: Lista de roles asignados\n- usuarioRolId: Número de transacción del usuario\n- creationDate: Fecha de creación\n\n**Errores:**\n- 404: Usuario no encontrado (ED-USR-01)\n\n**Nota:**\n- NO requiere autenticación\n- NO retorna contraseñas ni información sensible"
+			},
+			"response": []
 		}
 	],
 	"variable": [
@@ -155,6 +393,12 @@
 			"value": "",
 			"type": "string",
 			"description": "Token JWT obtenido del login"
+		},
+		{
+			"key": "transactionNumber",
+			"value": "1",
+			"type": "string",
+			"description": "Número de transacción (usuarioRolId) para buscar usuarios"
 		}
 	]
 }

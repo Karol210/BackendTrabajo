@@ -2,6 +2,7 @@ package com.ecommerce.davivienda.mapper.user;
 
 import com.ecommerce.davivienda.entity.user.*;
 import com.ecommerce.davivienda.models.user.UserRequest;
+import com.ecommerce.davivienda.models.user.UserResponse;
 import com.ecommerce.davivienda.models.user.UserUpdateRequest;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -86,6 +87,70 @@ public interface UserMapper {
     }
 
     // ==================== HELPERS ====================
+
+    // ==================== CONVERSIÓN A RESPONSE ====================
+
+    /**
+     * Convierte entidad User a UserResponse.
+     * Excluye información sensible como contraseña.
+     *
+     * @param user Entidad User
+     * @return UserResponse con datos públicos del usuario
+     */
+    default UserResponse toResponse(User user) {
+        if (user == null) {
+            return null;
+        }
+
+        return UserResponse.builder()
+                .usuarioId(user.getUsuarioId())
+                .nombre(user.getNombre())
+                .apellido(user.getApellido())
+                .documentType(user.getDocumentType() != null 
+                        ? user.getDocumentType().getNombre() 
+                        : null)
+                .documentNumber(user.getNumeroDeDoc())
+                .email(user.getCorreo())
+                .status(user.getUserStatus() != null 
+                        ? user.getUserStatus().getNombre() 
+                        : null)
+                .roles(extractRoleNames(user.getRoles()))
+                .usuarioRolId(user.getUsuarioRolId())
+                .build();
+    }
+
+    /**
+     * Convierte lista de Users a lista de UserResponse.
+     *
+     * @param users Lista de entidades User
+     * @return Lista de UserResponse
+     */
+    default java.util.List<UserResponse> toResponseList(java.util.List<User> users) {
+        if (users == null || users.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        
+        return users.stream()
+                .map(this::toResponse)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    /**
+     * Extrae los nombres de los roles de la lista de UserRole.
+     *
+     * @param userRoles Lista de UserRole
+     * @return Lista de nombres de roles
+     */
+    default java.util.List<String> extractRoleNames(java.util.List<UserRole> userRoles) {
+        if (userRoles == null || userRoles.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        
+        return userRoles.stream()
+                .filter(ur -> ur.getRole() != null)
+                .map(ur -> ur.getRole().getNombreRol())
+                .collect(java.util.stream.Collectors.toList());
+    }
 
     /**
      * Asigna el usuarioRolId primario al usuario desde la lista de roles guardados.

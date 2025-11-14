@@ -1,6 +1,5 @@
 package com.ecommerce.davivienda.service.role;
 
-import com.ecommerce.davivienda.dto.role.RoleRequestDto;
 import com.ecommerce.davivienda.dto.role.RoleResponseDto;
 
 import java.util.List;

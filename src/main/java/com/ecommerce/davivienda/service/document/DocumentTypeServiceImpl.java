@@ -1,6 +1,5 @@
 package com.ecommerce.davivienda.service.document;
 
-import com.ecommerce.davivienda.dto.document.DocumentTypeRequestDto;
 import com.ecommerce.davivienda.dto.document.DocumentTypeResponseDto;
 import com.ecommerce.davivienda.entity.user.DocumentType;
 import com.ecommerce.davivienda.exception.document.DocumentTypeException;
@@ -8,7 +7,6 @@ import com.ecommerce.davivienda.mapper.document.DocumentTypeMapper;
 import com.ecommerce.davivienda.repository.user.DocumentTypeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,11 +32,11 @@ public class DocumentTypeServiceImpl implements DocumentTypeService {
     @Override
     @Transactional(readOnly = true)
     public List<DocumentTypeResponseDto> findAll() {
-        log.info("Consultando todos los tipos de documento");
+        log.debug("Consultando todos los tipos de documento");
         
         List<DocumentType> documentTypes = documentTypeRepository.findAll();
         
-        log.info("Se encontraron {} tipos de documento", documentTypes.size());
+        log.debug("Se encontraron {} tipos de documento", documentTypes.size());
         return documentTypeMapper.toResponseDtoList(documentTypes);
     }
 
@@ -46,7 +44,7 @@ public class DocumentTypeServiceImpl implements DocumentTypeService {
     @Override
     @Transactional(readOnly = true)
     public DocumentTypeResponseDto findByCode(String codigo) {
-        log.info("Buscando tipo de documento con código: {}", codigo);
+        log.debug("Buscando tipo de documento con código: {}", codigo);
         
         DocumentType documentType = documentTypeRepository.findByCodigo(codigo)
                 .orElseThrow(() -> new DocumentTypeException(
@@ -54,7 +52,7 @@ public class DocumentTypeServiceImpl implements DocumentTypeService {
                         CODE_DOCUMENT_TYPE_NOT_FOUND_BY_CODE
                 ));
         
-        log.info("Tipo de documento encontrado: {} ({})", documentType.getNombre(), documentType.getCodigo());
+        log.debug("Tipo de documento encontrado: {} ({})", documentType.getNombre(), documentType.getCodigo());
         return documentTypeMapper.toResponseDto(documentType);
     }
 

@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -57,6 +58,13 @@ public class UserUserTransactionalServiceImpl implements UserUserTransactionalSe
     public Optional<User> findByDocumentTypeAndNumber(Integer documentTypeId, String documentNumber) {
         log.debug("Buscando usuario por documento: tipo={}, número={}", documentTypeId, documentNumber);
         return userRepository.findByDocumentType_DocumentoIdAndNumeroDeDoc(documentTypeId, documentNumber);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<User> findAllUsers() {
+        log.debug("Obteniendo todos los usuarios del sistema");
+        return userRepository.findAll();
     }
 
     @Override

@@ -2,6 +2,7 @@ package com.ecommerce.davivienda.service.user.transactional.user;
 
 import com.ecommerce.davivienda.entity.user.User;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -53,6 +54,13 @@ public interface UserUserTransactionalService {
      * @return Optional con el User si existe
      */
     Optional<User> findByDocumentTypeAndNumber(Integer documentTypeId, String documentNumber);
+
+    /**
+     * Obtiene todos los usuarios del sistema.
+     *
+     * @return Lista de todos los usuarios
+     */
+    List<User> findAllUsers();
 
     /**
      * Guarda un usuario.
