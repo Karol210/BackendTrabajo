@@ -40,9 +40,8 @@ public class CartItemResponse {
 
     /**
      * ID del producto.
-     * Campo interno - no se expone en JSON de respuesta.
      */
-    @JsonIgnore
+    @JsonProperty("productId")
     private Integer productId;
 
     /**
