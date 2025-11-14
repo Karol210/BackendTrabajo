@@ -1,5 +1,6 @@
 package com.ecommerce.davivienda.security.response;
 
+import com.ecommerce.davivienda.dto.user.UserProfileDto;
 import com.ecommerce.davivienda.models.Response;
 import com.ecommerce.davivienda.util.JsonUtils;
 import jakarta.servlet.http.HttpServletResponse;
@@ -32,31 +33,35 @@ public class AuthenticationResponseBuilder {
     private static final String FIELD_USERNAME = "username";
     private static final String FIELD_MESSAGE = "message";
     private static final String FIELD_EXPIRES_IN = "expiresIn";
+    private static final String FIELD_USER_PROFILE = "userProfile";
     
-    private static final String SUCCESS_MESSAGE_TEMPLATE = "Hola %s, has iniciado sesión con éxito";
+    private static final String SUCCESS_MESSAGE_TEMPLATE = "Hola %s %s, has iniciado sesión con éxito";
 
     private final JsonUtils jsonUtils;
 
     /**
      * Escribe respuesta exitosa de autenticación en el HttpServletResponse.
+     * Incluye el token JWT y el perfil completo del usuario.
      *
      * @param response HttpServletResponse
      * @param token Token JWT generado
-     * @param userName Nombre del usuario autenticado
+     * @param userName Nombre del usuario autenticado (email)
+     * @param userProfile Perfil del usuario (sin credenciales sensibles)
      * @throws IOException Si hay error al escribir la respuesta
      */
-    public void writeSuccessResponse(HttpServletResponse response, String token, String userName) 
+    public void writeSuccessResponse(HttpServletResponse response, String token, String userName, UserProfileDto userProfile) 
             throws IOException {
         
         log.debug("Construyendo respuesta exitosa para usuario: {}", userName);
 
-        Map<String, Object> body = buildSuccessBody(token, userName);
+        Map<String, Object> body = buildSuccessBody(token, userName, userProfile);
         
         response.setContentType(CONTENT_TYPE);
         response.setStatus(HttpStatus.OK.value());
         response.getWriter().write(jsonUtils.serializeToJson(body));
         
-        log.info("Respuesta exitosa enviada para usuario: {}", userName);
+        log.info("Respuesta exitosa enviada para usuario: {} ({})", userName, 
+                userProfile != null ? userProfile.getNombre() + " " + userProfile.getApellido() : "N/A");
     }
 
     /**
@@ -120,18 +125,27 @@ public class AuthenticationResponseBuilder {
     }
 
     /**
-     * Construye el body de respuesta exitosa.
+     * Construye el body de respuesta exitosa con perfil del usuario.
      *
      * @param token Token JWT
-     * @param userName Nombre del usuario
+     * @param userName Nombre del usuario (email)
+     * @param userProfile Perfil del usuario
      * @return Map con datos de respuesta
      */
-    private Map<String, Object> buildSuccessBody(String token, String userName) {
+    private Map<String, Object> buildSuccessBody(String token, String userName, UserProfileDto userProfile) {
         Map<String, Object> body = new HashMap<>();
         body.put(FIELD_TOKEN, token);
         body.put(FIELD_USERNAME, userName);
-        body.put(FIELD_MESSAGE, String.format(SUCCESS_MESSAGE_TEMPLATE, userName));
+        
+        // Mensaje personalizado con nombre y apellido del usuario
+        String welcomeMessage = userProfile != null 
+                ? String.format(SUCCESS_MESSAGE_TEMPLATE, userProfile.getNombre(), userProfile.getApellido())
+                : String.format("Hola %s, has iniciado sesión con éxito", userName);
+        
+        body.put(FIELD_MESSAGE, welcomeMessage);
         body.put(FIELD_EXPIRES_IN, EXPIRATION_TIME);
+        body.put(FIELD_USER_PROFILE, userProfile);
+        
         return body;
     }
 

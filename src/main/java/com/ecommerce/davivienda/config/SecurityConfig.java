@@ -1,5 +1,7 @@
 package com.ecommerce.davivienda.config;
 
+import com.ecommerce.davivienda.mapper.user.UserProfileMapper;
+import com.ecommerce.davivienda.repository.user.UserRepository;
 import com.ecommerce.davivienda.security.SecurityEndpoints;
 import com.ecommerce.davivienda.security.credentials.CredentialsExtractor;
 import com.ecommerce.davivienda.security.filter.JwtAuthenticationFilter;
@@ -83,6 +85,8 @@ public class SecurityConfig {
     private final JwtTokenExtractor tokenExtractor;
     private final JwtTokenValidator tokenValidator;
     private final AuthenticationResponseBuilder responseBuilder;
+    private final UserRepository userRepository;
+    private final UserProfileMapper userProfileMapper;
 
     /**
      * Bean de AuthenticationManager para procesar autenticaciones.
@@ -117,7 +121,9 @@ public class SecurityConfig {
                 authenticationManager(),
                 credentialsExtractor,
                 tokenGenerator,
-                responseBuilder
+                responseBuilder,
+                userRepository,
+                userProfileMapper
         );
         filter.setFilterProcessesUrl(JwtAuthenticationFilter.LOGIN_ENDPOINT);
         return filter;
